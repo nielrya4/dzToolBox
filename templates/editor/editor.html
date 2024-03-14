@@ -27,7 +27,7 @@
     </div>
     <h1>Code Editor</h1>
     <p>Welcome, {{ current_user.username }}!</p>
-    <form hx-post="/new_file" hx-target="#file-list" hx-swap="outerHTML">
+    <form hx-post="/new_project" hx-target="#file-list" hx-swap="outerHTML">
         <label for="title">File Title:</label>
         <input type="text" name="title" required>
         <label for="content">Code:</label>
@@ -35,21 +35,22 @@
         <button type="submit">Save File</button>
     </form>
     <h2>Your Files:</h2>
-    {% block file_list %}
-        <ul id="file-list">
-            {% for file in user_files %}
+    {% block project_list %}
+        <ul id="project-list">
+            {% for project in user_projects %}
                 <li>
-                    {{ file.title }}
-                    <button hx-post="/get_file/{{ file.id }}" type="button" hx-trigger="click" hx-target="#file-content" hx-swap="innerHTML">Open</button>
-                    <button hx-post="/delete_file/{{ file.id }}" type="button" hx-confirm="Are you sure you want to delete this file?" hx-target="#file-list" hx-swap="outerHTML">Delete</button>
+                    {{ project.title }}
+                    <button hx-post="/get_project/{{ project.id }}" type="button" hx-trigger="click" hx-target="#project-content" hx-swap="innerHTML">Open</button>
+                    <button hx-post="/delete_project/{{ project.id }}" type="button" hx-confirm="Are you sure you want to delete this file?" hx-target="#project-list" hx-swap="outerHTML">Delete</button>
+                    <br />
                 </li>
             {% endfor %}
         </ul>
     {% endblock %}
 
-    <input type="hidden" id="file-id" name="file_id" value="">
+    <input type="hidden" id="project-id" name="project_id" value="">
 
-    <div id="file-content">
+    <div id="project-content">
     </div>
 
     {% if current_user.is_authenticated %}

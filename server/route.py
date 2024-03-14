@@ -1,8 +1,8 @@
-from server import account, cleanup, database
-from apps import editor, init
+from server import account, cleanup
+from apps import project_browser, init
 
 
 def register_routes(app):
     account.register(app)
-    editor.register(app)
+    project_browser.register(app)
     init.register(app)
