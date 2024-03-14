@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    {% include "global/head.html" %}
+</head>
+<body>
+    <h1>Login</h1>
+    <form method="post" action="{{ url_for('login') }}">
+        <label for="username">Username:</label>
+        <input type="text" name="username" required>
+        <label for="password">Password:</label>
+        <input type="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
+    <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign Up</a></p>
+    {% if current_user.is_authenticated %}
+        <p>Logged in as {{ current_user.username }}. <a href="{{ url_for('editor') }}">Go to Code Editor</a></p>
+    {% endif %}
+</body>
+</html>

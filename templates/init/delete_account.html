@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Account</title>
+    {% include "global/head.html" %}
+</head>
+<body>
+    <h1>Delete Account</h1>
+    <p>Are you sure you want to delete your account?</p>
+    <form method="post" action="{{ url_for('delete_account') }}">
+        <button type="submit">Delete Account</button>
+    </form>
+    <p><a href="{{ url_for('editor') }}">Go back to Code Editor</a></p>
+</body>
+</html>
