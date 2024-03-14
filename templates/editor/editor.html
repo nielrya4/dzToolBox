@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Editor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+    {% include "global/head.html" %}
+</head>
+<body>
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">Home</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">Profile</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false">Contact</button>
+        </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">asdf</div>
+        <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">fdsa</div>
+        <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">sdss</div>
+    </div>
+    <h1>Code Editor</h1>
+    <p>Welcome, {{ current_user.username }}!</p>
+    <form hx-post="/new_file" hx-target="#file-list" hx-swap="outerHTML">
+        <label for="title">File Title:</label>
+        <input type="text" name="title" required>
+        <label for="content">Code:</label>
+        <textarea name="content" rows="10" required></textarea>
+        <button type="submit">Save File</button>
+    </form>
+    <h2>Your Files:</h2>
+    {% block file_list %}
+        <ul id="file-list">
+            {% for file in user_files %}
+                <li>
+                    {{ file.title }}
+                    <button hx-post="/get_file/{{ file.id }}" type="button" hx-trigger="click" hx-target="#file-content" hx-swap="innerHTML">Open</button>
+                    <button hx-post="/delete_file/{{ file.id }}" type="button" hx-confirm="Are you sure you want to delete this file?" hx-target="#file-list" hx-swap="outerHTML">Delete</button>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endblock %}
+
+    <input type="hidden" id="file-id" name="file_id" value="">
+
+    <div id="file-content">
+    </div>
+
+    {% if current_user.is_authenticated %}
+        <p><a href="{{ url_for('logout') }}">Logout</a></p>
+        <p>Logged in as {{ current_user.username }}. <a href="{{ url_for('delete_account') }}">Delete Account</a></p>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+</body>
+</html>
