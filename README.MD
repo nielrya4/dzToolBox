@@ -10,7 +10,6 @@
     </ol>
     <li style="color:cyan;">/server</li>
     <ol>
-        <li>fileops.py</li>
         <li>cleanup.py</li>
     </ol>
     <li style="color:cyan;">/apps</li>

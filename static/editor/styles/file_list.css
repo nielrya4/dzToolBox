@@ -1,0 +1,19 @@
+table.file_list {
+    border-collapse: collapse;
+    text-align: center;
+    width: 400px;
+    color: black;
+}
+
+td.file_list, th.file_list {
+    border: 1px solid #dddddd;
+    padding: 20px;
+    margin: 10px
+}
+
+tr.file_list:nth-child(even) {
+    background-color: #dddddd;
+}
+tr.file_list:nth-child(odd) {
+    background-color: white;
+}

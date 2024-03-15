@@ -17,14 +17,8 @@ def register(app):
     @login_required
     def project_browser():
         user_projects = database.get_all_files()
-        return render_template('editor/project_browser/project_browser.html', user_projects=user_projects)
+        return render_template('project_browser/project_browser.html', user_projects=user_projects)
 
-    @app.route('/get_project/<int:project_id>', methods=['GET', 'POST'])
-    @login_required
-    def get_file(project_id):
-        file = database.get_file(project_id)
-        # Replace this return with opening the project
-        return file.content
 
     @app.route('/delete_project/<int:project_id>', methods=['POST'])
     @login_required
@@ -39,7 +33,7 @@ def register(app):
             project_name = request.form.get('project_name')
             project_name = "New Project" if project_name == '' else project_name
             data_file = request.form.get('data_file', '')
-            data = ''
+            data = '<h1>hello world</h1>'
             database.new_file(project_name, data)
         return render_project_list()
 
@@ -47,7 +41,7 @@ def register(app):
 def render_project_list():
     user_projects = database.get_all_files()
     project_list_html = render_block(environment=environment,
-                                  template_name="editor/project_browser/project_browser.html",
+                                  template_name="project_browser/project_browser.html",
                                   block_name="project_list",
                                   user_projects=user_projects)
     return project_list_html
