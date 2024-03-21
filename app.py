@@ -2,11 +2,15 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin
 from server import route
+import os
 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['TEMP_FOLDER'] = 'temp'
+if not os.path.exists('temp'):
+    os.makedirs('temp')
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)

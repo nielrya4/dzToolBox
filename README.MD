@@ -43,12 +43,7 @@ that don't need to be done by the server, are included here.
 <ul>
     <li style="color:cyan;">/utils</li>
     <ol>
-        <li>spreadsheet.py</li>
-        <li>unmix.py</li>
-    </ol>
-    <li style="color:cyan;">/server</li>
-    <ol>
-        <li>cleanup.py</li>
+        <li>matrix.py (rewrite to test graphs rather than samples)</li>
     </ol>
     <li style="color:cyan;">/apps</li>
     <ol>

@@ -1,11 +1,12 @@
 <div id="backstore" style="display: none;">
     <div class="frame" id="content">
-        <form>
+        <form enctype="multipart/form-data">
             <label for="project_name">Project Name</label>
             <input type="text" id="project_name" name="project_name" required>
             <label for="data_file">Import Data (Optional)</label>
             <input type="file" id="data_file" name="data_file" accept=".xlsx, .xls, .csv">
             <button id="create_new_project" type="submit" hx-post="/new_project" hx-target="#project-list" hx-swap="outerHTML">Create New Project</button>
         </form>
+        <div id="status" style="display: none"></div>
     </div>
 </div>
