@@ -4,9 +4,9 @@ from server import database, files
 from jinja2_fragments import render_block
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from utils.project import Project
-from utils.spreadsheet import extract_data_from_file
+from utils import spreadsheet
 import os
-import app as APP
+import json
 import openpyxl
 
 environment = Environment(
@@ -37,38 +37,58 @@ def register(app):
             project_name = "New Project" if project_name == '' else project_name
             file = session.get('last_uploaded_file', None)
             if file is not None:
-                spreadsheet_data = str(extract_data_from_file(os.path.join('temp', file)))
+                spreadsheet_data = spreadsheet.array_to_text(spreadsheet.excel_to_array(os.path.join('temp', file)))
             else:
                 spreadsheet_data = "<h1>No Data</h1>"
 
             project_data = Project(name=project_name,
                                    data=spreadsheet_data,
-                                   outputs="").generate_xml_data()
+                                   outputs="").generate_json_string()
             database.new_file(project_name, project_data)
+
         return render_project_list()
 
-    @app.route('/json/save', methods=['POST'])
-    def json_save():
-        data = request.get_json()['jsonData']
+    @app.route('/json/save/new_file', methods=['POST'])
+    @login_required
+    def json_save_new_file():
+        filename = "spreadsheet.xlsx"
+        filepath = os.path.join("temp", filename)
+        session["last_uploaded_file"] = filename
 
+        # Save Excel data to a file
+        data = request.get_json()['jsonData']
         wb = openpyxl.Workbook()
         ws = wb.active
-
-        # Write the data to the worksheet
         for col_idx, column in enumerate(data, start=1):
             for row_idx, value in enumerate(column, start=1):
                 ws.cell(row=row_idx, column=col_idx, value=value)
-
-        # Save the workbook to a file in the temp folder
-        if session.get('last_uploaded_file') is None:
-            filename = 'spreadsheet.xlsx'
-        else:
-            filename = session['last_uploaded_file']
-        filepath = os.path.join('temp', filename)
-        session['last_uploaded_file'] = filename
-
         wb.save(filepath)
-        return jsonify({"result": "ok", "filename": filename})
+
+        # If an open project exists, update its data
+        if session.get("open_project", 0) is not 0:
+            project_id = session["open_project"]
+            file = database.get_file(project_id)
+            project_content = file.content
+
+            try:
+                # Convert Excel data to text
+                excel_data_text = spreadsheet.array_to_text(data)
+
+                # Update project JSON with Excel data
+                project_json = json.loads(project_content)
+                project_json["data"] = excel_data_text
+
+                # Save updated project content to the database
+                updated_project_content = json.dumps(project_json)
+                database.write_file(project_id, updated_project_content)
+                file.content = updated_project_content
+
+                return jsonify({"success": True})
+            except Exception as e:
+                print(f"Error updating project data: {e}")
+                return jsonify({"success": False, "error": str(e)})
+
+        return jsonify({"result": "ok", "filename": "filename"})
 
 
 def render_project_list():

@@ -7,7 +7,7 @@ class Output:
         self.output_type = output_type
         self.data = data
 
-    def generate_xml_data(self):
+    def generate_html_data(self):
         if self.output_type == 'graph' or self.output_type == 'matrix':
             return f'<div>{self.data}</div>'
         else:

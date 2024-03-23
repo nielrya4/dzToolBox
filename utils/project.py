@@ -1,3 +1,4 @@
+import json
 
 
 class Project:
@@ -6,16 +7,16 @@ class Project:
         self.data = data
         self.outputs = outputs
 
-    def generate_xml_data(self):
-        xml_data = f"<project name='{self.name}'>\n"
-        xml_data += "<data>\n"
-        xml_data += f"{self.data}\n"
-        xml_data += "</data>\n"
-        xml_data += "<outputs>\n"
+    def generate_json_string(self):
+        json_data = {
+            "project_name": self.name,
+            "data": self.data,
+            "outputs": []
+        }
         for output in self.outputs:
-            xml_data += f"<output name='{output.name}'"
-            xml_data += f"{output.generate_xml_data()}\n"
-            xml_data += "</output>\n"
-        xml_data += "</outputs>\n"
-        xml_data += "</project>\n"
-        return xml_data
+            json_data["outputs"].append({
+                "output_name": output.name,
+                "output_data": output.generate_html_data()
+            })
+        json_string = json.dumps(json_data, indent=4)
+        return json_string
