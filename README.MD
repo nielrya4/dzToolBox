@@ -39,6 +39,7 @@ that don't need to be done by the server, are included here.
 </p>
 
 <h5>Todo:</h5>
+<p>Implement Outputs</p>
 <p>Finish writing the following files:</p>
 <ul>
     <li style="color:cyan;">/utils</li>

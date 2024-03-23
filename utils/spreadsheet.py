@@ -1,7 +1,9 @@
 import openpyxl
 import base64
 from utils.sample import Sample, Grain
+import json
 from io import BytesIO
+import tempfile
 
 
 def read_samples(excel_data):
@@ -31,25 +33,40 @@ def is_sample_sheet(self):
         return True
 
 
-def extract_data_from_file(file):
-    with open(file, "rb") as file:
-        xlsx_data = file.read()
-    encoded_xlsx_data = base64.b64encode(xlsx_data).decode("utf-8")
-    return encoded_xlsx_data
+def excel_to_array(file_path):
+    try:
+        workbook = openpyxl.load_workbook(file_path)
+        sheet = workbook.active
+        max_rows = sheet.max_row
+        max_cols = sheet.max_column
+        spreadsheet_data = []
+        for row in range(1, max_rows + 1):
+            row_data = []
+            for col in range(1, max_cols + 1):
+                cell_value = sheet.cell(row=row, column=col).value
+                cell_value = cell_value if cell_value is not None else None
+                row_data.append(cell_value)
+            spreadsheet_data.append(row_data)
+        transposed_array = [[spreadsheet_data[j][i] for j in range(len(spreadsheet_data))] for i in range(len(spreadsheet_data[0]))]
+        return transposed_array
+    except Exception as e:
+        print(f"Error converting Excel file to array: {e}")
+        return None
 
 
-def text_to_array(spreadsheet_content):
-    xlsx_io = BytesIO(spreadsheet_content)
-    workbook = openpyxl.load_workbook(xlsx_io)
-    sheet = workbook.active
-    max_rows = sheet.max_row
-    max_cols = sheet.max_column
-    spreadsheet_data = []
-    for row in range(1, max_rows + 1):
-        row_data = []
-        for col in range(1, max_cols + 1):
-            cell_value = sheet.cell(row=row, column=col).value
-            cell_value = cell_value if cell_value is not None else None
-            row_data.append(cell_value)
-        spreadsheet_data.append(row_data)
-    return spreadsheet_data
+def array_to_text(array):
+    try:
+        # Serialize the array to a string using JSON
+        return json.dumps(array)
+    except Exception as e:
+        print(f"Error converting array to text: {e}")
+        return None
+
+
+def text_to_array(text):
+    try:
+        array = json.loads(text)
+        return array
+    except Exception as e:
+        print(f"Error converting text to array: {e}")
+        return None

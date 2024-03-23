@@ -62,7 +62,9 @@ new_project.addEventListener('click',()=>{
     });
 
     function save_data(jsonData) {
-        fetch('/json/save', {
+        sessionStorage.setItem("open_project", "0");
+
+        fetch('/json/save/new_file', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 'jsonData': jsonData })
