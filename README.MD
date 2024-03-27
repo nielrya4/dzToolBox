@@ -39,7 +39,9 @@ that don't need to be done by the server, are included here.
 </p>
 
 <h5>Todo:</h5>
-<p>Implement Outputs</p>
+<p>First implement samples toggle, then implement outputs. Use 
+new output wizard to create new output. Make spreadsheet editor
+and output editor separate pages.</p>
 <p>Finish writing the following files:</p>
 <ul>
     <li style="color:cyan;">/utils</li>

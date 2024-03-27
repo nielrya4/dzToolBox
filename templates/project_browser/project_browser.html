@@ -5,19 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project List</title>
     {% include "global/head.html" %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/file_list.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/table_list.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/frame.css') }}">
 
 </head>
 <body>
     <div>
-            <button id="new_project">New Project</button>
+            <button class="btn btn-primary" id="new_project">New Project</button>
     </div>
     <h4>Projects:</h4>
     {% block project_list %}
-        <table class="file_list" id="project-list">
+        <table class="table_list" id="project-list">
             {% for project in user_projects %}
-                <tr class="file_list">
+                <tr class="table_list">
                     <td>
                         {{ project.title }}
                     </td>
@@ -36,13 +36,12 @@
     </div>
 
 
-    {% include "project_browser/new_project_dialog.html" %}
+    {% include "project_browser/frames/new_project_dialog.html" %}
     {% include "global/spinner.html" %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
     <script src="{{ url_for('static', filename='global/scripts/winbox.bundle.js') }}"></script>
     <script src="{{ url_for('static', filename='global/scripts/spinner.js') }}"></script>
-    <script src="{{ url_for('static', filename='editor/scripts/new_project.js') }}"></script>
 </body>
 </html>

@@ -6,6 +6,8 @@ from utils import spreadsheet
 import json
 import openpyxl
 import os
+from utils.graph import Graph
+from jinja2_fragments import render_block
 
 
 environment = Environment(
@@ -21,13 +23,24 @@ def register(app):
         session["open_project"] = project_id
         file = database.get_file(project_id)
         project_content = file.content
+
         project_data = get_project_data(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
+
+        loaded_samples = spreadsheet.read_samples(spreadsheet_data)
+        samples_data = []
+        for sample in loaded_samples:
+            active = request.form.get(sample.name) == "true"
+            samples_data.append([sample.name, active])
+
         # outputs_data = get_all_outputs(project_content)[:][1]
         outputs_data = "asdf"
+
         return render_template("editor/editor.html",
                                spreadsheet_data=spreadsheet_data,
+                               samples=samples_data,
                                outputs_data=outputs_data)
+
 
     @app.route('/json/save/spreadsheet', methods=['POST'])
     @login_required
@@ -60,6 +73,32 @@ def register(app):
                 return jsonify({"success": False, "error": str(e)})
 
         return jsonify({"result": "ok", "filename": "filename"})
+
+    @app.route('/new_output', methods=['GET'])
+    @login_required
+    def new_output():
+        output_name = request.args.get('output_name', '')
+        sample_names = request.args.getlist('samples')
+        output_type = request.args.get('output_type', '')
+
+        project_id = session.get("open_project", 0)
+        file = database.get_file(project_id)
+        project_content = file.content
+        project_data = get_project_data(project_content)
+        spreadsheet_data = spreadsheet.text_to_array(project_data)
+        loaded_samples = spreadsheet.read_samples(spreadsheet_data)
+
+        active_samples = []
+        for sample in loaded_samples:
+            for sample_name in sample_names:
+                if sample.name == sample_name:
+                    active_samples.append(sample)
+        graph = Graph(samples=active_samples,
+                      title="Sample Graph",
+                      stacked=False,
+                      graph_type="kde")
+        fig = graph.generate_svg()
+        return f"Output Name: {output_name}, Samples: {sample_names}, Output Type: {output_type}, {fig}"
 
 
 def get_all_outputs(json_string):
