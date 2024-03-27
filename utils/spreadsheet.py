@@ -6,19 +6,21 @@ from io import BytesIO
 import tempfile
 
 
-def read_samples(excel_data):
+def read_samples(spreadsheet_array):
     samples = []
-    spreadsheet_content = base64.b64decode(excel_data)
-    spreadsheet_array = text_to_array(spreadsheet_content)
 
-    # Assuming the sample data starts from row 2 and each sample occupies two columns
-    for row_data in spreadsheet_array[1:]:  # Skip the header row
-        sample_name = row_data[0]
+    # Iterate over transposed array
+    for i in range(0, len(spreadsheet_array[0]), 2):  # Step by 2 for each sample
+        sample_name = spreadsheet_array[0][i]  # Sample name is in the first row and first column of each pair
         if sample_name is not None:
             grains = []
-            for i in range(1, len(row_data), 2):  # Iterate over every other column
-                age = row_data[i]
-                uncertainty = row_data[i + 1] if i + 1 < len(row_data) else None
+            for row_data in spreadsheet_array[1:]:  # Start from second row
+                age = row_data[i]  # Age is in the same column as sample name
+                if age == '':
+                    age = None
+                uncertainty = row_data[i + 1] if i + 1 < len(row_data) else None  # Uncertainty is in the next column
+                if uncertainty == '':
+                    uncertainty = None
                 if age is not None and uncertainty is not None:
                     grains.append(Grain(float(age), float(uncertainty)))
             sample = Sample(sample_name, grains)
