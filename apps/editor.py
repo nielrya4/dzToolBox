@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from server import database
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from utils import spreadsheet
+from utils.output import Output
 import json
 import openpyxl
 import os
@@ -96,9 +97,21 @@ def register(app):
         graph = Graph(samples=active_samples,
                       title="Sample Graph",
                       stacked=False,
-                      graph_type="kde")
+                      graph_type="sim_mds")
         fig = graph.generate_svg()
-        return f"Output Name: {output_name}, Samples: {sample_names}, Output Type: {output_type}, {fig}"
+
+        if get_all_outputs(project_content) is None:
+            outputs = []
+        else:
+            outputs = get_all_outputs(project_content)
+        output = Output("output", "graph", fig)
+
+        outputs.append(output)
+        # return f"Output Name: {output_name}, Samples: {sample_names}, Output Type: {output_type}, {fig}"
+        return render_block(environment=environment,
+                            template_name="editor/editor.html",
+                            block_name="outputs",
+                            outputs_data=[o.data for o in outputs])
 
 
 def get_all_outputs(json_string):
@@ -107,8 +120,9 @@ def get_all_outputs(json_string):
         data = json.loads(json_string)
         for output in data.get("outputs", []):
             output_name = output.get("output_name")
+            output_type = output.get("output_type")
             output_data = output.get("output_data")
-            outputs.append((output_name, output_data))
+            outputs.append(Output(output_name, output_type, output_data))
         return outputs
     except Exception as e:
         print(f"Error parsing JSON: {e}")

@@ -1,13 +1,34 @@
-<div id="backstore" style="display: none;">
-    <div class="frame" id="content">
-        <form id="new_project_form" enctype="multipart/form-data" hx-post="/new_project" hx-target="#project-list" hx-swap="outerHTML">
-            <label for="project_name">Project Name</label>
-            <input type="text" id="project_name" name="project_name" required hx-validate="true">
-            <label for="data_file">Import Data</label>
-            <input type="file" id="data_file" name="data_file" accept=".xlsx, .xls, .csv" required hx-validate="true">
-            <button id="create_new_project" type="post">Create New Project</button>
-        </form>
-        <div id="status" style="display: none"></div>
+<div id="new_project_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Project</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="container-sm">
+                    <form id="new_project_form" enctype="multipart/form-data" hx-post="/new_project" hx-target="#project-list" hx-swap="outerHTML">
+                        <br />
+                        <div class="row" style="margin: 0;">
+                            <label for="project_name">Project Name</label>
+                            <input class="form-control" type="text" id="project_name" name="project_name" required hx-validate="true">
+                        </div>
+                        <br />
+                        <div class="row">
+                            <label for="data_file">Import Data</label>
+                            <input class="form-control" type="file" id="data_file" name="data_file" accept=".xlsx, .xls, .csv" required hx-validate="true">
+                        </div>
+                        <br />
+                        <div class="row">
+                            <div>
+                                <button class="btn btn-primary" id="create_new_project" type="post" data-bs-toggle="modal" data-bs-target="#new_project_modal">Create New Project</button>
+                            </div>
+                        </div>
+                        <br />
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -18,29 +39,9 @@
     const data_file = document.getElementById("data_file")
     const new_project_form = document.getElementById("new_project_form")
 
-
     new_project.addEventListener('click',()=>{
         data_file.value = null;
         project_name.value = "";
-        const docBox = new WinBox({
-            title: 'New Project',
-            class: ["no-full"],
-            width:'400px',
-            height:'400px',
-            background: '#003060',
-            top:50,
-            right:50,
-            bottom:50,
-            left:50,
-            border: 2,
-            mount: document.getElementById("content"),
-            index: 9999
-        })
-        new_project_form.addEventListener('submit', () =>{
-            docBox.close();
-            spinner.classList.add('hidden');
-            spinner.classList.remove('visible');
-        })
 
         document.getElementById('data_file').addEventListener('change', function (event) {
             var file = event.target.files[0];
@@ -72,7 +73,6 @@
                 // Save the file
                 save_data(excelData);
             };
-
             reader.readAsArrayBuffer(file);
         });
 
@@ -95,24 +95,4 @@
         }
 
     })
-
-    document.addEventListener("DOMContentLoaded", function() {
-        var spinner = document.getElementById('spinner');
-        var output_spinner = document.getElementById('outputs_spinner');
-        var new_project = document.getElementById('new_project');
-        spinner.classList.add('hidden');
-        output_spinner.classList.add('hidden');
-
-        new_project.addEventListener('click', function() {
-            spinner.classList.remove('hidden');
-            spinner.classList.add('visible');
-
-            setTimeout(function() {                     //If we've waited more than 500 seconds, reload the page
-                spinner.classList.add('hidden');
-                spinner.classList.remove('visible');
-                location.reload();
-            }, 500000);
-        });
-    });
-
 </script>

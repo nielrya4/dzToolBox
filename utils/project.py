@@ -16,6 +16,7 @@ class Project:
         for output in self.outputs:
             json_data["outputs"].append({
                 "output_name": output.name,
+                "output_type": output.type,
                 "output_data": output.generate_html_data()
             })
         json_string = json.dumps(json_data, indent=4)

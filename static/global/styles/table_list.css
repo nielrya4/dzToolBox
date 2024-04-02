@@ -1,7 +1,7 @@
 table.table_list {
     border-collapse: collapse;
     text-align: center;
-    width: 400px;
+    width: 100%;
     color: black;
 }
 

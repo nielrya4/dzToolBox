@@ -186,17 +186,19 @@ def mds_graph(samples, title, mds_type):
     num_samples = len(samples)
     dissimilarity_matrix = np.zeros((num_samples, num_samples))
     sample_names = [sample.name for sample in samples]
+    sample_kdes = [kde_function(sample)[1] for sample in samples]
+    sample_cdfs = [cdf_function(sample)[1] for sample in samples]
 
     for i in range(num_samples):
         for j in range(i + 1, num_samples):
             if mds_type == 'similarity':
-                dissimilarity_matrix[i, j] = test.dis_similarity(samples[i], samples[j])
+                dissimilarity_matrix[i, j] = test.dis_similarity(sample_kdes[i], sample_kdes[j])
             elif mds_type == 'ks':
-                dissimilarity_matrix[i, j] = test.dis_ks(samples[i], samples[j])
+                dissimilarity_matrix[i, j] = test.dis_ks(sample_cdfs[i], sample_cdfs[j])
             elif mds_type == 'kuiper':
-                dissimilarity_matrix[i, j] = test.dis_kuiper(samples[i], samples[j])
+                dissimilarity_matrix[i, j] = test.dis_kuiper(sample_cdfs[i], sample_cdfs[j])
             elif mds_type == 'r2':
-                dissimilarity_matrix[i, j] = test.dis_r2(samples[i], samples[j])
+                dissimilarity_matrix[i, j] = test.dis_r2(sample_kdes[i], sample_kdes[j])
             dissimilarity_matrix[j, i] = dissimilarity_matrix[i, j]
 
     embedding = MultidimensionalScaling(n_components=2, dissimilarity='precomputed')
@@ -219,15 +221,15 @@ def mds_graph(samples, title, mds_type):
         for j in range(num_samples):
             if i != j:  # Exclude the sample itself
                 if mds_type == 'similarity':
-                    dissimilarity = test.dis_similarity(samples[i], samples[j])
+                    dissimilarity = test.dis_similarity(sample_kdes[i], sample_kdes[j])
                 elif mds_type == 'ks':
-                    dissimilarity = test.dis_ks(samples[i], samples[j])
+                    dissimilarity = test.dis_ks(sample_cdfs[i], sample_cdfs[j])
                 elif mds_type == 'kuiper':
-                    dissimilarity = test.dis_kuiper(samples[i], samples[j])
+                    dissimilarity = test.dis_kuiper(sample_cdfs[i], sample_cdfs[j])
                 elif mds_type == 'r2':
-                    dissimilarity = test.dis_r2(samples[i], samples[j])
+                    dissimilarity = test.dis_r2(sample_kdes[i], sample_kdes[j])
                 else:
-                    dissimilarity = test.dis_similarity(samples[i], samples[j])
+                    dissimilarity = test.dis_similarity(sample_kdes[i], sample_kdes[j])
                 if dissimilarity < distance:
                     distance = dissimilarity
                     nearest_sample = samples[j]
