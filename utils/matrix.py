@@ -1,7 +1,8 @@
-from utils import test
+from utils import test, graph
 import numpy as np
 import pandas as pd
 from io import BytesIO
+
 
 
 class Matrix:
@@ -11,36 +12,38 @@ class Matrix:
 
     def generate_data_frame(self, row_labels=None, col_labels=None, matrix_type="similarity"):
         samples = self.samples
+        sample_kdes = [graph.kde_function(sample)[1] for sample in samples]
+        sample_cdfs = [graph.cdf_function(sample)[1] for sample in samples]
         num_data_sets = len(samples)
         matrix = np.zeros((num_data_sets, num_data_sets))
         if matrix_type == "similarity":
-            for i, sample1 in enumerate(samples):
-                for j, sample2 in enumerate(samples):
+            for i, sample1 in enumerate(sample_kdes):
+                for j, sample2 in enumerate(sample_kdes):
                     similarity_score = test.similarity(sample1, sample2)
                     matrix[i, j] = similarity_score
         elif matrix_type == "dissimilarity":
-            for i, sample1 in enumerate(samples):
-                for j, sample2 in enumerate(samples):
+            for i, sample1 in enumerate(sample_kdes):
+                for j, sample2 in enumerate(sample_kdes):
                     dissimilarity_score = test.dis_similarity(sample1, sample2)
                     matrix[i, j] = dissimilarity_score
         elif matrix_type == "likeness":
-            for i, sample1 in enumerate(samples):
-                for j, sample2 in enumerate(samples):
+            for i, sample1 in enumerate(sample_kdes):
+                for j, sample2 in enumerate(sample_kdes):
                     likeness_score = test.likeness(sample1, sample2)
                     matrix[i, j] = likeness_score
         elif matrix_type == "ks":
-            for i, sample1 in enumerate(samples):
-                for j, sample2 in enumerate(samples):
+            for i, sample1 in enumerate(sample_cdfs):
+                for j, sample2 in enumerate(sample_cdfs):
                     ks_score = test.ks(sample1, sample2)
                     matrix[i, j] = ks_score
         elif matrix_type == "kuiper":
-            for i, sample1 in enumerate(samples):
-                for j, sample2 in enumerate(samples):
+            for i, sample1 in enumerate(sample_cdfs):
+                for j, sample2 in enumerate(sample_cdfs):
                     kuiper_score = test.kuiper(sample1, sample2)
                     matrix[i, j] = kuiper_score
         elif matrix_type == "r2":
-            for i, sample1 in enumerate(samples):
-                for j, sample2 in enumerate(samples):
+            for i, sample1 in enumerate(sample_kdes):
+                for j, sample2 in enumerate(sample_kdes):
                     cross_correlation_score = test.r2(sample1, sample2)
                     matrix[i, j] = cross_correlation_score
 

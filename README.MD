@@ -39,18 +39,12 @@ that don't need to be done by the server, are included here.
 </p>
 
 <h5>Todo:</h5>
-<p>First implement samples toggle, then implement outputs. Use 
-new output wizard to create new output. Make spreadsheet editor
-and output editor separate pages.</p>
+<p>Implement outputs with HTMX. Make spreadsheet editor and 
+output editor separate pages(?).</p>
 <p>Finish writing the following files:</p>
 <ul>
-    <li style="color:cyan;">/utils</li>
-    <ol>
-        <li>matrix.py (rewrite to test graphs rather than samples)</li>
-    </ol>
     <li style="color:cyan;">/apps</li>
     <ol>
         <li>editor.py</li>
-        <li>init.py</li>
     </ol>
 </ul>

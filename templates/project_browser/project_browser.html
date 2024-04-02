@@ -7,13 +7,11 @@
     {% include "global/head.html" %}
     <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/table_list.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/frame.css') }}">
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/toolbars.css') }}">
 </head>
 <body>
-    <div>
-            <button class="btn btn-primary" id="new_project">New Project</button>
-    </div>
-    <h4>Projects:</h4>
+    {% include "project_browser/toolbars/project_list_toolbar.html" %}
+
     {% block project_list %}
         <table class="table_list" id="project-list">
             {% for project in user_projects %}
@@ -36,12 +34,9 @@
     </div>
 
 
-    {% include "project_browser/frames/new_project_dialog.html" %}
-    {% include "global/spinner.html" %}
+    {% include "project_browser/modals/new_project_dialog.html" %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
-    <script src="{{ url_for('static', filename='global/scripts/winbox.bundle.js') }}"></script>
-    <script src="{{ url_for('static', filename='global/scripts/spinner.js') }}"></script>
 </body>
 </html>
