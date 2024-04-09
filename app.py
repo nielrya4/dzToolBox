@@ -6,7 +6,7 @@ import os
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://koyeb-adm:xxxxxxxxxxxx@ep-lucky-boat-a44k24rd.us-east-1.pg.koyeb.app/koyebdb'
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['TEMP_FOLDER'] = 'temp'
 if not os.path.exists('temp'):
@@ -24,7 +24,7 @@ route.register_routes(app)
 
 
 class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
     files = db.relationship('CodeFile', backref='author', lazy=True)
