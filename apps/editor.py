@@ -75,6 +75,33 @@ def register(app):
 
         return jsonify({"result": "ok", "filename": "filename"})
 
+    @app.route('/get_sample_names', methods=['POST'])
+    @login_required
+    def get_sample_names():
+        filename = "spreadsheet.xlsx"
+        filepath = os.path.join("temp", filename)
+        session["last_uploaded_file"] = filename
+
+        data = request.get_json()['jsonData']
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        for col_idx, column in enumerate(data, start=1):
+            for row_idx, value in enumerate(column, start=1):
+                ws.cell(row=row_idx, column=col_idx, value=value)
+        wb.save(filepath)
+        if session.get("open_project", 0) is not 0:
+            json_data = request.get_json()['jsonData']
+            project_id = session["open_project"]
+            data = json_data.get("data", 0)
+            try:
+                samples = spreadsheet.read_samples(data)
+                sample_names = [sample.name for sample in samples]
+                return jsonify({"sample_names": sample_names})
+            except Exception as e:
+                print(f"Error updating project data: {e}")
+                return jsonify({"success": False, "error": str(e)})
+        return jsonify({"sample_names": "failed"})
+
     @app.route('/new_output', methods=['GET'])
     @login_required
     def new_output():
