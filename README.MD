@@ -39,9 +39,9 @@ that don't need to be done by the server, are included here.
 </p>
 
 <h5>Todo:</h5>
-<p>Implement outputs with HTMX. Make spreadsheet editor and 
-output editor separate pages(?).</p>
-<p>Migrate from sqlite to postgres</p>
+<p>Implement outputs with HTMX. Send actual output requested
+by user instead of mds used for debugging.</p>
+
 <p>Finish writing the following files:</p>
 <ul>
     <li style="color:cyan;">/apps</li>

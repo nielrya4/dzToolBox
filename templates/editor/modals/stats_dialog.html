@@ -8,11 +8,11 @@
                 </div>
                 <br />
                 <div class="container-sm">
-                    <form id="output_form" action="/new_output" method="get">
+                    <form id="output_form" data-hx-trigger="click">
                         <label for="output_name">Output Name (Optional)</label>
                         <input type="text" id="output_name" name="output_name">
                         <br />
-                        <div id="sample_list">
+                        <div id="sample_list" class="table_list">
                             <br />
                             <table class="table_list">
                                 <tr class="table_list">
@@ -54,7 +54,7 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <button class="btn btn-primary" type="submit">Create Graph</button>
+                                        <button class="btn btn-primary" type="button" onclick="send_args()">Create Graph</button>
                                         <button class="btn btn-secondary" type="button" onclick="back()">Back</button>
                                     </td>
                                 </tr>
@@ -79,12 +79,13 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <button class="btn btn-primary" type="submit">Create Matrix</button>
+                                        <button class="btn btn-primary" type="button" onclick="send_args()">Create Matrix</button>
                                         <button class="btn btn-primary" type="button" onclick="back()">Back</button>
                                     </td>
                                 </tr>
                             </table>
                         </div>
+                        <button data-bs-toggle="modal" data-bs-target="#new_output_modal" name="send_it" id="send_it" style="display: none" type="button" data-hx-target="#outputs_container" data-hx-swap="innerHTML"></button>
                     </form>
                     <br />
                 </div>
@@ -109,28 +110,32 @@
         document.getElementById("graphs").style.display = "none";
     }
 
-    document.getElementById("output_form").addEventListener("submit", function(event) {
-        event.preventDefault();
-        var selectedSamples = [];
-        var checkboxes = document.getElementsByClassName("sample-checkbox");
-        for (var i = 0; i < checkboxes.length; i++) {
-            if (checkboxes[i].checked) {
-                selectedSamples.push(checkboxes[i].value);
-            }
+function send_args() {
+    var selectedSamples = [];
+    var checkboxes = document.getElementsByClassName("sample-checkbox");
+    for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].checked) {
+            selectedSamples.push(checkboxes[i].value);
         }
-        var outputType;
-        if (document.getElementById("graphs").style.display === "flex") {
-            outputType = document.getElementById("graph_select").value;
-        } else if (document.getElementById("matrices").style.display === "flex") {
-            outputType = document.getElementById("matrix_select").value;
-        }
-        var outputName = document.getElementById("output_name").value;
-        var queryString = "?samples=" + selectedSamples.join("&samples=") + "&output_type=" + outputType;
-        if (outputName !== "") {
-            queryString += "&output_name=" + outputName;
-        }
-        window.location.href = "/new_output" + queryString;
-    });
+    }
+    var outputType;
+    if (document.getElementById("graphs").style.display === "flex") {
+        outputType = document.getElementById("graph_select").value;
+    } else if (document.getElementById("matrices").style.display === "flex") {
+        outputType = document.getElementById("matrix_select").value;
+    }
+    var outputName = document.getElementById("output_name").value;
+    var queryString = "/new_output?samples=" + selectedSamples.join("&samples=") + "&output_type=" + outputType;
+    if (outputName !== "") {
+        queryString += "&output_name=" + outputName;
+    }
+    // Set the argument string as a parameter to the hx-params attribute
+    document.getElementById("send_it").setAttribute("data-hx-get", queryString);
+    htmx.process(document.getElementById("send_it"));
+    document.getElementById("send_it").click();
+}
+
+
 </script>
 
 <script>

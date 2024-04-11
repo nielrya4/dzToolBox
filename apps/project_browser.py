@@ -40,12 +40,11 @@ def register(app):
                 spreadsheet_data = spreadsheet.array_to_text(spreadsheet.excel_to_array(os.path.join('temp', file)))
             else:
                 spreadsheet_data = "<h1>No Data</h1>"
-
             project_data = Project(name=project_name,
                                    data=spreadsheet_data,
                                    outputs="").generate_json_string()
-            database.new_file(project_name, project_data)
-
+            file = database.new_file(project_name, project_data)
+            session["open_project"] = 0
         return render_project_list()
 
     @app.route('/json/save/new_file', methods=['POST'])
@@ -63,30 +62,6 @@ def register(app):
             for row_idx, value in enumerate(column, start=1):
                 ws.cell(row=row_idx, column=col_idx, value=value)
         wb.save(filepath)
-
-        # If an open project exists, update its data
-        if session.get("open_project", 0) is not 0:
-            project_id = session["open_project"]
-            file = database.get_file(project_id)
-            project_content = file.content
-
-            try:
-                # Convert Excel data to text
-                excel_data_text = spreadsheet.array_to_text(data)
-
-                # Update project JSON with Excel data
-                project_json = json.loads(project_content)
-                project_json["data"] = excel_data_text
-
-                # Save updated project content to the database
-                updated_project_content = json.dumps(project_json)
-                database.write_file(project_id, updated_project_content)
-                file.content = updated_project_content
-
-                return jsonify({"success": True})
-            except Exception as e:
-                print(f"Error updating project data: {e}")
-                return jsonify({"success": False, "error": str(e)})
 
         return jsonify({"result": "ok", "filename": "filename"})
 

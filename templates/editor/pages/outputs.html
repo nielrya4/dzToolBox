@@ -1,23 +1,2 @@
 {% include "editor/toolbars/outputs_toolbar.html" %}
 
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var spinner = document.getElementById('spinner');
-        var output_spinner = document.getElementById('outputs_spinner');
-        var new_output = document.getElementById('new_output');
-        spinner.classList.add('hidden');
-        output_spinner.classList.add('hidden');
-
-        new_output.addEventListener('click', function() {
-            spinner.classList.remove('hidden');
-            spinner.classList.add('visible');
-
-            setTimeout(function() {                     //If we've waited more than 500 seconds, reload the page
-                spinner.classList.add('hidden');
-                spinner.classList.remove('visible');
-                location.reload();
-            }, 500000);
-        });
-    });
-</script>

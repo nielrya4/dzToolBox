@@ -37,50 +37,12 @@ document.addEventListener('DOMContentLoaded', function () {
         save_table_data();
     });
 
-    document.getElementById('save').addEventListener('click', function () {
-        save_table_data();
-    });
-
-    document.getElementById('load').addEventListener('click', function () {
-            document.getElementById('fileInput').click();
-    });
-    document.getElementById('fileInput').addEventListener('change', function (event) {
-        var file = event.target.files[0];
-        var reader = new FileReader();
-
-        reader.onload = function (e) {
-            var data = new Uint8Array(e.target.result);
-            var workbook = XLSX.read(data, { type: 'array' });
-            var sheetName = workbook.SheetNames[0];
-            var worksheet = workbook.Sheets[sheetName];
-
-            // Convert the entire range of cells to JSON format
-            var excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-            // Determine the number of columns by finding the maximum row length
-            var columnCount = Math.max(...excelData.map(row => row.length));
-
-            // Fill any missing cells in each row
-            for (var i = 0; i < excelData.length; i++) {
-                var row = excelData[i];
-                while (row.length < columnCount) {
-                    row.push('');
-                }
-            }
-            // Load Excel data into HandsOnTable
-            hot.loadData(excelData);
-            console.log('Data loaded from Excel:', excelData);
-            //Save the file
-            save_table_data();
-        };
-        reader.readAsArrayBuffer(file);
-    });
     function save_table_data()
     {
         var jsonData = {data: hot.getData()};
         save_data1(jsonData);
     }
-        function save_data1(jsonData) {
+    function save_data1(jsonData) {
         fetch('/json/save/spreadsheet', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -95,5 +57,95 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error saving data:', error);
         });
     }
+
+
+
+    const new_output_btn = document.getElementById("new_output")
+
+    new_output_btn.addEventListener('click', function(event){
+        var jsonData = {data: hot.getData()};
+        get_sample_names(jsonData)
+    });
+    function get_sample_names(jsonData) {
+        fetch('/get_sample_names', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 'jsonData': jsonData })
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json(); // Parse the response body as JSON
+            } else {
+                throw new Error('Error fetching sample names');
+            }
+        })
+        .then(data => {
+            // Extract sample names from the response data
+            var sampleNames = data.sample_names;
+            displaySampleNames(sampleNames);
+        })
+        .catch(error => {
+            console.error('Error fetching sample names:', error);
+        });
+    }
+
+    function displaySampleNames(sampleNames) {
+    // Get the container for the sample list
+    var sampleList = document.getElementById("sample_list");
+
+    // Find the table within the container
+    var table = sampleList.querySelector(".table_list");
+
+    // Clear any existing content in the table body
+    var tbody = table.querySelector("tbody");
+    tbody.innerHTML = "";
+
+    // Iterate over each sample name and create table rows
+    sampleNames.forEach(function(sampleName, index) {
+        // For the first sample name, create table header cells
+        if (index === 0) {
+            var trHeader = document.createElement("tr");
+            var thSampleName = document.createElement("th");
+            thSampleName.textContent = "Sample Name:";
+            var thActive = document.createElement("th");
+            thActive.textContent = "Active:";
+            trHeader.appendChild(thSampleName);
+            trHeader.appendChild(thActive);
+            // Append the table header row to the table body
+            tbody.appendChild(trHeader);
+        }
+        // Create table row and table data elements
+        var tr = document.createElement("tr");
+        tr.setAttribute("class", "table_list");
+        var tdSampleName = document.createElement("td");
+        var tdCheckbox = document.createElement("td");
+
+        // Create label and checkbox for the sample
+        var label = document.createElement("label");
+        label.setAttribute("for", sampleName);
+        label.textContent = sampleName;
+        var checkbox = document.createElement("input");
+        checkbox.setAttribute("type", "checkbox");
+        checkbox.setAttribute("class", "sample-checkbox");
+        checkbox.setAttribute("id", sampleName);
+        checkbox.setAttribute("name", sampleName);
+        checkbox.setAttribute("value", sampleName);
+        checkbox.checked = true; // Assuming all samples are initially checked
+
+        // Append label and checkbox to the table data elements
+        tdSampleName.appendChild(label);
+        tdCheckbox.appendChild(checkbox);
+
+        // Append table data elements to the table row
+        tr.appendChild(tdSampleName);
+        tr.appendChild(tdCheckbox);
+
+        // Append table row to the table body
+        tbody.appendChild(tr);
+        });
+    }
+
+
+
 });
 

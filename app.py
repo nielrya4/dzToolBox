@@ -6,7 +6,7 @@ import os
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://koyeb-adm:xxxxxxxxxxxx@ep-lucky-boat-a44k24rd.us-east-1.pg.koyeb.app/koyebdb'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://koyeb-adm:J0OqWG2Lalmy@ep-lucky-boat-a44k24rd.us-east-1.pg.koyeb.app/koyebdb'
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['TEMP_FOLDER'] = 'temp'
 if not os.path.exists('temp'):

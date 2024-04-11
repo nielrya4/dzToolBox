@@ -16,10 +16,10 @@ def read_samples(spreadsheet_array):
             grains = []
             for row_data in spreadsheet_array[1:]:  # Start from second row
                 age = row_data[i]  # Age is in the same column as sample name
-                if age == '':
+                if not (isinstance(age, float) or isinstance(age, int)):
                     age = None
                 uncertainty = row_data[i + 1] if i + 1 < len(row_data) else None  # Uncertainty is in the next column
-                if uncertainty == '':
+                if not (isinstance(uncertainty, float) or isinstance(uncertainty, int)):
                     uncertainty = None
                 if age is not None and uncertainty is not None:
                     grains.append(Grain(float(age), float(uncertainty)))
