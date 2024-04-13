@@ -24,25 +24,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     hot.addHook('afterChange', function(changes, src) {
         if (src == 'edit') {
-            save_table_data();
+            saveTableData();
         }
     });
     hot.addHook('afterRedo', function(changes, src) {
-        save_table_data();
+        saveTableData();
     });
     hot.addHook('afterUndo', function(changes, src) {
-        save_table_data();
+        saveTableData();
     });
     hot.addHook('afterPaste', function(changes, src) {
-        save_table_data();
+        saveTableData();
     });
 
-    function save_table_data()
-    {
+    function saveTableData() {
         var jsonData = {data: hot.getData()};
-        save_data1(jsonData);
+        saveData(jsonData);
     }
-    function save_data1(jsonData) {
+
+    function saveData(jsonData) {
         fetch('/json/save/spreadsheet', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -58,15 +58,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-
-
-    const new_output_btn = document.getElementById("new_output")
-
-    new_output_btn.addEventListener('click', function(event){
+    const newOutputBtn = document.getElementById("new_output");
+    newOutputBtn.addEventListener('click', function(event) {
         var jsonData = {data: hot.getData()};
-        get_sample_names(jsonData)
+        getSampleNames(jsonData);
     });
-    function get_sample_names(jsonData) {
+
+    function getSampleNames(jsonData) {
         fetch('/get_sample_names', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -119,22 +117,34 @@ document.addEventListener('DOMContentLoaded', function () {
         tr.setAttribute("class", "table_list");
         var tdSampleName = document.createElement("td");
         var tdCheckbox = document.createElement("td");
+        var checkContainer = document.createElement("div");
+        checkContainer.classList.add("form-check");
+        checkContainer.classList.add("form-switch");
 
         // Create label and checkbox for the sample
         var label = document.createElement("label");
         label.setAttribute("for", sampleName);
         label.textContent = sampleName;
+        label.classList.add("form-check-label");
+        label.addEventListener("click", function() {
+            // Toggle the corresponding checkbox when the label is clicked
+            checkbox.checked = !checkbox.checked;
+        });
+
         var checkbox = document.createElement("input");
-        checkbox.setAttribute("type", "checkbox");
-        checkbox.setAttribute("class", "sample-checkbox");
-        checkbox.setAttribute("id", sampleName);
-        checkbox.setAttribute("name", sampleName);
-        checkbox.setAttribute("value", sampleName);
-        checkbox.checked = true; // Assuming all samples are initially checked
+        checkbox.type = "checkbox";
+        checkbox.classList.add("sample-checkbox");
+        checkbox.classList.add("form-check-input");
+        checkbox.value = sampleName;
+        checkbox.name = sampleName;
+        checkbox.id = sampleName;
+        checkbox.checked = true;
+
 
         // Append label and checkbox to the table data elements
         tdSampleName.appendChild(label);
-        tdCheckbox.appendChild(checkbox);
+        checkContainer.appendChild(checkbox);
+        tdCheckbox.appendChild(checkContainer);
 
         // Append table data elements to the table row
         tr.appendChild(tdSampleName);
@@ -142,10 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Append table row to the table body
         tbody.appendChild(tr);
-        });
-    }
-
-
+    });
+}
 
 });
-
