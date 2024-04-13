@@ -21,8 +21,12 @@
                                 </tr>
                                 {% for sample in samples %}
                                     <tr class="table_list">
-                                        <td><label for="{{ sample[0] }}"></label> {{ sample[0] }}</td>
-                                        <td><input type="checkbox" class="sample-checkbox" id="{{ sample[0] }}" name="{{ sample[0] }}" value="{{ sample[0] }}" checked></td>
+                                        <td><label class="form-check-label" for="{{ sample[0] }}"></label> {{ sample[0] }}</td>
+                                        <td>
+                                            <div class="form-check form-switch">
+                                                <input class="sample-checkbox form-check-input" type="checkbox" role="switch" id="{{ sample[0] }}" name="{{ sample[0] }}" value="{{ sample[0] }}" checked>
+                                            </div>
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             </table>
@@ -94,20 +98,29 @@
     </div>
 </div>
 <script>
+    const checkboxes = document.querySelectorAll(".sample-checkbox");
+    for (const checkbox of checkboxes) {
+        checkbox.addEventListener("click", function() {
+            // Checkbox state is already updated by user interaction
+            // No further action needed here
+            console.log("clicked");
+        });
+    }
+
     function select_graph() {
-        document.getElementById("graphs").style.display = "block";
+        document.getElementById("graphs").style.display = "flex";
         document.getElementById("matrices").style.display = "none";
     }
 
     function select_matrix() {
-        document.getElementById("matrices").style.display = "block";
+        document.getElementById("matrices").style.display = "flex";
         document.getElementById("graphs").style.display = "none";
     }
 
     function back() {
-        output_type_buttons.style.display="flex";
-        document.getElementById("matrices").style.display = "none";
-        document.getElementById("graphs").style.display = "none";
+        output_type_buttons.style.display = "flex";
+        matrices.style.display = "none";
+        graphs.style.display = "none";
     }
 
 function send_args() {

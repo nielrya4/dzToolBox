@@ -8,6 +8,7 @@ import json
 import openpyxl
 import os
 from utils.graph import Graph
+from utils.project import Project
 from jinja2_fragments import render_block
 
 
@@ -34,13 +35,14 @@ def register(app):
             active = request.form.get(sample.name) == "true"
             samples_data.append([sample.name, active])
 
-        # outputs_data = get_all_outputs(project_content)[:][1]
-        outputs_data = "asdf"
-
+        project_outputs = get_all_outputs(project_content)
+        print(project_outputs)
+        if not project_outputs:
+            project_outputs = [Output("Default", "graph", "<h1>No Outputs Yet</h1>")]
         return render_template("editor/editor.html",
                                spreadsheet_data=spreadsheet_data,
                                samples=samples_data,
-                               outputs_data=outputs_data)
+                               outputs_data=[o.data for o in project_outputs])
 
 
     @app.route('/json/save/spreadsheet', methods=['POST'])
@@ -126,19 +128,27 @@ def register(app):
                       stacked=False,
                       graph_type="sim_mds")
         fig = graph.generate_svg()
+        graph2 = Graph(samples=active_samples,
+                     title="Sample Graph 2",
+                     stacked=False,
+                     graph_type="kde")
+        fig2 = graph2.generate_svg()
 
         if get_all_outputs(project_content) is None:
             outputs = []
         else:
             outputs = get_all_outputs(project_content)
         output = Output("output", "graph", fig)
-
+        output2 = Output("output2", "graph", fig2)
         outputs.append(output)
-        # return f"Output Name: {output_name}, Samples: {sample_names}, Output Type: {output_type}, {fig}"
+        outputs.append(output2)
+        updated_project_content = set_all_outputs(project_content, outputs)
+        database.write_file(project_id, updated_project_content)
+        project_outputs = get_all_outputs(updated_project_content)
         return render_block(environment=environment,
                             template_name="editor/editor.html",
                             block_name="outputs",
-                            outputs_data=[o.data for o in outputs])
+                            outputs_data=[o.data for o in project_outputs])
 
 
 def get_all_outputs(json_string):
@@ -154,6 +164,14 @@ def get_all_outputs(json_string):
     except Exception as e:
         print(f"Error parsing JSON: {e}")
         return None
+
+
+def set_all_outputs(json_string, outputs):
+    name = get_project_name(json_string)
+    data = get_project_data(json_string)
+    updated_project = Project(name=name, data=data, outputs=outputs)
+    updated_project_content = updated_project.generate_json_string()
+    return updated_project_content
 
 
 def get_output_by_name(json_string, output_name):
