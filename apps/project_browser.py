@@ -17,9 +17,9 @@ environment = Environment(
 
 def register(app):
 
-    @app.route('/project_browser', methods=['GET', 'POST'])
+    @app.route('/projects', methods=['GET', 'POST'])
     @login_required
-    def project_browser():
+    def projects():
         user_projects = database.get_all_files()
         return render_template('project_browser/project_browser.html', user_projects=user_projects)
 

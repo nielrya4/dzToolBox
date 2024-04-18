@@ -30,8 +30,9 @@
             {% include "editor/pages/outputs.html" %}
             <div id="outputs_container">
                 {% block outputs %}
-                    {% for data in outputs_data %}
-                        {{ data | safe }}
+                    {% for output in outputs_data %}
+                        {{ output.data | safe }}
+                        <br />
                     {% endfor %}
                 {% endblock %}
             </div>

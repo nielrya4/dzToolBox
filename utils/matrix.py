@@ -49,16 +49,16 @@ class Matrix:
 
         # Create a DataFrame with the normalized similarity scores and labels
         if row_labels is None:
-            row_labels = [f'Data {i+1}' for i in range(num_data_sets)]
+            row_labels = [sample.name for sample in samples]
         if col_labels is None:
-            col_labels = [f'Data {i+1}' for i in range(num_data_sets)]
+            col_labels = [sample.name for sample in samples]
 
         df = pd.DataFrame(matrix, columns=col_labels, index=row_labels)
         return df
 
     def to_html(self):
-        html_data = self.generate_data_frame(matrix_type=self.matrix_type)
-        html_data.to_html(classes="table table-bordered table-striped", justify="center").replace('<th>','<th style = "background-color: White;">').replace('<td>','<td style = "background-color: White;">')
+        data_frame = self.generate_data_frame(matrix_type=self.matrix_type)
+        html_data = data_frame.to_html(classes="table table-bordered table-striped", justify="center").replace('<th>','<th style = "background-color: White;">').replace('<td>','<td style = "background-color: White;">')
         return html_data
 
     def to_xlsx(self):

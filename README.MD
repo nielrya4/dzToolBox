@@ -39,8 +39,8 @@ that don't need to be done by the server, are included here.
 </p>
 
 <h5>Todo:</h5>
-<p>Implement outputs with HTMX. Send actual output requested
-by user instead of mds used for debugging.</p>
+<p>Implement MDS and dzMix functionality: design modals and connect
+to graph-making functions.</p>
 
 <p>Finish writing the following files:</p>
 <ul>
