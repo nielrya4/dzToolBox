@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, session
 from flask_login import UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import app as APP
@@ -79,6 +79,7 @@ def register(app):
             if user and check_password_hash(user.password, password):
                 login_user(user)
                 flash('Login successful!', 'success')
+                session["user_id"] = user.id
                 return redirect(url_for('projects'))
 
             else:
