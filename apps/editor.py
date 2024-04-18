@@ -26,24 +26,27 @@ def register(app):
         session["open_project"] = project_id
         file = database.get_file(project_id)
         project_content = file.content
+        project_author = f"<User {file.user_id}>"
+        if str(project_author) == str(current_user):
+            project_data = get_project_data(project_content)
+            spreadsheet_data = spreadsheet.text_to_array(project_data)
 
-        project_data = get_project_data(project_content)
-        spreadsheet_data = spreadsheet.text_to_array(project_data)
+            loaded_samples = spreadsheet.read_samples(spreadsheet_data)
+            samples_data = []
+            for sample in loaded_samples:
+                active = request.form.get(sample.name) == "true"
+                samples_data.append([sample.name, active])
 
-        loaded_samples = spreadsheet.read_samples(spreadsheet_data)
-        samples_data = []
-        for sample in loaded_samples:
-            active = request.form.get(sample.name) == "true"
-            samples_data.append([sample.name, active])
-
-        project_outputs = get_all_outputs(project_content)
-        print(project_outputs)
-        if not project_outputs:
-            project_outputs = [Output("Default", "graph", "<h1>No Outputs Yet</h1>")]
-        return render_template("editor/editor.html",
-                               spreadsheet_data=spreadsheet_data,
-                               samples=samples_data,
-                               outputs_data=project_outputs)
+            project_outputs = get_all_outputs(project_content)
+            print(project_outputs)
+            if not project_outputs:
+                project_outputs = [Output("Default", "graph", "<h1>No Outputs Yet</h1>")]
+            return render_template("editor/editor.html",
+                                   spreadsheet_data=spreadsheet_data,
+                                   samples=samples_data,
+                                   outputs_data=project_outputs)
+        else:
+            return render_template("errors/403.html")
 
 
     @app.route('/json/save/spreadsheet', methods=['POST'])
