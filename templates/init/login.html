@@ -10,14 +10,14 @@
     <h1>Login</h1>
     <form method="post" action="{{ url_for('login') }}">
         <label for="username">Username:</label>
-        <input type="text" name="username" required>
+        <input id="username" type="text" name="username" required>
         <label for="password">Password:</label>
-        <input type="password" name="password" required>
+        <input id="password" type="password" name="password" required>
         <button type="submit">Login</button>
     </form>
     <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign Up</a></p>
     {% if current_user.is_authenticated %}
-        <p>Logged in as {{ current_user.username }}. <a href="{{ url_for('project_browser') }}">Go to Code Editor</a></p>
+        <p>Logged in as {{ current_user.username }}. <a href="{{ url_for('projects') }}">Go to project browser.</a></p>
     {% endif %}
 </body>
 </html>
