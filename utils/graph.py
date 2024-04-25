@@ -74,6 +74,7 @@ class Graph:
 # Graph functions that output ([x], [y]):
 def kde_function(sample, num_steps=1000, x_min=0, x_max=4000):
     grains = sample.grains
+    sample.replace_bandwidth(10)
     bandwidths = np.abs([grain.uncertainty for grain in grains])
     mean_bandwidth = np.mean(bandwidths)
     ages = np.array([grain.age for grain in grains])

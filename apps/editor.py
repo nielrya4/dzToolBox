@@ -67,6 +67,10 @@ def register(app):
             json_data = request.get_json()['jsonData']
             project_id = session["open_project"]
             data = json_data.get("data", 0)
+            for i, row in enumerate(data):
+                for j, cell in enumerate(row):
+                    if data[i][j] == '':
+                        data[i][j] = None
             file = database.get_file(project_id)
             project_content = file.content
             try:
@@ -137,8 +141,13 @@ def register(app):
                 if sample.name == sample_name:
                     active_samples.append(sample)
 
+        adjusted_samples = []
+        for sample in active_samples:
+            sample.replace_bandwidth(10)
+            adjusted_samples.append(sample)
+
         if output_type == "kde_graph":
-            graph = Graph(samples=active_samples,
+            graph = Graph(samples=adjusted_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="kde")
@@ -159,11 +168,11 @@ def register(app):
             output_data = graph.generate_svg()
             output_type = "graph"
         elif output_type == "similarity_matrix":
-            matrix = Matrix(active_samples, "similarity")
+            matrix = Matrix(adjusted_samples, "similarity")
             output_data = matrix.to_html()
             output_type = "matrix"
         elif output_type == "likeness_matrix":
-            matrix = Matrix(active_samples, "likeness")
+            matrix = Matrix(adjusted_samples, "likeness")
             output_data = matrix.to_html()
             output_type = "matrix"
         elif output_type == "ks_matrix":
@@ -175,15 +184,15 @@ def register(app):
             output_data = matrix.to_html()
             output_type = "matrix"
         elif output_type == "r2_matrix":
-            matrix = Matrix(active_samples, "r2")
+            matrix = Matrix(adjusted_samples, "r2")
             output_data = matrix.to_html()
             output_type = "matrix"
         elif output_type == "dis_similarity_matrix":
-            matrix = Matrix(active_samples, "dissimilarity")
+            matrix = Matrix(adjusted_samples, "dissimilarity")
             output_data = matrix.to_html()
             output_type = "matrix"
         elif output_type == "dis_likeness_matrix":
-            matrix = Matrix(active_samples, "similarity")
+            matrix = Matrix(adjusted_samples, "similarity")
             output_data = matrix.to_html()
             output_type = "matrix"
         elif output_type == "dis_ks_matrix":
@@ -195,7 +204,7 @@ def register(app):
             output_data = matrix.to_html()
             output_type = "matrix"
         elif output_type == "dis_r2_matrix":
-            matrix = Matrix(active_samples, "similarity")
+            matrix = Matrix(adjusted_samples, "similarity")
             output_data = matrix.to_html()
             output_type = "matrix"
 
@@ -205,6 +214,68 @@ def register(app):
             outputs = get_all_outputs(project_content)
 
         output = Output(output_name, output_type, output_data)
+        outputs.append(output)
+
+        updated_project_content = set_all_outputs(project_content, outputs)
+        database.write_file(project_id, updated_project_content)
+        project_outputs = get_all_outputs(updated_project_content)
+        return render_block(environment=environment,
+                            template_name="editor/editor.html",
+                            block_name="outputs",
+                            outputs_data=project_outputs)
+
+    @app.route('/new_mds', methods=['GET'])
+    @login_required
+    def new_mds():
+        output_name = request.args.get('output_name', '')
+        sample_names = request.args.getlist('samples')
+        mds_type = request.args.get('mds_type', '')
+
+        project_id = session.get("open_project", 0)
+        file = database.get_file(project_id)
+        project_content = file.content
+        project_data = get_project_data(project_content)
+        spreadsheet_data = spreadsheet.text_to_array(project_data)
+        loaded_samples = spreadsheet.read_samples(spreadsheet_data)
+
+        output_data = ""
+        active_samples = []
+        for sample in loaded_samples:
+            for sample_name in sample_names:
+                if sample.name == sample_name:
+                    active_samples.append(sample)
+
+        if mds_type == "similarity":
+            graph = Graph(samples=active_samples,
+                          title=output_name,
+                          stacked=False,
+                          graph_type="sim_mds")
+            output_data = graph.generate_svg()
+        elif mds_type == "ks":
+            graph = Graph(samples=active_samples,
+                          title=output_name,
+                          stacked=False,
+                          graph_type="ks_mds")
+            output_data = graph.generate_svg()
+        elif mds_type == "kuiper":
+            graph = Graph(samples=active_samples,
+                          title=output_name,
+                          stacked=False,
+                          graph_type="kuiper_mds")
+            output_data = graph.generate_svg()
+        elif mds_type == "r2":
+            graph = Graph(samples=active_samples,
+                          title=output_name,
+                          stacked=False,
+                          graph_type="r2_mds")
+            output_data = graph.generate_svg()
+
+        if get_all_outputs(project_content) is None:
+            outputs = []
+        else:
+            outputs = get_all_outputs(project_content)
+
+        output = Output(output_name, 'graph', output_data)
         outputs.append(output)
 
         updated_project_content = set_all_outputs(project_content, outputs)
