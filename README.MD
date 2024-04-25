@@ -40,7 +40,8 @@ that don't need to be done by the server, are included here.
 
 <h5>Todo:</h5>
 <p>Implement MDS and dzMix functionality: design modals and connect
-to graph-making functions.</p>
+to graph-making functions. Implement account settings and delete 
+account.</p>
 
 <p>Finish writing the following files:</p>
 <ul>

@@ -1,0 +1,89 @@
+<div id="mds_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New MDS</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="mds_form" data-hx-trigger="click">
+                        <label for="mds_output_name">Output Title</label>
+                        <input type="text" id="mds_output_name" name="mds_output_name" required>
+                        <br />
+                        <div id="sample_list" class="table_list">
+                            <br />
+                            <table class="table_list">
+                                <tr class="table_list">
+                                    <th>Sample Name:</th>
+                                    <th>Active:</th>
+                                </tr>
+                                {% for sample in samples %}
+                                    <tr class="table_list">
+                                        <td><label class="form-check-label" for="{{ sample[0] }}"></label> {{ sample[0] }}</td>
+                                        <td>
+                                            <div class="form-check form-switch">
+                                                <input class="mds-sample-checkbox form-check-input" type="checkbox" role="switch" id="{{ sample[0] }}" name="{{ sample[0] }}" value="{{ sample[0] }}" checked>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                        <br />
+                        <div class="table_list" id="mds_graphs">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <label for="mds_select">Select an MDS type...</label>
+                                        <select name="mds_select" id="mds_select">
+                                            <option value="similarity">Similarity</option>
+                                            <option value="ks">KS</option>
+                                            <option value="kuiper">Kuiper</option>
+                                            <option value="r2">R^2</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary" type="button" onclick="mds_send_args()">Create MDS</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <button data-bs-toggle="modal"
+                                data-bs-target="#mds_modal"
+                                name="send_it_mds"
+                                id="send_it_mds"
+                                style="display: none"
+                                type="button"
+                                data-hx-target="#outputs_container"
+                                data-hx-swap="innerHTML">
+                        </button>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function mds_send_args() {
+        var selectedSamples = [];
+        var mds_checkboxes = document.getElementsByClassName("mds-sample-checkbox");
+        for (var i = 0; i < mds_checkboxes.length; i++) {
+            if (mds_checkboxes[i].checked) {
+                selectedSamples.push(mds_checkboxes[i].value);
+            }
+        }
+        var mds_type = document.getElementById("mds_select").value;
+
+        var mds_outputName = document.getElementById("mds_output_name").value;
+        var queryString = "/new_mds?samples=" + selectedSamples.join("&samples=") + "&mds_type=" + mds_type;
+        if (mds_outputName !== "") {
+            queryString += "&output_name=" + mds_outputName;
+        }
+        document.getElementById("send_it_mds").setAttribute("data-hx-get", queryString);
+        htmx.process(document.getElementById("send_it_mds"));
+        document.getElementById("send_it_mds").click();
+    }
+</script>
