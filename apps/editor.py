@@ -2,7 +2,7 @@ from flask import render_template, request, jsonify, session
 from flask_login import login_required, current_user
 from server import database
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from utils import spreadsheet
+from utils import spreadsheet, unmix
 from utils.output import Output
 import json
 import openpyxl
@@ -269,6 +269,50 @@ def register(app):
                           stacked=False,
                           graph_type="r2_mds")
             output_data = graph.generate_svg()
+
+        if get_all_outputs(project_content) is None:
+            outputs = []
+        else:
+            outputs = get_all_outputs(project_content)
+
+        output = Output(output_name, 'graph', output_data)
+        outputs.append(output)
+
+        updated_project_content = set_all_outputs(project_content, outputs)
+        database.write_file(project_id, updated_project_content)
+        project_outputs = get_all_outputs(updated_project_content)
+        return render_block(environment=environment,
+                            template_name="editor/editor.html",
+                            block_name="outputs",
+                            outputs_data=project_outputs)
+
+    @app.route('/new_unmix', methods=['GET'])
+    @login_required
+    def new_unmix():
+        output_name = request.args.get('output_name', '')
+        sample_names = request.args.getlist('samples')
+        mds_type = request.args.get('unmix_type', '')
+
+        project_id = session.get("open_project", 0)
+        file = database.get_file(project_id)
+        project_content = file.content
+        project_data = get_project_data(project_content)
+        spreadsheet_data = spreadsheet.text_to_array(project_data)
+        loaded_samples = spreadsheet.read_samples(spreadsheet_data)
+
+        output_data = ""
+        active_samples = []
+        for sample in loaded_samples:
+            for sample_name in sample_names:
+                if sample.name == sample_name:
+                    active_samples.append(sample)
+
+        if mds_type == "ks":
+            output_data = unmix.do_monte_carlo(active_samples, num_trials=1000)
+        elif mds_type == "kuiper":
+            output_data = unmix.do_monte_carlo(active_samples, num_trials=1000)
+        elif mds_type == "r2":
+            output_data = unmix.do_monte_carlo(active_samples, num_trials=1000)
 
         if get_all_outputs(project_content) is None:
             outputs = []

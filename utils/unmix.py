@@ -1,4 +1,4 @@
-from test import r2
+import utils.test
 import random
 import numpy as np
 import pandas as pd
@@ -29,8 +29,8 @@ def do_monte_carlo(samples, num_trials=10000):
     source_contributions = np.average(random_configurations, axis=0)*100
     source_std = np.std(random_configurations, axis=0)*100
 
-    contribution_table_d = build_contribution_table(source_samples, source_contributions, source_std, test_type="KS")
-    return contribution_table_d, None, None
+    contribution_table_d = build_contribution_table(source_samples, source_contributions, source_std, test_type="r2")
+    return contribution_table_d
 
 
 def get_percent_of_array(arr, percentage):
@@ -76,7 +76,7 @@ class UnmixingTrial:
             for k in range(len(sink_kde)):
                 model_kde[k] += source_kde[k] * scale_weight
 
-        d_val = r2(sink_kde, model_kde)
+        d_val = utils.test.r2(sink_kde, model_kde)
         v_val = None
         r2_val = None
         return rands, d_val, v_val, r2_val
