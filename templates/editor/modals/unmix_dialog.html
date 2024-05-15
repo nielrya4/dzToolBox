@@ -1,0 +1,88 @@
+<div id="unmix_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Unmixing Model</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="mds_form" data-hx-trigger="click">
+                        <label for="unmix_output_name">Output Title</label>
+                        <input type="text" id="unmix_output_name" name="unmix_output_name" required>
+                        <br />
+                        <div id="sample_list" class="table_list">
+                            <br />
+                            <table class="table_list">
+                                <tr class="table_list">
+                                    <th>Sample Name:</th>
+                                    <th>Active:</th>
+                                </tr>
+                                {% for sample in samples %}
+                                    <tr class="table_list">
+                                        <td><label class="form-check-label" for="{{ sample[0] }}"></label> {{ sample[0] }}</td>
+                                        <td>
+                                            <div class="form-check form-switch">
+                                                <input class="unmix-sample-checkbox form-check-input" type="checkbox" role="switch" id="{{ sample[0] }}" name="{{ sample[0] }}" value="{{ sample[0] }}" checked>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                        <br />
+                        <div class="table_list" id="unmix_graphs">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <label for="unmix_select">Select an unmixing type...</label>
+                                        <select name="unmix_select" id="unmix_select">
+                                            <option value="r2">R^2</option>
+                                            <option value="ks">KS</option>
+                                            <option value="kuiper">Kuiper</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary" type="button" onclick="unmix_send_args()">Create Unmixing Model</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <button data-bs-toggle="modal"
+                                data-bs-target="#unmixing_modal"
+                                name="send_it_unmix"
+                                id="send_it_unmix"
+                                style="display: none"
+                                type="button"
+                                data-hx-target="#outputs_container"
+                                data-hx-swap="innerHTML">
+                        </button>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function unmix_send_args() {
+        var selectedSamples = [];
+        var mds_checkboxes = document.getElementsByClassName("unmix-sample-checkbox");
+        for (var i = 0; i < mds_checkboxes.length; i++) {
+            if (mds_checkboxes[i].checked) {
+                selectedSamples.push(mds_checkboxes[i].value);
+            }
+        }
+        var unmix_type = document.getElementById("unmix_select").value;
+
+        var unmix_outputName = document.getElementById("unmix_output_name").value;
+        var queryString = "/new_unmix?samples=" + selectedSamples.join("&samples=") + "&unmix_type=" + unmix_type;
+        if (unmix_outputName !== "") {
+            queryString += "&output_name=" + unmix_outputName;
+        }
+        document.getElementById("send_it_unmix").setAttribute("data-hx-get", queryString);
+        htmx.process(document.getElementById("send_it_unmix"));
+        document.getElementById("send_it_unmix").click();
+    }
+</script>
