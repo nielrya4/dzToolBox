@@ -6,23 +6,23 @@ from utils import graph
 
 
 def do_monte_carlo(samples, num_trials=10000):
-    samples.reverse()
     sink_sample = samples[0]
     source_samples = samples[1:]
     trials = [None] * num_trials
 
     sink_sample.replace_bandwidth(10)
+
     for source_sample in source_samples:
         source_sample.replace_bandwidth(10)
 
-    sink_kde = graph.kde_function(sink_sample)[0]
-    source_kdes = [graph.kde_function(source_sample)[0] for source_sample in source_samples]
+    sink_kde = graph.kde_function(sink_sample)[1]
+    source_kdes = [graph.kde_function(source_sample)[1] for source_sample in source_samples]
 
     for i in range(0, num_trials):
         trial = UnmixingTrial(sink_kde, source_kdes)
         trials[i] = trial
 
-    sorted_trials = sorted(trials, key=lambda x: x.d_val, reverse=True)
+    sorted_trials = sorted(trials, key=lambda x: x.r2_val, reverse=True)
     top_trials = get_percent_of_array(sorted_trials, 1)
     random_configurations = [trial.random_configuration for trial in top_trials]
 
@@ -76,9 +76,9 @@ class UnmixingTrial:
             for k in range(len(sink_kde)):
                 model_kde[k] += source_kde[k] * scale_weight
 
-        d_val = utils.test.r2(sink_kde, model_kde)
+        d_val = None
         v_val = None
-        r2_val = None
+        r2_val = utils.test.r2(sink_kde, model_kde)
         return rands, d_val, v_val, r2_val
 
     @staticmethod
