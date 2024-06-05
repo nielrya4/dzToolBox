@@ -291,7 +291,7 @@ def register(app):
     def new_unmix():
         output_name = request.args.get('output_name', '')
         sample_names = request.args.getlist('samples')
-        mds_type = request.args.get('unmix_type', '')
+        unmix_type = request.args.get('unmix_type', '')
 
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
@@ -299,7 +299,6 @@ def register(app):
         project_data = get_project_data(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
-
         output_data = ""
         active_samples = []
         for sample in loaded_samples:
@@ -307,11 +306,11 @@ def register(app):
                 if sample.name == sample_name:
                     active_samples.append(sample)
 
-        if mds_type == "ks":
+        if unmix_type == "ks":
             output_data = unmix.do_monte_carlo(active_samples, num_trials=1000)
-        elif mds_type == "kuiper":
+        elif unmix_type == "kuiper":
             output_data = unmix.do_monte_carlo(active_samples, num_trials=1000)
-        elif mds_type == "r2":
+        elif unmix_type == "r2":
             output_data = unmix.do_monte_carlo(active_samples, num_trials=1000)
 
         if get_all_outputs(project_content) is None:
