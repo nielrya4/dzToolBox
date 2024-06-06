@@ -23,22 +23,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     hot.addHook('afterChange', function(changes, src) {
-        if (src == 'edit') {
+        if (src === 'edit') {
             saveTableData();
         }
     });
-    hot.addHook('afterRedo', function(changes, src) {
-        saveTableData();
-    });
-    hot.addHook('afterUndo', function(changes, src) {
-        saveTableData();
-    });
-    hot.addHook('afterPaste', function(changes, src) {
-        saveTableData();
-    });
+    hot.addHook('afterRedo', saveTableData);
+    hot.addHook('afterUndo', saveTableData);
+    hot.addHook('afterPaste', saveTableData);
 
     function saveTableData() {
-        var jsonData = {data: hot.getData()};
+        var jsonData = { data: hot.getData() };
         saveData(jsonData);
     }
 
@@ -58,10 +52,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const newOutputBtn = document.getElementById("new_output");
-    newOutputBtn.addEventListener('click', function(event) {
-        var jsonData = {data: hot.getData()};
+    // Common event handler for buttons
+    function handleButtonClick(event) {
+        var jsonData = { data: hot.getData() };
         getSampleNames(jsonData);
+    }
+
+    // Add event listeners to buttons
+    const buttons = ['new_output', 'new_mds', 'new_unmix'];
+    buttons.forEach(buttonId => {
+        const button = document.getElementById(buttonId);
+        button.addEventListener('click', handleButtonClick);
     });
 
     function getSampleNames(jsonData) {
@@ -78,7 +79,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         })
         .then(data => {
-            // Extract sample names from the response data
             var sampleNames = data.sample_names;
             displaySampleNames(sampleNames);
         })
@@ -88,71 +88,85 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function displaySampleNames(sampleNames) {
-    // Get the container for the sample list
-    var sampleList = document.getElementById("sample_list");
+        // Function to create table content
+        function createTableContent(container) {
+            container.innerHTML = "";
 
-    // Find the table within the container
-    var table = sampleList.querySelector(".table_list");
+            var table = document.createElement("table");
+            table.classList.add("table_list");
+            var tbody = document.createElement("tbody");
 
-    // Clear any existing content in the table body
-    var tbody = table.querySelector("tbody");
-    tbody.innerHTML = "";
+            sampleNames.forEach(function(sampleName, index) {
+                if (index === 0) {
+                    var trHeader = document.createElement("tr");
+                    var thSampleName = document.createElement("th");
+                    thSampleName.textContent = "Sample Name:";
+                    var thActive = document.createElement("th");
+                    thActive.textContent = "Active:";
+                    trHeader.appendChild(thSampleName);
+                    trHeader.appendChild(thActive);
+                    tbody.appendChild(trHeader);
+                }
 
-    // Iterate over each sample name and create table rows
-    sampleNames.forEach(function(sampleName, index) {
-        // For the first sample name, create table header cells
-        if (index === 0) {
-            var trHeader = document.createElement("tr");
-            var thSampleName = document.createElement("th");
-            thSampleName.textContent = "Sample Name:";
-            var thActive = document.createElement("th");
-            thActive.textContent = "Active:";
-            trHeader.appendChild(thSampleName);
-            trHeader.appendChild(thActive);
-            // Append the table header row to the table body
-            tbody.appendChild(trHeader);
+                var tr = document.createElement("tr");
+                tr.setAttribute("class", "table_list");
+                var tdSampleName = document.createElement("td");
+                var tdCheckbox = document.createElement("td");
+                var checkContainer = document.createElement("div");
+                checkContainer.classList.add("form-check");
+                checkContainer.classList.add("form-switch");
+
+                var checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.classList.add("sample-checkbox");
+                checkbox.classList.add("form-check-input");
+                checkbox.value = sampleName;
+                checkbox.name = sampleName;
+                checkbox.id = sampleName;
+                checkbox.checked = true;
+
+                var label = document.createElement("label");
+                label.setAttribute("for", sampleName);
+                label.textContent = sampleName;
+                label.classList.add("form-check-label");
+
+                tdSampleName.appendChild(label);
+                checkContainer.appendChild(checkbox);
+                tdCheckbox.appendChild(checkContainer);
+                tr.appendChild(tdSampleName);
+                tr.appendChild(tdCheckbox);
+                tbody.appendChild(tr);
+
+                // Attach event listener to the row
+                tr.addEventListener("click", function(event) {
+                    if (event.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                });
+
+                // Attach event listener to the checkbox
+                checkbox.addEventListener("click", function(event) {
+                    event.stopPropagation(); // Prevent row click event
+                });
+            });
+
+            table.appendChild(tbody);
+            container.appendChild(table);
         }
-        // Create table row and table data elements
-        var tr = document.createElement("tr");
-        tr.setAttribute("class", "table_list");
-        var tdSampleName = document.createElement("td");
-        var tdCheckbox = document.createElement("td");
-        var checkContainer = document.createElement("div");
-        checkContainer.classList.add("form-check");
-        checkContainer.classList.add("form-switch");
 
-        // Create label and checkbox for the sample
-        var label = document.createElement("label");
-        label.setAttribute("for", sampleName);
-        label.textContent = sampleName;
-        label.classList.add("form-check-label");
-        label.addEventListener("click", function() {
-            // Toggle the corresponding checkbox when the label is clicked
-            checkbox.checked = !checkbox.checked;
-        });
+        // Update each list with the created table content
+        var sampleList = document.getElementById("sample_list");
+        var mdsSampleList = document.getElementById("mds_sample_list");
+        var unmixSampleList = document.getElementById("unmix_sample_list");
 
-        var checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.classList.add("sample-checkbox");
-        checkbox.classList.add("form-check-input");
-        checkbox.value = sampleName;
-        checkbox.name = sampleName;
-        checkbox.id = sampleName;
-        checkbox.checked = true;
+        // Clear the lists first to ensure no duplicates
+        sampleList.innerHTML = "";
+        mdsSampleList.innerHTML = "";
+        unmixSampleList.innerHTML = "";
 
-
-        // Append label and checkbox to the table data elements
-        tdSampleName.appendChild(label);
-        checkContainer.appendChild(checkbox);
-        tdCheckbox.appendChild(checkContainer);
-
-        // Append table data elements to the table row
-        tr.appendChild(tdSampleName);
-        tr.appendChild(tdCheckbox);
-
-        // Append table row to the table body
-        tbody.appendChild(tr);
-    });
-}
-
+        // Create table content for each list
+        createTableContent(sampleList);
+        createTableContent(mdsSampleList);
+        createTableContent(unmixSampleList);
+    }
 });

@@ -97,7 +97,8 @@
     </div>
 </div>
 <script>
-    const checkboxes = document.querySelectorAll(".sample-checkbox");
+    const sampleList = document.getElementById("sample_list")
+    const checkboxes = sampleList.querySelectorAll(".sample-checkbox");
     for (const checkbox of checkboxes) {
         checkbox.addEventListener("click", function() {
             // Checkbox state is already updated by user interaction
@@ -124,7 +125,7 @@
 
 function send_args() {
     var selectedSamples = [];
-    var checkboxes = document.getElementsByClassName("sample-checkbox");
+    var checkboxes = sampleList.getElementsByClassName("sample-checkbox");
     for (var i = 0; i < checkboxes.length; i++) {
         if (checkboxes[i].checked) {
             selectedSamples.push(checkboxes[i].value);

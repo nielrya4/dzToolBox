@@ -39,14 +39,19 @@ that don't need to be done by the server, are included here.
 </p>
 
 <h5>Todo:</h5>
-<p>Implement MDS and dzMix functionality: design modals and connect
-to graph-making functions. Implement account settings and delete 
-account.</p>
+<p>Implement full dzMix functionality. Still need relative 
+contribution graphs and top trials graphs. Also need to 
+develop KS and Kuiper tests instead of just R^2. Implement 
+account settings, deleting accounts, and deleting outputs.</p>
 
 <p>Finish writing the following files:</p>
 <ul>
     <li style="color:cyan;">/apps</li>
-    <ol>
+    <ul>
         <li>editor.py</li>
-    </ol>
+    </ul>
+    <li style="color:cyan;">/utils</li>
+    <ul>
+        <li>unmix.py</li>
+    </ul>
 </ul>
