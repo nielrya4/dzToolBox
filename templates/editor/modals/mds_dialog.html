@@ -12,7 +12,7 @@
                         <label for="mds_output_name">Output Title</label>
                         <input type="text" id="mds_output_name" name="mds_output_name" required>
                         <br />
-                        <div id="sample_list" class="table_list">
+                        <div id="mds_sample_list" class="table_list">
                             <br />
                             <table class="table_list">
                                 <tr class="table_list">
@@ -67,9 +67,10 @@
     </div>
 </div>
 <script>
+    const mdsSampleList = document.getElementById("mds_sample_list")
     function mds_send_args() {
         var selectedSamples = [];
-        var mds_checkboxes = document.getElementsByClassName("mds-sample-checkbox");
+        var mds_checkboxes = mdsSampleList.querySelectorAll(".sample-checkbox");
         for (var i = 0; i < mds_checkboxes.length; i++) {
             if (mds_checkboxes[i].checked) {
                 selectedSamples.push(mds_checkboxes[i].value);

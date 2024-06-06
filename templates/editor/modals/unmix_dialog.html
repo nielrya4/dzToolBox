@@ -12,7 +12,7 @@
                         <label for="unmix_output_name">Output Title</label>
                         <input type="text" id="unmix_output_name" name="unmix_output_name" required>
                         <br />
-                        <div id="sample_list" class="table_list">
+                        <div id="unmix_sample_list" class="table_list">
                             <br />
                             <table class="table_list">
                                 <tr class="table_list">
@@ -66,12 +66,13 @@
     </div>
 </div>
 <script>
+    const unmixSampleList = document.getElementById("unmix_sample_list")
     function unmix_send_args() {
         var selectedSamples = [];
-        var mds_checkboxes = document.getElementsByClassName("unmix-sample-checkbox");
-        for (var i = 0; i < mds_checkboxes.length; i++) {
-            if (mds_checkboxes[i].checked) {
-                selectedSamples.push(mds_checkboxes[i].value);
+        var unmix_checkboxes = unmixSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < unmix_checkboxes.length; i++) {
+            if (unmix_checkboxes[i].checked) {
+                selectedSamples.push(unmix_checkboxes[i].value);
             }
         }
         var unmix_type = document.getElementById("unmix_select").value;
