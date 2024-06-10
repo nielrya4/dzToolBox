@@ -1,13 +1,15 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin
-from server import route
+from server import route, cleanup
 import os
+import secrets
 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://koyeb-adm:J0OqWG2Lalmy@ep-lucky-boat-a44k24rd.us-east-1.pg.koyeb.app/koyebdb'
-app.config['SECRET_KEY'] = 'your_secret_key'
+SECRET_KEY = secrets.token_hex(16)
+app.config['SECRET_KEY'] = SECRET_KEY
 app.config['TEMP_FOLDER'] = 'temp'
 if not os.path.exists('temp'):
     os.makedirs('temp')
@@ -21,7 +23,7 @@ with app.app_context():
     db.create_all()
 
 route.register_routes(app)
-
+cleanup.start_cleanup()
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

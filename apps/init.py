@@ -46,6 +46,22 @@ def register(app):
 
         return render_template('init/signup.html')
 
+    # Create Guest Account: Creates a temporary account, logs in, creates the first project, and redirects to the editor
+    @app.route('/create_guest_account')
+    def create_guest_account():
+        if current_user.is_authenticated:
+            logout_user()
+        username = str(APP.SECRET_KEY) + "_guest"
+        password = "guest"
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        guest_user = APP.User(username=username, password=hashed_password)
+        db.session.add(guest_user)
+        db.session.commit()
+        user = APP.User.query.filter_by(username=username).first()
+        login_user(user)
+        session["user_id"] = user.id
+        return redirect(url_for('projects'))
+
     @app.route('/delete_account', methods=['GET', 'POST'])
     @login_required
     def delete_account():
@@ -89,4 +105,6 @@ def register(app):
 
     @app.route('/')
     def home():
+        if current_user.is_authenticated:
+            return redirect(url_for('projects'))
         return render_template('init/home.html')
