@@ -2,4 +2,14 @@
     <a id="new_output" data-bs-toggle="modal" href="#new_output_modal">Stats</a>
     <a id="new_mds" data-bs-toggle="modal" href="#mds_modal">MDS</a>
     <a id="new_unmix" data-bs-toggle="modal" href="#unmix_modal">Unmix</a>
+    <a id="clear_outputs" style="float: right !important;" data-hx-post="/clear_outputs" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Clear Outputs</a>
+    <button id="clear_outputs" style="display: none" type="button" data-hx-post="/clear_outputs" data-hx-target="#outputs_container" data-hx-swap="innerHTML"></button>
+
 </div>
+<script>
+    const clear_btn = document.getElementById("clear_outputs")
+    function clear_outputs()
+    {
+        clear_btn.click();
+    }
+</script>

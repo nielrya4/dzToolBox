@@ -120,6 +120,27 @@ def register(app):
         graph_output = Output(output_name, "graph", output_data)
         matrix_output = Output(output_name, "matrix", output_data)
 
+    @app.route('/clear_outputs', methods=['POST'])
+    @login_required
+    def clear_outputs():
+        project_id = session.get("open_project", 0)
+        file = database.get_file(project_id)
+        project_content = file.content
+        if get_all_outputs(project_content) is None:
+            outputs = []
+        else:
+            outputs = get_all_outputs(project_content)
+
+        outputs.clear()
+
+        updated_project_content = set_all_outputs(project_content, outputs)
+        database.write_file(project_id, updated_project_content)
+        project_outputs = get_all_outputs(updated_project_content)
+        return render_block(environment=environment,
+                            template_name="editor/editor.html",
+                            block_name="outputs",
+                            outputs_data=project_outputs)
+
     @app.route('/new_output', methods=['GET'])
     @login_required
     def new_output():
