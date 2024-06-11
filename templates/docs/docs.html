@@ -1,4 +1,19 @@
-<h1>Documentation</h1>
-<img style="width: 50%; height: 50%;" alt="Flying Zircon" src="{{ url_for('static', filename='global/img/Flying_z.jpg') }}">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project List</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/table_list.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/toolbars.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/frame.css') }}">
+    {% include "global/head.html" %}
 
-{% include 'global/footer.html' %}
+</head>
+<body>
+    <h1>Documentation</h1>
+    <img style="width: 50%; height: 50%;" alt="Flying Zircon" src="{{ url_for('static', filename='global/img/Flying_z.jpg') }}">
+    {% include 'global/footer.html' %}
+</body>
+</html>

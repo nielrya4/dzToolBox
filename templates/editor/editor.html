@@ -13,9 +13,8 @@
 
     {% include "global/head.html" %}
 </head>
-<body>
+<body style="overflow: hidden; scrollbar-width: none;">
     <div style="text-align: left" class="row">
-
         <div class="col">
             <ul class="nav nav-tabs" id="myTab" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -37,13 +36,15 @@
         </div>
         <div class="tab-pane fade" id="outputs_page" role="tabpanel" aria-labelledby="outputs_tab">
             {% include "editor/pages/outputs.html" %}
-            <div id="outputs_container">
+            <div style="height: 85vh; overflow-x: scroll; overflow-y: scroll; scrollbar-width: none;" id="outputs_container">
+            <br />
                 {% block outputs %}
                     {% for output in outputs_data %}
                         {{ output.data | safe }}
                         <br />
                     {% endfor %}
                 {% endblock %}
+
             </div>
         </div>
     </div>
