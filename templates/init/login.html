@@ -6,18 +6,29 @@
     <title>Login</title>
     {% include "global/head.html" %}
 </head>
-<body>
+<body style="padding: 1em; align-items: center;">
     <h1>Login</h1>
+    <br />
     <form method="post" action="{{ url_for('login') }}">
-        <label for="username">Username:</label>
-        <input id="username" type="text" name="username" required>
-        <label for="password">Password:</label>
-        <input id="password" type="password" name="password" required>
-        <button type="submit">Login</button>
+        <div class="row text-nowrap">
+            <div class="col-md-5">
+                <label for="username">Username:</label>
+                <input id="username" type="text" name="username" class="form-control" required>
+            </div>
+            <div class="col-md-5">
+                <label for="password">Password:</label>
+                <input id="password" type="password" name="password" class="form-control" required>
+            </div>
+            <div class="mt-4 col-md-2">
+                <button type="submit" class="btn btn-primary">Login</button>
+            </div>
+        </div>
     </form>
-    <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign Up</a></p>
+    <br />
+    <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign Up</a> or <a href="/create_guest_account">Login as a Guest</a></p>
     {% if current_user.is_authenticated %}
         <p>Logged in as {{ current_user.username }}. <a href="{{ url_for('projects') }}">Go to project browser.</a></p>
     {% endif %}
+    {% include 'global/footer.html' %}
 </body>
 </html>

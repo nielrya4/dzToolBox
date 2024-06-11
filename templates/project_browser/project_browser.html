@@ -16,6 +16,13 @@
 
     {% block project_list %}
         <table class="table_list" id="project-list">
+            <h1 id="no_projects" style="display: none;">No projects yet? Click above to start a project!</h1>
+            {% if user_projects == [] %}
+                <script>document.getElementById("no_projects").style.display = "flex";</script>
+            {% else %}
+                <script>document.getElementById("no_projects").style.display = "none";</script>
+            {% endif %}
+
             {% for project in user_projects %}
                 <tr class="table_list">
                     <td>
