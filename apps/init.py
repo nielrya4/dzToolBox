@@ -1,9 +1,14 @@
+import numpy as np
 from flask import render_template, request, redirect, url_for, flash, session
 from flask_login import UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import app as APP
 from jinja2_fragments import render_block
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+import secrets
+from utils.project import Project
+from server import database
+from utils import spreadsheet
 
 environment = Environment(
     loader=FileSystemLoader("templates"),
@@ -51,7 +56,8 @@ def register(app):
     def create_guest_account():
         if current_user.is_authenticated:
             logout_user()
-        username = str(APP.SECRET_KEY) + "_guest"
+        secret_key = secrets.token_hex(16)
+        username = str(secret_key) + "_guest"
         password = "guest"
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         guest_user = APP.User(username=username, password=hashed_password)
@@ -60,7 +66,14 @@ def register(app):
         user = APP.User.query.filter_by(username=username).first()
         login_user(user)
         session["user_id"] = user.id
-        return redirect(url_for('projects'))
+        project_name = "Default Project"
+        spreadsheet_data = spreadsheet.array_to_text([[None] * 6] * 6)
+        project_data = Project(name=project_name,
+                               data=spreadsheet_data,
+                               outputs="").generate_json_string()
+        file = database.new_file(project_name, project_data)
+        session["open_project"] = file.id
+        return redirect(f"/projects/{file.id}")
 
     @app.route('/delete_account', methods=['GET', 'POST'])
     @login_required
