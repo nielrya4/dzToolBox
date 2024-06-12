@@ -69,13 +69,17 @@ def register(app):
             data = json_data.get("data", 0)
             for i, row in enumerate(data):
                 for j, cell in enumerate(row):
-                    if data[i][j] == '':
+                    if data[i][j].strip() == '':
+                        print(data[i][j])
                         data[i][j] = None
+                    elif is_float(data[i][j]):
+                        data[i][j] = float(data[i][j].strip())
             file = database.get_file(project_id)
             project_content = file.content
             try:
                 project_json = json.loads(project_content)
                 project_json["data"] = spreadsheet.array_to_text(data)
+                print(project_json["data"])
                 updated_project_content = json.dumps(project_json)
                 database.write_file(project_id, updated_project_content)
                 return jsonify({"success": True})
@@ -172,6 +176,9 @@ def register(app):
                           title=output_name,
                           stacked=False,
                           graph_type="kde")
+            for sample in adjusted_samples:
+                for grain in sample.grains:
+                    print(grain)
             output_data = graph.generate_svg()
             output_type = "graph"
         elif output_type == "pdp_graph":
@@ -422,3 +429,13 @@ def get_project_name(json_string):
     except Exception as e:
         print(f"Error parsing JSON: {e}")
         return None
+
+
+def is_float(element: any) -> bool:
+    if element is None:
+        return False
+    try:
+        float(element)
+        return True
+    except ValueError:
+        return False
