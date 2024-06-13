@@ -26,7 +26,8 @@ def do_monte_carlo(samples, num_trials=10000):
         trials[i] = trial
 
     sorted_trials = sorted(trials, key=lambda x: x.r2_val, reverse=True)
-    top_trials = get_percent_of_array(sorted_trials, 1)
+    #top_trials = get_percent_of_array(sorted_trials, 1)
+    top_trials = sorted_trials[:10]
     top_kdes = [trial.model_kde for trial in top_trials]
     random_configurations = [trial.random_configuration for trial in top_trials]
 
@@ -81,13 +82,13 @@ def build_contribution_graph(samples, percent_contributions, standard_deviations
 
 
 def build_top_trials_graph(sink_kde, model_kdes):
-    x = range(len(sink_kde))
+    x = np.linspace(0, 4000, 1000).reshape(-1, 1)
     fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
-    ax.plot(x, sink_kde, label="Sink Sample")
-    ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
-    for model_kde in model_kdes:
-        ax.plot(x, model_kde)
+    for i, model_kde in enumerate(model_kdes):
+        ax.plot(x, model_kde, 'c-', label="Top Trials" if i == 0 else "_Top Trials")
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    ax.plot(x, sink_kde, 'b-', label="Sink Sample")
+    ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     ax.set_title("Top Trials Graph")
     plt.tight_layout()
     image_buffer = BytesIO()
@@ -96,8 +97,6 @@ def build_top_trials_graph(sink_kde, model_kdes):
     plotted_graph = image_buffer.getvalue().decode("utf-8")
     plt.close(fig)
     return plotted_graph
-
-    pass
 
 
 class UnmixingTrial:

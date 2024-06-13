@@ -335,11 +335,11 @@ def register(app):
                     active_samples.append(sample)
 
         if unmix_type == "ks":
-            contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=1000)
+            contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=10000)
         elif unmix_type == "kuiper":
-            contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=1000)
+            contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=10000)
         elif unmix_type == "r2":
-            contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=1000)
+            contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=10000)
 
         if get_all_outputs(project_content) is None:
             outputs = []
