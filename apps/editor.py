@@ -327,7 +327,7 @@ def register(app):
         project_data = get_project_data(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
-        output_data = ""
+        contribution_table, contribution_graph, trials_graph = "", "", ""
         active_samples = []
         for sample in loaded_samples:
             for sample_name in sample_names:
@@ -335,19 +335,23 @@ def register(app):
                     active_samples.append(sample)
 
         if unmix_type == "ks":
-            output_data = unmix.do_monte_carlo(active_samples, num_trials=1000)
+            contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=1000)
         elif unmix_type == "kuiper":
-            output_data = unmix.do_monte_carlo(active_samples, num_trials=1000)
+            contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=1000)
         elif unmix_type == "r2":
-            output_data = unmix.do_monte_carlo(active_samples, num_trials=1000)
+            contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=1000)
 
         if get_all_outputs(project_content) is None:
             outputs = []
         else:
             outputs = get_all_outputs(project_content)
 
-        output = Output(output_name, 'graph', output_data)
-        outputs.append(output)
+        table_output = Output(output_name, 'matrix', contribution_table)
+        contribution_graph_output = Output(output_name, 'graph', contribution_graph)
+        trials_graph_output = Output(output_name, 'graph', trials_graph)
+        outputs.append(table_output)
+        outputs.append(contribution_graph_output)
+        outputs.append(trials_graph_output)
 
         updated_project_content = set_all_outputs(project_content, outputs)
         database.write_file(project_id, updated_project_content)
