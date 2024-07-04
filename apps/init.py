@@ -1,9 +1,7 @@
-import numpy as np
 from flask import render_template, request, redirect, url_for, flash, session
-from flask_login import UserMixin, login_user, login_required, logout_user, current_user
+from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import app as APP
-from jinja2_fragments import render_block
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import secrets
 from utils.project import Project
@@ -79,14 +77,10 @@ def register(app):
     @login_required
     def delete_account():
         if request.method == 'POST':
-            # Delete associated code files
             APP.CodeFile.query.filter_by(user_id=current_user.id).delete()
 
-            # Delete the user
             db.session.delete(current_user)
             db.session.commit()
-
-            # Log out the user after deleting the account
             logout_user()
 
             flash('Your account has been deleted.', 'success')

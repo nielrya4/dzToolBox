@@ -40,8 +40,7 @@ that don't need to be done by the server, are included here.
 
 <h5>Todo:</h5>
 <p>Implement full dzMix functionality. Still need to 
-develop KS and Kuiper tests instead of just R^2. Implement 
-account settings, deleting accounts, and deleting individual outputs.</p>
+develop KS and Kuiper tests instead of just R^2. Implement deleting individual outputs.</p>
 
 <p>Finish writing the following files:</p>
 <ul>
