@@ -112,7 +112,9 @@ def register(app):
                 return redirect(url_for('projects'))
 
             else:
-                flash('Login unsuccessful. Please check your username and password.', 'error')
+                if request.method == 'POST':
+                    login_message = 'Login unsuccessful. Please check your username and password.'
+                    return render_template('init/login.html', login_message=login_message, current_user=current_user)
 
         return render_template('init/login.html', current_user=current_user)
 
