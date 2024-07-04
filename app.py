@@ -18,12 +18,12 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Move db.create_all() into an application context block
 with app.app_context():
     db.create_all()
 
 route.register_routes(app)
 cleanup.start_cleanup()
+
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
