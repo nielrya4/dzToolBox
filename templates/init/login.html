@@ -11,7 +11,7 @@
     <br />
     <form method="post" action="{{ url_for('login') }}">
         {% if login_message %}
-            <h6>{{ login_message }}</h6>
+            <h6 style="color:red;">{{ login_message }}</h6>
         {% endif %}
         <div class="row text-nowrap">
             <div class="col-md-5">
