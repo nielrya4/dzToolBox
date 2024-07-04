@@ -92,25 +92,20 @@ def register(app):
     def login():
         if current_user.is_authenticated:
             return redirect(url_for('projects'))
-
-        if request.method == 'POST' or request.method == 'GET':
+        if request.method == 'POST':
             username = request.form.get('username')
             password = request.form.get('password')
-
             user = APP.User.query.filter_by(username=username).first()
-
             if user and check_password_hash(user.password, password):
                 login_user(user)
                 flash('Login successful!', 'success')
                 session["user_id"] = user.id
                 return redirect(url_for('projects'))
-
             else:
-                if request.method == 'POST':
-                    login_message = 'Login unsuccessful. Please check your username and password.'
-                    return render_template('init/login.html', login_message=login_message, current_user=current_user)
-
-        return render_template('init/login.html', current_user=current_user)
+                login_message = 'Login unsuccessful. Please check your username and password.'
+                return render_template('init/login.html', login_message=login_message, current_user=current_user)
+        else:
+            return render_template('init/login.html', current_user=current_user)
 
     @app.route('/')
     def home():
