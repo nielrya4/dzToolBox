@@ -1,3 +1,5 @@
 instance
 instance/site.db
 .idea
+temp
+temp/spreadsheet.xlsx
