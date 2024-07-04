@@ -99,7 +99,7 @@ def register(app):
         if current_user.is_authenticated:
             return redirect(url_for('projects'))
 
-        if request.method == 'POST':
+        if request.method == 'POST' or request.method == 'GET':
             username = request.form.get('username')
             password = request.form.get('password')
 

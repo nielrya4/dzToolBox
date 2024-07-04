@@ -39,10 +39,9 @@ that don't need to be done by the server, are included here.
 </p>
 
 <h5>Todo:</h5>
-<p>Implement full dzMix functionality. Still need relative 
-contribution graphs and top trials graphs. Also need to 
+<p>Implement full dzMix functionality. Still need to 
 develop KS and Kuiper tests instead of just R^2. Implement 
-account settings, deleting accounts, and deleting outputs.</p>
+account settings, deleting accounts, and deleting individual outputs.</p>
 
 <p>Finish writing the following files:</p>
 <ul>
