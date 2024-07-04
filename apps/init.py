@@ -95,7 +95,12 @@ def register(app):
         if request.method == 'POST':
             username = request.form.get('username')
             password = request.form.get('password')
-            user = APP.User.query.filter_by(username=username).first()
+            try:
+                user = APP.User.query.filter_by(username=username).first()
+            except Exception as e:
+                login_message = f"Error querying user by username: {e}"
+                return render_template('init/login.html', login_message=login_message, current_user=current_user)
+
             if user and check_password_hash(user.password, password):
                 login_user(user)
                 flash('Login successful!', 'success')
