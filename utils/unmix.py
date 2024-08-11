@@ -8,7 +8,7 @@ from io import BytesIO
 from concurrent.futures import ProcessPoolExecutor
 
 
-def do_monte_carlo(samples, num_trials=10000):
+def do_monte_carlo(samples, num_trials=10000, test_type="r2"):
     sink_sample = samples[0]
     source_samples = samples[1:]
 
@@ -16,28 +16,44 @@ def do_monte_carlo(samples, num_trials=10000):
     for source_sample in source_samples:
         source_sample.replace_bandwidth(10)
 
-    sink_kde = graph.kde_function(sink_sample)[1]
-    source_kdes = [graph.kde_function(source_sample)[1] for source_sample in source_samples]
+    if test_type == "r2":
+        sink_line = graph.kde_function(sink_sample)[1]
+        source_lines = [graph.kde_function(source_sample)[1] for source_sample in source_samples]
+    elif test_type == "ks" or test_type == "kuiper":
+        sink_line = graph.cdf_function(sink_sample)[1]
+        source_lines = [graph.cdf_function(source_sample)[1] for source_sample in source_samples]
+    else:
+        sink_line = graph.kde_function(sink_sample)[1]
+        source_lines = [graph.kde_function(source_sample)[1] for source_sample in source_samples]
 
     with ProcessPoolExecutor() as executor:
-        trials = list(executor.map(create_trial, [(sink_kde, source_kdes)] * num_trials))
+        trials = list(executor.map(create_trial, [(sink_line, source_lines, test_type)] * num_trials))
+    if test_type == "r2":
+        sorted_trials = sorted(trials, key=lambda x: x.test_val, reverse=True)
+    elif test_type == "ks" or test_type == "kuiper":
+        sorted_trials = sorted(trials, key=lambda x: x.test_val, reverse=False)
+    else:
+        sorted_trials = sorted(trials, key=lambda x: x.test_val, reverse=True)
 
-    sorted_trials = sorted(trials, key=lambda x: x.r2_val, reverse=True)
     top_trials = sorted_trials[:10]
-    top_kdes = [trial.model_kde for trial in top_trials]
+    for trial in top_trials:
+        print(trial.test_val)
+    top_lines = [trial.model_line for trial in top_trials]
     random_configurations = [trial.random_configuration for trial in top_trials]
 
     source_contributions = np.average(random_configurations, axis=0) * 100
     source_std = np.std(random_configurations, axis=0) * 100
 
-    contribution_table = build_contribution_table(source_samples, source_contributions, source_std, test_type="r2")
-    contribution_graph = build_contribution_graph(source_samples, source_contributions, source_std, test_type="r2")
-    top_trials_graph = build_top_trials_graph(sink_kde, top_kdes)
+    contribution_table = build_contribution_table(source_samples, source_contributions, source_std, test_type=test_type)
+    contribution_graph = build_contribution_graph(source_samples, source_contributions, source_std, test_type=test_type)
+    top_trials_graph = build_top_trials_graph(sink_line, top_lines)
     return contribution_table, contribution_graph, top_trials_graph
 
+
 def create_trial(args):
-    sink_kde, source_kdes = args
-    return UnmixingTrial(sink_kde, source_kdes)
+    sink_line, source_lines, test_type = args
+    return UnmixingTrial(sink_line, source_lines, test_type=test_type)
+
 
 def build_contribution_table(samples, percent_contributions, standard_deviation, test_type="r2"):
     sample_names = [sample.name for sample in samples]
@@ -50,6 +66,7 @@ def build_contribution_table(samples, percent_contributions, standard_deviation,
     df.columns.name = "-"
     output = df.to_html(classes="table table-bordered table-striped", justify="center").replace('<th>', '<th style="background-color: White;">').replace('<td>', '<td style="background-color: White;">')
     return output
+
 
 def build_contribution_graph(samples, percent_contributions, standard_deviations, test_type="r2"):
     sample_names = [sample.name for sample in samples]
@@ -71,13 +88,14 @@ def build_contribution_graph(samples, percent_contributions, standard_deviations
     plt.close(fig)
     return plotted_graph
 
-def build_top_trials_graph(sink_kde, model_kdes):
+
+def build_top_trials_graph(sink_line, model_lines):
     x = np.linspace(0, 4000, 1000).reshape(-1, 1)
     fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
-    for i, model_kde in enumerate(model_kdes):
+    for i, model_kde in enumerate(model_lines):
         ax.plot(x, model_kde, 'c-', label="Top Trials" if i == 0 else "_Top Trials")
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
-    ax.plot(x, sink_kde, 'b-', label="Sink Sample")
+    ax.plot(x, sink_line, 'b-', label="Sink Sample")
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     ax.set_title("Top Trials Graph")
     plt.tight_layout()
@@ -88,27 +106,39 @@ def build_top_trials_graph(sink_kde, model_kdes):
     plt.close(fig)
     return plotted_graph
 
+
 class UnmixingTrial:
-    def __init__(self, sink_kde, source_kdes):
-        self.sink_kde = sink_kde
-        self.source_kdes = source_kdes
-        self.random_configuration, self.model_kde, _, _, self.r2_val = self.__do_trial()
+    def __init__(self, sink_line, source_lines, test_type="r2"):
+        self.sink_line = sink_line
+        self.source_lines = source_lines
+        self.test_type = test_type
+        self.random_configuration, self.model_line, self.test_val = self.__do_trial()
 
     def __do_trial(self):
-        sink_kde = self.sink_kde
-        source_kdes = self.source_kdes
+        sink_line = self.sink_line
+        source_lines = self.source_lines
 
-        num_sources = len(source_kdes)
+        num_sources = len(source_lines)
         rands = self.__make_cumulative_random(num_sources)
 
-        model_kde = np.zeros_like(sink_kde)
-        for j, source_kde in enumerate(source_kdes):
-            model_kde += source_kde * rands[j]
+        model_line = np.zeros_like(sink_line)
+        for j, source_line in enumerate(source_lines):
+            model_line += source_line * rands[j]
 
-        r2_val = utils.test.r2(sink_kde, model_kde)
-        return rands, model_kde, None, None, r2_val
+        if self.test_type == "r2":
+            val = utils.test.r2(sink_line, model_line)
+        elif self.test_type == "ks":
+            val = utils.test.ks(sink_line, model_line)
+        elif self.test_type == "kuiper":
+            val = utils.test.kuiper(sink_line, model_line)
+        else:
+            val = utils.test.r2(sink_line, model_line)
+
+        return rands, model_line, val
 
     @staticmethod
     def __make_cumulative_random(num_samples):
-        rands = np.random.random(num_samples)
-        return rands / rands.sum()
+        rands = [random.random() for _ in range(num_samples)]
+        total = sum(rands)
+        normalized_rands = [rand / total for rand in rands]
+        return normalized_rands
