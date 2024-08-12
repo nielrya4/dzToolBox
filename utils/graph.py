@@ -88,11 +88,11 @@ def kde_function(sample, num_steps=1000, x_min=0, x_max=4000):
 
 
 def cdf_function(sample):
-    ages = [grain.age for grain in sample.grains]
-    count, bins_count = np.histogram(ages, bins=1000, density=True)
-    pdf = count / sum(count)
-    cdf_values = np.cumsum(pdf)
-    return bins_count, cdf_values
+    _, y_values = kde_function(sample)
+    cdf_values = np.cumsum(y_values)
+    for val in cdf_values:
+        print(str(val) + "\n")
+    return range(0, 1001), cdf_values
 
 
 def pdp_function(sample, num_steps=1000, x_min=0, x_max=4000):
