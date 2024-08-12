@@ -4,24 +4,14 @@ import numpy as np
 
 # KS Test (Massey, 1951) is the max absolute difference btw 2 CDF curves
 def ks(y1_values, y2_values):
-    data1, data2 = np.ma.asarray(y1_values), np.ma.asarray(y2_values)
-    n1, n2 = (data1.count(), data2.count())
-    mix = np.ma.concatenate((data1.compressed(), data2.compressed()))
-    mix_sort = mix.argsort(kind='mergesort')
-    csum = np.where(mix_sort < n1, 1. / n1, -1. / n2).cumsum()
-    ks_test_d = max(np.abs(csum))
-    return ks_test_d
+    d_val = max(abs(y1_values - y2_values))
+    return d_val
 
 
 # Kuiper test (Kuiper, 1960) is the sum of the max difference of CDF1 - CDF2 and CDF2 - CDF1
 def kuiper(y1_values, y2_values):
-    data1, data2 = np.ma.asarray(y1_values), np.ma.asarray(y2_values)
-    n1, n2 = data1.count(), data2.count()
-    mix = np.ma.concatenate((data1.compressed(), data2.compressed()))
-    mix_sort = mix.argsort(kind='mergesort')
-    csum = np.where(mix_sort < n1, 1. / n1, -1. / n2).cumsum()
-    kuiper_test_v = max(csum) + max(csum * -1)
-    return kuiper_test_v
+    v_val = max(y1_values - y2_values) + max(y2_values - y1_values)
+    return v_val
 
 
 # Similarity (Gehrels, 2000) is the sum of the geometric mean of each point along x for two PDPs or KDEs
