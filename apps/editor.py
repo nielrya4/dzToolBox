@@ -29,9 +29,9 @@ def register(app):
         project_author = f"<User {file.user_id}>"
         if str(project_author) == str(current_user):
             project_data = get_project_data(project_content)
-            spreadsheet_data = spreadsheet.text_to_array(project_data)
-
+            spreadsheet_data = json.loads(project_data)
             loaded_samples = spreadsheet.read_samples(spreadsheet_data)
+
             samples_data = []
             for sample in loaded_samples:
                 active = request.form.get(sample.name) == "true"
@@ -42,7 +42,7 @@ def register(app):
             if not project_outputs:
                 project_outputs = [Output("Default", "graph", "<h1>No Outputs Yet</h1>")]
             return render_template("editor/editor.html",
-                                   spreadsheet_data=spreadsheet_data,
+                                   spreadsheet_data=project_data,
                                    samples=samples_data,
                                    outputs_data=project_outputs)
         else:
@@ -69,11 +69,12 @@ def register(app):
             data = json_data.get("data", 0)
             for i, row in enumerate(data):
                 for j, cell in enumerate(row):
-                    if data[i][j].strip() == '':
-                        print(data[i][j])
-                        data[i][j] = None
-                    elif is_float(data[i][j]):
-                        data[i][j] = float(data[i][j].strip())
+                    if data[i][j] is not None:
+                        if str(data[i][j]).strip() == '':
+                            print(data[i][j])
+                            data[i][j] = None
+                        elif is_float(data[i][j]):
+                            data[i][j] = float(data[i][j].strip())
             file = database.get_file(project_id)
             project_content = file.content
             try:
