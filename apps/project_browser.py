@@ -5,9 +5,8 @@ from jinja2_fragments import render_block
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from utils.project import Project
 from utils import spreadsheet
-import os
+import numpy as np
 import json
-import openpyxl
 
 environment = Environment(
     loader=FileSystemLoader("templates"),
@@ -32,38 +31,21 @@ def register(app):
     @app.route('/new_project', methods=['GET', 'POST'])
     @login_required
     def new_project():
-        if request.method == 'POST':
-            project_name = request.form.get('project_name')
-            project_name = "New Project" if project_name == '' else project_name
-            file = session.get('last_uploaded_file', None)
-            if file is not None:
-                spreadsheet_data = spreadsheet.array_to_text(spreadsheet.excel_to_array(os.path.join('temp', file)))
-            else:
-                spreadsheet_data = "<h1>No Data</h1>"
-            project_data = Project(name=project_name,
-                                   data=spreadsheet_data,
-                                   outputs="").generate_json_string()
-            file = database.new_file(project_name, project_data)
-            session["open_project"] = 0
+        project_name = request.form.get('project_name', "New Project")
+        file = request.files['data_file']
+        if file is not None:
+            spreadsheet_array = spreadsheet.excel_to_array(file)
+            spreadsheet_transposed = np.transpose(spreadsheet_array)
+            spreadsheet_list = np.ndarray.tolist(spreadsheet_transposed)
+            spreadsheet_data = json.dumps(spreadsheet_list)
+        else:
+            spreadsheet_data = "<h1>No Data</h1>"
+        project_data = Project(name=project_name,
+                               data=spreadsheet_data,
+                               outputs="").generate_json_string()
+        file = database.new_file(project_name, project_data)
+        session["open_project"] = 0
         return render_project_list()
-
-    @app.route('/json/save/new_file', methods=['POST'])
-    @login_required
-    def json_save_new_file():
-        filename = "spreadsheet.xlsx"
-        filepath = os.path.join("temp", filename)
-        session["last_uploaded_file"] = filename
-
-        # Save Excel data to a file
-        data = request.get_json()['jsonData']
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        for col_idx, column in enumerate(data, start=1):
-            for row_idx, value in enumerate(column, start=1):
-                ws.cell(row=row_idx, column=col_idx, value=value)
-        wb.save(filepath)
-
-        return jsonify({"result": "ok", "filename": "filename"})
 
 
 def render_project_list():
