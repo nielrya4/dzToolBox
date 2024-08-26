@@ -180,21 +180,21 @@ def register(app):
             for sample in adjusted_samples:
                 for grain in sample.grains:
                     print(grain)
-            output_data = graph.generate_svg()
+            output_data = graph.generate_html(download_link=True)
             output_type = "graph"
         elif output_type == "pdp_graph":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="pdp")
-            output_data = graph.generate_svg()
+            output_data = graph.generate_html(download_link=True)
             output_type = "graph"
         elif output_type == "cdf_graph":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="cdf")
-            output_data = graph.generate_svg()
+            output_data = graph.generate_html(download_link=True)
             output_type = "graph"
         elif output_type == "similarity_matrix":
             matrix = Matrix(adjusted_samples, "similarity")
@@ -279,25 +279,25 @@ def register(app):
                           title=output_name,
                           stacked=False,
                           graph_type="sim_mds")
-            output_data = graph.generate_svg()
+            output_data = graph.generate_html(download_link=True)
         elif mds_type == "ks":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="ks_mds")
-            output_data = graph.generate_svg()
+            output_data = graph.generate_html(download_link=True)
         elif mds_type == "kuiper":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="kuiper_mds")
-            output_data = graph.generate_svg()
+            output_data = graph.generate_html(download_link=True)
         elif mds_type == "r2":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="r2_mds")
-            output_data = graph.generate_svg()
+            output_data = graph.generate_html(download_link=True)
 
         if get_all_outputs(project_content) is None:
             outputs = []

@@ -4,6 +4,7 @@ from utils import test
 from sklearn.manifold import MDS as MultidimensionalScaling
 import matplotlib.pyplot as plt
 from io import BytesIO
+import base64
 
 
 class Graph:
@@ -42,6 +43,15 @@ class Graph:
         plotted_graph = image_buffer.getvalue().decode("utf-8")
         plt.close(fig)
         return plotted_graph
+
+    def generate_html(self, download_link=False):
+        svg = self.generate_svg()
+        encoded_data = base64.b64encode(svg.encode('utf-8')).decode('utf-8')
+        if download_link:
+            html = f'<div><img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/> <br /> <a href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download SVG</a></div>'
+        else:
+            html = f'<div><img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/></div>'
+        return html
 
     def generate_pdf(self):
         fig = self.generate_fig()

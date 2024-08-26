@@ -1,4 +1,4 @@
-import urllib.parse
+import base64
 
 
 class Output:
@@ -9,8 +9,7 @@ class Output:
 
     def generate_html_data(self):
         if self.type == 'graph':
-            encoded_data = urllib.parse.quote(self.data)
-            return f'<img src="data:image/svg+xml;charset=utf-8,{encoded_data}"/>'
+            return f'<div>{self.data}</div>'
         elif self.type == 'matrix':
             return f'<div>{self.data}</div>'
         else:
