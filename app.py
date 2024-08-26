@@ -18,12 +18,6 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-with app.app_context():
-    db.create_all()
-
-route.register_routes(app)
-cleanup.start_cleanup()
-
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -37,6 +31,14 @@ class CodeFile(db.Model):
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
+
+
+
+with app.app_context():
+    db.create_all()
+
+route.register_routes(app)
+cleanup.start_cleanup()
 
 
 if __name__ == '__main__':
