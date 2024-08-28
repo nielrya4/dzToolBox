@@ -3,8 +3,8 @@
     <a id="new_mds" data-bs-toggle="modal" href="#mds_modal">MDS</a>
     <a id="new_unmix" data-bs-toggle="modal" href="#unmix_modal">Unmix</a>
     <a id="clear_outputs" style="float: right !important;" data-hx-post="/clear_outputs" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Clear Outputs</a>
+    <a id="project_settings" style="float: right !important;" data-bs-toggle="modal" href="#project_settings_modal">Project Settings</a>
     <button id="clear_outputs" style="display: none" type="button" data-hx-post="/clear_outputs" data-hx-target="#outputs_container" data-hx-swap="innerHTML"></button>
-
 </div>
 <script>
     const clear_btn = document.getElementById("clear_outputs")
@@ -12,4 +12,50 @@
     {
         clear_btn.click();
     }
+</script>
+
+<script>
+    const settings_btn = document.getElementById("project_settings")
+    settings_btn.addEventListener('click', function(){
+        const kde_bandwidth_textbox = document.getElementById("kde_bandwidth")
+        const show_links_select = document.getElementById('show_links');
+        const stack_graphs_select = document.getElementById('stack_graphs');
+        const n_trials_textbox = document.getElementById('n_trials');
+        fetch('/get_settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 'jsonData': null })
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json(); // Parse the response body as JSON
+            } else {
+                throw new Error('Error fetching settings');
+            }
+        })
+        .then(data => {
+            var project_settings = data.settings;
+
+            kde_bandwidth_textbox.value = project_settings["kde_bandwidth"];
+
+            if (project_settings["download_links"] === "true") {
+                show_links_select.selectedIndex = 0;
+            }
+            else if (project_settings["download_links"] === "false") {
+                show_links_select.selectedIndex = 1;
+            }
+
+            if (project_settings["stack_graphs"] === "true") {
+                stack_graphs_select.selectedIndex = 0;
+            }
+            else if (project_settings["stack_graphs"] === "false") {
+                stack_graphs_select.selectedIndex = 1;
+            }
+
+            n_trials_textbox.value = project_settings["n_trials"];
+        })
+        .catch(error => {
+            console.error('Error fetching sample names:', error);
+        });
+    });
 </script>

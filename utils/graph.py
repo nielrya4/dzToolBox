@@ -8,22 +8,24 @@ import base64
 
 
 class Graph:
-    def __init__(self, samples, title, graph_type, stacked=False, legend=True):
+    def __init__(self, samples, title, graph_type, stacked=False, legend=True, kde_bandwidth=10):
         self.samples = samples
         self.title = title
         self.graph_type = graph_type
         self.legend = legend
         self.stacked = stacked
+        self.kde_bandwidth = kde_bandwidth
 
     def generate_fig(self):
         gtype = self.graph_type
         stacked = self.stacked
         samples = self.samples
         title = self.title
+        kde_bandwidth = self.kde_bandwidth
         if gtype == 'kde':
-            return kde_graph(samples, title, stacked)
+            return kde_graph(samples, title, stacked=stacked, kde_bandwidth=kde_bandwidth)
         elif gtype == 'pdp':
-            return pdp_graph(samples, title, stacked)
+            return pdp_graph(samples, title, stacked=stacked)
         elif gtype == 'cdf':
             return cdf_graph(samples, title)
         elif gtype == 'sim_mds':
@@ -82,9 +84,9 @@ class Graph:
 
 
 # Graph functions that output ([x], [y]):
-def kde_function(sample, num_steps=1000, x_min=0, x_max=4000):
+def kde_function(sample, num_steps=1000, x_min=0, x_max=4000, kde_bandwidth=10):
     grains = sample.grains
-    sample.replace_bandwidth(10)
+    sample.replace_bandwidth(kde_bandwidth)
     bandwidths = np.abs([grain.uncertainty for grain in grains])
     mean_bandwidth = np.mean(bandwidths)
     ages = np.array([grain.age for grain in grains])
@@ -120,14 +122,14 @@ def pdp_function(sample, num_steps=1000, x_min=0, x_max=4000):
 
 
 # Graph functions that output a fig object
-def kde_graph(samples, title, stacked=False):
+def kde_graph(samples, title, stacked=False, kde_bandwidth=10):
     x_max = get_x_max(samples)
     x_min = get_x_min(samples)
     fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
     if not stacked:
         for i, sample in enumerate(samples):
             header = sample.name
-            x, y = kde_function(sample, x_max=x_max, x_min=x_min)
+            x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
             ax.plot(x, y, label=header)
             ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     else:
@@ -135,14 +137,14 @@ def kde_graph(samples, title, stacked=False):
             fig, ax = plt.subplots(nrows=1, figsize=(9, 6), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
-                x, y = kde_function(sample, x_max=x_max, x_min=x_min)
+                x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
                 ax[0, 0].plot(x, y, label=header)
                 ax[0, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
         else:
             fig, ax = plt.subplots(nrows=len(samples), figsize=(9, 6), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
-                x, y = kde_function(sample, x_max=x_max, x_min=x_min)
+                x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
                 ax[i, 0].plot(x, y, label=header)
                 ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
     fig.suptitle(title if not None else "Kernel Density Estimate")
@@ -193,11 +195,11 @@ def cdf_graph(samples, title):
     return fig
 
 
-def mds_graph(samples, title, mds_type):
+def mds_graph(samples, title, mds_type, kde_bandwidth=10):
     num_samples = len(samples)
     dissimilarity_matrix = np.zeros((num_samples, num_samples))
     sample_names = [sample.name for sample in samples]
-    sample_kdes = [kde_function(sample)[1] for sample in samples]
+    sample_kdes = [kde_function(sample, kde_bandwidth=kde_bandwidth)[1] for sample in samples]
     sample_cdfs = [cdf_function(sample)[1] for sample in samples]
 
     for i in range(num_samples):

@@ -2,16 +2,26 @@ import json
 
 
 class Project:
-    def __init__(self, name, data, outputs):
+
+    __default_settings = {
+        "kde_bandwidth": 10,
+        "download_links": "true",
+        "graphs_stacked": "false",
+        "n_trials": 10000
+    }
+
+    def __init__(self, name, data, outputs, settings=__default_settings):
         self.name = name
         self.data = data
         self.outputs = outputs
+        self.settings = settings
 
     def generate_json_string(self):
         json_data = {
             "project_name": self.name,
             "data": self.data,
-            "outputs": []
+            "outputs": [],
+            "default_settings": self.settings
         }
         for output in self.outputs:
             json_data["outputs"].append({
@@ -21,4 +31,7 @@ class Project:
             })
         json_string = json.dumps(json_data, indent=4)
         return json_string
+
+
+
 

@@ -117,6 +117,33 @@ def register(app):
                 return jsonify({"success": False, "error": str(e)})
         return jsonify({"sample_names": "failed"})
 
+    @app.route('/update_settings', methods=['POST'])
+    @login_required
+    def update_settings():
+        project_id = session.get("open_project", 0)
+        file = database.get_file(project_id)
+        project_content = file.content
+
+        data = request.get_json()
+        settings = {
+            "kde_bandwidth" : data['kde_bandwidth'],
+            "download_links" : data['download_links'],
+            "stack_graphs" : data['stack_graphs'],
+            "n_trials" : data['n_trials']
+        }
+        updated_project_content = set_project_settings(project_content, settings)
+        database.write_file(project_id, updated_project_content)
+        return jsonify({"result": "ok"})
+
+    @app.route('/get_settings', methods=['POST'])
+    @login_required
+    def get_settings():
+        project_id = session.get("open_project", 0)
+        file = database.get_file(project_id)
+        project_content = file.content
+        settings = get_project_settings(project_content)
+        return jsonify({"settings" : settings})
+
     @app.route('/delete_output', methods=['POST'])
     @login_required
     def del_output():
@@ -157,6 +184,7 @@ def register(app):
         file = database.get_file(project_id)
         project_content = file.content
         project_data = get_project_data(project_content)
+        project_settings = get_project_settings(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
 
@@ -173,10 +201,12 @@ def register(app):
             adjusted_samples.append(sample)
 
         if output_type == "kde_graph":
+            kde_bandwidth = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] else 0
             graph = Graph(samples=adjusted_samples,
                           title=output_name,
                           stacked=False,
-                          graph_type="kde")
+                          graph_type="kde",
+                          kde_bandwidth=kde_bandwidth)
             for sample in adjusted_samples:
                 for grain in sample.grains:
                     print(grain)
@@ -376,7 +406,16 @@ def get_all_outputs(json_string):
 def set_all_outputs(json_string, outputs):
     name = get_project_name(json_string)
     data = get_project_data(json_string)
-    updated_project = Project(name=name, data=data, outputs=outputs)
+    settings = get_project_settings(json_string)
+    updated_project = Project(name=name, data=data, outputs=outputs, settings=settings)
+    updated_project_content = updated_project.generate_json_string()
+    return updated_project_content
+
+def set_project_settings(json_string, settings):
+    name = get_project_name(json_string)
+    data = get_project_data(json_string)
+    outputs = get_all_outputs(json_string)
+    updated_project = Project(name=name, data=data, outputs=outputs, settings=settings)
     updated_project_content = updated_project.generate_json_string()
     return updated_project_content
 
@@ -416,6 +455,15 @@ def get_project_data(json_string):
         data = json.loads(json_string)
         project_data = data.get("data")
         return project_data
+    except Exception as e:
+        print(f"Error parsing JSON: {e}")
+        return None
+
+def get_project_settings(json_string):
+    try:
+        data = json.loads(json_string)
+        project_settings = data.get("default_settings")
+        return project_settings
     except Exception as e:
         print(f"Error parsing JSON: {e}")
         return None
