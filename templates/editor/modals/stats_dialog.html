@@ -10,7 +10,7 @@
                 <div class="container-sm">
                     <form id="output_form" data-hx-trigger="click">
                         <label for="output_name">Output Title</label>
-                        <input type="text" id="output_name" name="output_name" required>
+                        <input type="text" class="form-control" id="output_name" name="output_name" required>
                         <br />
                         <div id="sample_list" class="table_list">
                             <br />
@@ -46,47 +46,47 @@
                             </table>
                         </div>
                         <div class="table_list" id="graphs">
-                            <table>
-                                <tr>
-                                    <td>
-                                        <label for="graph_select">Select a Graph...</label>
-                                        <select name="graph_select" id="graph_select">
-                                            <option value="kde_graph">KDE</option>
-                                            <option value="pdp_graph">PDP</option>
-                                            <option value="cdf_graph">CDF</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-primary" type="button" onclick="send_args()">Create Graph</button>
-                                        <button class="btn btn-secondary" type="button" onclick="back()">Back</button>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div class="row text-nowrap align-items-end">
+                                <div class="col">
+                                    <label for="graph_select">Select a Graph...</label>
+                                    <select name="graph_select" class="form-select" id="graph_select">
+                                        <option value="kde_graph">KDE</option>
+                                        <option value="pdp_graph">PDP</option>
+                                        <option value="cdf_graph">CDF</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <button class="btn btn-primary" type="button" onclick="send_args()">Create Graph</button>
+                                </div>
+                                <div class="col">
+                                    <button class="btn btn-secondary" type="button" onclick="back()">Back</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="table_list" id="matrices">
-                            <table>
-                                <tr>
-                                    <td>
-                                        <label for="matrix_select">Select a Matrix...</label>
-                                        <select name="matrix_select" id="matrix_select">
-                                            <option value="similarity_matrix">Similarity</option>
-                                            <option value="likeness_matrix">Likeness</option>
-                                            <option value="ks_matrix">KS</option>
-                                            <option value="kuiper_matrix">Kuiper</option>
-                                            <option value="r2_matrix">R^2</option>
-                                            <option value="dis_similarity_matrix">Dissimilarity</option>
-                                            <option value="dis_likeness_matrix">Dislikeness</option>
-                                            <option value="dis_ks_matrix">Dis-KS</option>
-                                            <option value="dis_kuiper_matrix">Dis-Kuiper</option>
-                                            <option value="dis_r2_matrix">Dis-R2</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-primary" type="button" onclick="send_args()">Create Matrix</button>
-                                        <button class="btn btn-secondary" type="button" onclick="back()">Back</button>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div class="row text-nowrap align-items-end">
+                                <div class="col">
+                                    <label for="matrix_select">Select a Matrix...</label>
+                                    <select name="matrix_select" class="form-select" id="matrix_select">
+                                        <option value="similarity_matrix">Similarity</option>
+                                        <option value="likeness_matrix">Likeness</option>
+                                        <option value="ks_matrix">KS</option>
+                                        <option value="kuiper_matrix">Kuiper</option>
+                                        <option value="r2_matrix">R^2</option>
+                                        <option value="dis_similarity_matrix">Dissimilarity</option>
+                                        <option value="dis_likeness_matrix">Dislikeness</option>
+                                        <option value="dis_ks_matrix">Dis-KS</option>
+                                        <option value="dis_kuiper_matrix">Dis-Kuiper</option>
+                                        <option value="dis_r2_matrix">Dis-R2</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <button class="btn btn-primary" type="button" onclick="send_args()">Create Matrix</button>
+                                </div>
+                                <div class="col">
+                                    <button class="btn btn-secondary" type="button" onclick="back()">Back</button>
+                                </div>
+                            </div>
                         </div>
                         <button data-bs-toggle="modal" data-bs-target="#new_output_modal" name="send_it" id="send_it" style="display: none" type="button" data-hx-target="#outputs_container" data-hx-swap="innerHTML"></button>
                     </form>

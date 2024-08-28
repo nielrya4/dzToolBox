@@ -1,0 +1,71 @@
+<div id="project_settings_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Output</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="settings_form">
+                        <label for="kde_bandwidth">Default KDE Bandwidth</label>
+                        <input type="text" class="form-control" id="kde_bandwidth" name="kde_bandwidth" value="10" required>
+                        <label for="show_links">Show Download Links Under Images? </label>
+                        <select id="show_links" name="show_links" class="form-select" aria-label="Default select example">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                        <label for="stack_graphs">Stack Graph Subplots?</label>
+                        <select id="stack_graphs" name="stack_graphs" class="form-select" aria-label="Default select example">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                        <label for="n_trials">Default Unmixing Trials</label>
+                        <input type="text" class="form-control" id="n_trials" name="n_trials" required>
+                        <br />
+                        <button
+                                type="button"
+                                class = "btn btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#project_settings_modal"
+                                name="update_settings"
+                                id="update_settings"
+                        >Update Settings</button>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const update_btn = document.getElementById('update_settings')
+
+    update_btn.addEventListener('click', function () {
+        const kde_bandwidth_textbox = document.getElementById('kde_bandwidth');
+        const show_links_select = document.getElementById('show_links');
+        const stack_graphs_select = document.getElementById('stack_graphs');
+        const n_trials_textbox = document.getElementById('n_trials');
+
+        var settingsData = {
+            "kde_bandwidth" : parseInt(kde_bandwidth_textbox.value),
+            "download_links" : show_links_select.value,
+            "stack_graphs" : stack_graphs_select.value,
+            "n_trials" : parseInt(n_trials_textbox.value)
+        };
+        fetch('/update_settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settingsData)
+        }).then(response => {
+            if (response.ok) {
+                console.log('Settings updated successfully!');
+            } else {
+                console.error('Error updating settings');
+            }
+        }).catch(error => {
+            console.error('Error updating settings', error);
+        });
+    });
+</script>
