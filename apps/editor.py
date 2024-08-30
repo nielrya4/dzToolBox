@@ -188,6 +188,10 @@ def register(app):
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
 
+        kde_bandwidth_setting = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] is not None else 10
+        download_link_setting = project_settings["download_links"] == "true" if project_settings["download_links"] is not None else False
+        stack_graphs_setting = project_settings["stack_graphs"] == "true" if project_settings["stack_graphs"] is not None else False
+
         output_data = ""
         active_samples = []
         for sample in loaded_samples:
@@ -201,30 +205,30 @@ def register(app):
             adjusted_samples.append(sample)
 
         if output_type == "kde_graph":
-            kde_bandwidth = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] else 0
+            kde_bandwidth = kde_bandwidth_setting
             graph = Graph(samples=adjusted_samples,
                           title=output_name,
-                          stacked=False,
+                          stacked=stack_graphs_setting,
                           graph_type="kde",
                           kde_bandwidth=kde_bandwidth)
             for sample in adjusted_samples:
                 for grain in sample.grains:
                     print(grain)
-            output_data = graph.generate_html(download_link=True)
+            output_data = graph.generate_html(download_link=download_link_setting)
             output_type = "graph"
         elif output_type == "pdp_graph":
             graph = Graph(samples=active_samples,
                           title=output_name,
-                          stacked=False,
+                          stacked=stack_graphs_setting,
                           graph_type="pdp")
-            output_data = graph.generate_html(download_link=True)
+            output_data = graph.generate_html(download_link=download_link_setting)
             output_type = "graph"
         elif output_type == "cdf_graph":
             graph = Graph(samples=active_samples,
                           title=output_name,
-                          stacked=False,
+                          stacked=stack_graphs_setting,
                           graph_type="cdf")
-            output_data = graph.generate_html(download_link=True)
+            output_data = graph.generate_html(download_link=download_link_setting)
             output_type = "graph"
         elif output_type == "similarity_matrix":
             matrix = Matrix(adjusted_samples, "similarity")
@@ -294,8 +298,12 @@ def register(app):
         file = database.get_file(project_id)
         project_content = file.content
         project_data = get_project_data(project_content)
+        project_settings = get_project_settings(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
+
+        kde_bandwidth_setting = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] is not None else 10
+        download_link_setting = project_settings["download_links"] == "true" if project_settings["download_links"] is not None else False
 
         output_data = ""
         active_samples = []
@@ -308,26 +316,30 @@ def register(app):
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
-                          graph_type="sim_mds")
-            output_data = graph.generate_html(download_link=True)
+                          graph_type="sim_mds",
+                          kde_bandwidth=kde_bandwidth_setting)
+            output_data = graph.generate_html(download_link=download_link_setting)
         elif mds_type == "ks":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
-                          graph_type="ks_mds")
-            output_data = graph.generate_html(download_link=True)
+                          graph_type="ks_mds",
+                          kde_bandwidth=kde_bandwidth_setting)
+            output_data = graph.generate_html(download_link=download_link_setting)
         elif mds_type == "kuiper":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
-                          graph_type="kuiper_mds")
-            output_data = graph.generate_html(download_link=True)
+                          graph_type="kuiper_mds",
+                          kde_bandwidth=kde_bandwidth_setting)
+            output_data = graph.generate_html(download_link=download_link_setting)
         elif mds_type == "r2":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
-                          graph_type="r2_mds")
-            output_data = graph.generate_html(download_link=True)
+                          graph_type="r2_mds",
+                          kde_bandwidth=kde_bandwidth_setting)
+            output_data = graph.generate_html(download_link=download_link_setting)
 
         if get_all_outputs(project_content) is None:
             outputs = []
