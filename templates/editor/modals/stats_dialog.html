@@ -123,30 +123,30 @@
         graphs.style.display = "none";
     }
 
-function send_args() {
-    var selectedSamples = [];
-    var checkboxes = sampleList.getElementsByClassName("sample-checkbox");
-    for (var i = 0; i < checkboxes.length; i++) {
-        if (checkboxes[i].checked) {
-            selectedSamples.push(checkboxes[i].value);
+    function send_args() {
+        var selectedSamples = [];
+        var checkboxes = sampleList.getElementsByClassName("sample-checkbox");
+        for (var i = 0; i < checkboxes.length; i++) {
+            if (checkboxes[i].checked) {
+                selectedSamples.push(checkboxes[i].value);
+            }
         }
+        var outputType;
+        if (document.getElementById("graphs").style.display === "flex") {
+            outputType = document.getElementById("graph_select").value;
+        } else if (document.getElementById("matrices").style.display === "flex") {
+            outputType = document.getElementById("matrix_select").value;
+        }
+        var outputName = document.getElementById("output_name").value;
+        var queryString = "/new_output?samples=" + selectedSamples.join("&samples=") + "&output_type=" + outputType;
+        if (outputName !== "") {
+            queryString += "&output_name=" + outputName;
+        }
+        // Set the argument string as a parameter to the hx-params attribute
+        document.getElementById("send_it").setAttribute("data-hx-get", queryString);
+        htmx.process(document.getElementById("send_it"));
+        document.getElementById("send_it").click();
     }
-    var outputType;
-    if (document.getElementById("graphs").style.display === "flex") {
-        outputType = document.getElementById("graph_select").value;
-    } else if (document.getElementById("matrices").style.display === "flex") {
-        outputType = document.getElementById("matrix_select").value;
-    }
-    var outputName = document.getElementById("output_name").value;
-    var queryString = "/new_output?samples=" + selectedSamples.join("&samples=") + "&output_type=" + outputType;
-    if (outputName !== "") {
-        queryString += "&output_name=" + outputName;
-    }
-    // Set the argument string as a parameter to the hx-params attribute
-    document.getElementById("send_it").setAttribute("data-hx-get", queryString);
-    htmx.process(document.getElementById("send_it"));
-    document.getElementById("send_it").click();
-}
 
 
 </script>
