@@ -2,7 +2,6 @@ instance
 instance/site.db
 .idea
 temp
-temp/spreadsheet.xlsx
 venv
 dztoolbox.sock
 __pycache__
