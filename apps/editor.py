@@ -52,17 +52,6 @@ def register(app):
     @app.route('/json/save/spreadsheet', methods=['POST'])
     @login_required
     def json_save_spreadsheet():
-        filename = "spreadsheet.xlsx"
-        filepath = os.path.join("temp", filename)
-        session["last_uploaded_file"] = filename
-
-        data = request.get_json()['jsonData']
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        for col_idx, column in enumerate(data, start=1):
-            for row_idx, value in enumerate(column, start=1):
-                ws.cell(row=row_idx, column=col_idx, value=value)
-        wb.save(filepath)
         if session.get("open_project", 0) is not 0:
             json_data = request.get_json()['jsonData']
             project_id = session["open_project"]
@@ -93,17 +82,6 @@ def register(app):
     @app.route('/get_sample_names', methods=['POST'])
     @login_required
     def get_sample_names():
-        filename = "spreadsheet.xlsx"
-        filepath = os.path.join("temp", filename)
-        session["last_uploaded_file"] = filename
-
-        data = request.get_json()['jsonData']
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        for col_idx, column in enumerate(data, start=1):
-            for row_idx, value in enumerate(column, start=1):
-                ws.cell(row=row_idx, column=col_idx, value=value)
-        wb.save(filepath)
         if session.get("open_project", 0) != 0:
             json_data = request.get_json()['jsonData']
             project_id = session["open_project"]
