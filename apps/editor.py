@@ -101,7 +101,6 @@ def register(app):
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
         project_content = file.content
-
         data = request.get_json()
         settings = {
             "kde_bandwidth" : data['kde_bandwidth'],
