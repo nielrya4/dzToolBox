@@ -98,7 +98,7 @@ def register(app):
             try:
                 user = APP.User.query.filter_by(username=username).first()
             except Exception as e:
-                login_message = f"Error querying user by username. This means the connection with the database was a little whack. Just try again, as it usually works on the second or third attempt."
+                login_message = f"Error querying user by username. This means the connection with the database was a little whack. Check your internet connection. Just try again, as it usually works on the second or third attempt."
                 return render_template('init/login.html', login_message=login_message, current_user=current_user)
 
             if user and check_password_hash(user.password, password):

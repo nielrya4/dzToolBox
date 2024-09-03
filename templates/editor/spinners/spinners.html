@@ -1,0 +1,25 @@
+{% from "global/spinner.html" import spinner with context %}
+
+{{ spinner(id="new_output_spinner", message="Generating Output...") }}
+
+<script>
+    document.getElementById("send_it").addEventListener("click", function (){
+        show_output_spinner();
+    });
+    document.getElementById("send_it_mds").addEventListener("click", function (){
+        show_output_spinner();
+    });
+    document.getElementById("send_it_unmix").addEventListener("click", function (){
+        show_output_spinner();
+    });
+
+    function show_output_spinner() {
+        document.getElementById("new_output_spinner").classList.remove("hidden");
+        document.getElementById("new_output_spinner").classList.add("visible");
+    }
+
+    document.addEventListener("htmx:afterRequest", function() {
+        document.getElementById("new_output_spinner").classList.remove("visible");
+        document.getElementById("new_output_spinner").classList.add("hidden");
+    });
+</script>
