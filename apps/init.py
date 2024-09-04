@@ -47,7 +47,7 @@ def register(app):
             flash('Account created successfully. You can now log in.', 'success')
             return redirect(url_for('login'))
 
-        return render_template('init/signup.html')
+        return render_template('init/pages/signup.html')
 
     # Create Guest Account: Creates a temporary account, logs in, creates the first project, and redirects to the editor
     @app.route('/create_guest_account')
@@ -86,7 +86,7 @@ def register(app):
             flash('Your account has been deleted.', 'success')
             return redirect(url_for('login'))  # Redirect to the login page
 
-        return render_template('init/delete_account.html', current_user=current_user)
+        return render_template('init/pages/delete_account.html', current_user=current_user)
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
@@ -99,7 +99,7 @@ def register(app):
                 user = APP.User.query.filter_by(username=username).first()
             except Exception as e:
                 login_message = f"Error querying user by username. This means the connection with the database was a little whack. Check your internet connection. Just try again, as it usually works on the second or third attempt."
-                return render_template('init/login.html', login_message=login_message, current_user=current_user)
+                return render_template('init/pages/login.html', login_message=login_message, current_user=current_user)
 
             if user and check_password_hash(user.password, password):
                 login_user(user)
@@ -108,12 +108,12 @@ def register(app):
                 return redirect(url_for('projects'))
             else:
                 login_message = 'Login unsuccessful. Please check your username and password.'
-                return render_template('init/login.html', login_message=login_message, current_user=current_user)
+                return render_template('init/pages/login.html', login_message=login_message, current_user=current_user)
         else:
-            return render_template('init/login.html', current_user=current_user)
+            return render_template('init/pages/login.html', current_user=current_user)
 
     @app.route('/')
     def home():
         if current_user.is_authenticated:
             return redirect(url_for('projects'))
-        return render_template('init/home.html')
+        return render_template('init/pages/home.html')
