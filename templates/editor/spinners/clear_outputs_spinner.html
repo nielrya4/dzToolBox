@@ -1,0 +1,15 @@
+{% from "global/spinner.html" import spinner with context %}
+
+{{ spinner(id="clear_outputs_spinner", message="Clearing Outputs...") }}
+
+<script>
+    document.getElementById("clear_outputs").addEventListener("click", function (){
+        document.getElementById("clear_outputs_spinner").classList.remove("hidden");
+        document.getElementById("clear_outputs_spinner").classList.add("visible");
+    });
+
+    document.addEventListener("htmx:afterRequest", function() {
+        document.getElementById("clear_outputs_spinner").classList.remove("visible");
+        document.getElementById("clear_outputs_spinner").classList.add("hidden");
+    });
+</script>
