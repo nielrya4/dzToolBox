@@ -24,12 +24,13 @@
                 <input id="confirm_password" class="form-control" type="password" name="confirm_password" required>
             </div>
             <div class="col-md-2 mt-4">
-                <button class="btn btn-primary" type="submit">Sign Up</button>
+                <button id="signup_btn" class="btn btn-primary" type="submit">Sign Up</button>
             </div>
         </div>
     </form>
     <br />
     <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
     {% include 'global/footer.html' %}
+    {% include 'init/spinners/signup_spinner.html' %}
 </body>
 </html>
