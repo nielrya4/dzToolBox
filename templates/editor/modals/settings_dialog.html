@@ -11,9 +11,9 @@
                     <form id="settings_form">
                         <label for="kde_bandwidth">Default KDE Bandwidth</label>
                         <input type="text" class="form-control" id="kde_bandwidth" name="kde_bandwidth" value="10" required>
-                        <label for="show_links">Show Download Links Under Images? </label>
+                        <label for="show_links">Show Actions Button Under Images? </label>
                         <select id="show_links" name="show_links" class="form-select" aria-label="Default select example">
-                            <option value="true">Yes</option>
+                            <option value="true">Yes (Recommended)</option>
                             <option value="false">No</option>
                         </select>
                         <label for="stack_graphs">Stack Graph Subplots?</label>
@@ -50,7 +50,7 @@
 
         var settingsData = {
             "kde_bandwidth" : parseInt(kde_bandwidth_textbox.value),
-            "download_links" : show_links_select.value,
+            "actions_button" : show_links_select.value,
             "stack_graphs" : stack_graphs_select.value,
             "n_trials" : parseInt(n_trials_textbox.value)
         };

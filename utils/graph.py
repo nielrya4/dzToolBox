@@ -5,6 +5,7 @@ from sklearn.manifold import MDS as MultidimensionalScaling
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
+import secrets
 
 
 class Graph:
@@ -46,11 +47,23 @@ class Graph:
         plt.close(fig)
         return plotted_graph
 
-    def generate_html(self, download_link=False):
+    def generate_html(self, output_id, actions_button=False):
         svg = self.generate_svg()
         encoded_data = base64.b64encode(svg.encode('utf-8')).decode('utf-8')
-        if download_link:
-            html = f'<div><img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/> <br /> <a href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download SVG</a></div>'
+        if actions_button:
+            html = f"""
+                    <div>
+                        <img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/>
+                        <div class="dropdown show">
+                            <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="{output_id}_dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Actions
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="{output_id}_dropdown">
+                                <a class="dropdown-item" href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download SVG</a>
+                                <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Delete Output</a>
+                            </div>
+                        </div>
+                    </div>"""
         else:
             html = f'<div><img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/></div>'
         return html

@@ -5,7 +5,7 @@ class Project:
 
     __default_settings = {
         "kde_bandwidth": 10,
-        "download_links": "true",
+        "actions_button": "true",
         "graphs_stacked": "false",
         "n_trials": 10000
     }
@@ -25,7 +25,7 @@ class Project:
         }
         for output in self.outputs:
             json_data["outputs"].append({
-                "output_name": output.name,
+                "output_id": output.id,
                 "output_type": output.type,
                 "output_data": output.generate_html_data()
             })

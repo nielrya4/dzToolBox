@@ -7,6 +7,7 @@ from utils.output import Output
 import json
 import openpyxl
 import os
+import secrets
 from utils.graph import Graph
 from utils.matrix import Matrix
 from utils.project import Project
@@ -104,7 +105,7 @@ def register(app):
         data = request.get_json()
         settings = {
             "kde_bandwidth" : data['kde_bandwidth'],
-            "download_links" : data['download_links'],
+            "actions_button" : data['actions_button'],
             "stack_graphs" : data['stack_graphs'],
             "n_trials" : data['n_trials']
         }
@@ -121,13 +122,27 @@ def register(app):
         settings = get_project_settings(project_content)
         return jsonify({"settings" : settings})
 
-    @app.route('/delete_output', methods=['POST'])
+    @app.route('/delete_output/<string:output_id>', methods=['POST'])
     @login_required
-    def del_output():
-        output_name = request.form.get('output_name', '')
-        output_data = request.form.get('output_data', '')
-        graph_output = Output(output_name, "graph", output_data)
-        matrix_output = Output(output_name, "matrix", output_data)
+    def del_output(output_id):
+        project_id = session.get("open_project", 0)
+        file = database.get_file(project_id)
+        project_content = file.content
+        if get_all_outputs(project_content) is None:
+            outputs = []
+        else:
+            outputs = get_all_outputs(project_content)
+        for output in outputs:
+            if output.id == output_id:
+                outputs.remove(output)
+        updated_project_content = set_all_outputs(project_content, outputs)
+        database.write_file(project_id, updated_project_content)
+        project_outputs = get_all_outputs(updated_project_content)
+        return render_block(environment=environment,
+                            template_name="editor/editor.html",
+                            block_name="outputs",
+                            outputs_data=project_outputs)
+
 
     @app.route('/clear_outputs', methods=['POST'])
     @login_required
@@ -157,6 +172,8 @@ def register(app):
         sample_names = request.args.getlist('samples')
         output_type = request.args.get('output_type', '')
 
+        output_id = secrets.token_hex(15)
+
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
         project_content = file.content
@@ -166,7 +183,7 @@ def register(app):
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
 
         kde_bandwidth_setting = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] is not None else 10
-        download_link_setting = project_settings["download_links"] == "true" if project_settings["download_links"] is not None else False
+        actions_button_setting = project_settings["actions_button"] == "true" if project_settings["actions_button"] is not None else False
         stack_graphs_setting = project_settings["stack_graphs"] == "true" if project_settings["stack_graphs"] is not None else False
 
         output_data = ""
@@ -191,21 +208,21 @@ def register(app):
             for sample in adjusted_samples:
                 for grain in sample.grains:
                     print(grain)
-            output_data = graph.generate_html(download_link=download_link_setting)
+            output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "pdp_graph":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=stack_graphs_setting,
                           graph_type="pdp")
-            output_data = graph.generate_html(download_link=download_link_setting)
+            output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "cdf_graph":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=stack_graphs_setting,
                           graph_type="cdf")
-            output_data = graph.generate_html(download_link=download_link_setting)
+            output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "similarity_matrix":
             matrix = Matrix(adjusted_samples, "similarity")
@@ -252,8 +269,7 @@ def register(app):
             outputs = []
         else:
             outputs = get_all_outputs(project_content)
-
-        output = Output(output_name, output_type, output_data)
+        output = Output(output_id, output_type, output_data)
         outputs.append(output)
 
         updated_project_content = set_all_outputs(project_content, outputs)
@@ -270,6 +286,8 @@ def register(app):
         output_name = request.args.get('output_name', '')
         sample_names = request.args.getlist('samples')
         mds_type = request.args.get('mds_type', '')
+
+        output_id = secrets.token_hex(15)
 
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
@@ -295,35 +313,35 @@ def register(app):
                           stacked=False,
                           graph_type="sim_mds",
                           kde_bandwidth=kde_bandwidth_setting)
-            output_data = graph.generate_html(download_link=download_link_setting)
+            output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
         elif mds_type == "ks":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="ks_mds",
                           kde_bandwidth=kde_bandwidth_setting)
-            output_data = graph.generate_html(download_link=download_link_setting)
+            output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
         elif mds_type == "kuiper":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="kuiper_mds",
                           kde_bandwidth=kde_bandwidth_setting)
-            output_data = graph.generate_html(download_link=download_link_setting)
+            output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
         elif mds_type == "r2":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="r2_mds",
                           kde_bandwidth=kde_bandwidth_setting)
-            output_data = graph.generate_html(download_link=download_link_setting)
+            output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
 
         if get_all_outputs(project_content) is None:
             outputs = []
         else:
             outputs = get_all_outputs(project_content)
 
-        output = Output(output_name, 'graph', output_data)
+        output = Output(output_id, 'graph', output_data)
         outputs.append(output)
 
         updated_project_content = set_all_outputs(project_content, outputs)
@@ -382,10 +400,10 @@ def get_all_outputs(json_string):
         outputs = []
         data = json.loads(json_string)
         for output in data.get("outputs", []):
-            output_name = output.get("output_name")
+            output_id = output.get("output_id")
             output_type = output.get("output_type")
             output_data = output.get("output_data")
-            outputs.append(Output(output_name, output_type, output_data))
+            outputs.append(Output(output_id, output_type, output_data))
         return outputs
     except Exception as e:
         print(f"Error parsing JSON: {e}")
