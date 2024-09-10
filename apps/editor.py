@@ -359,6 +359,9 @@ def register(app):
         sample_names = request.args.getlist('samples')
         unmix_type = request.args.get('unmix_type', '')
 
+        output_ids = [secrets.token_hex(15), secrets.token_hex(15), secrets.token_hex(15)]
+
+
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
         project_content = file.content
@@ -372,16 +375,16 @@ def register(app):
                 if sample.name == sample_name:
                     active_samples.append(sample)
 
-        contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, num_trials=10000, test_type=unmix_type)
+        contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, output_ids, num_trials=10000, test_type=unmix_type)
 
         if get_all_outputs(project_content) is None:
             outputs = []
         else:
             outputs = get_all_outputs(project_content)
 
-        table_output = Output(output_name, 'matrix', contribution_table)
-        contribution_graph_output = Output(output_name, 'graph', contribution_graph)
-        trials_graph_output = Output(output_name, 'graph', trials_graph)
+        table_output = Output(output_ids[0], 'matrix', contribution_table)
+        contribution_graph_output = Output(output_ids[1], 'graph', contribution_graph)
+        trials_graph_output = Output(output_ids[2], 'graph', trials_graph)
         outputs.append(table_output)
         outputs.append(contribution_graph_output)
         outputs.append(trials_graph_output)

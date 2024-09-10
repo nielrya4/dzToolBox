@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve dztoolbox
+After=network.target
+
+[Service]
+User=webadmin
+Group=www-data
+WorkingDirectory=/home/webadmin/dztoolbox
+Environment="PATH=/home/webadmin/dztoolbox/venv/bin"
+ExecStart=/home/webadmin/dztoolbox/venv/bin/uwsgi --ini dztoolbox.ini
+
+[Install]
+WantedBy=multi-user.target

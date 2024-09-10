@@ -9,7 +9,7 @@
 <body style="padding: 1em; align-items: center;">
     <h1>Login</h1>
     <br />
-    <form method="post" action="{{ url_for('login') }}">
+    <form id="login_form" method="post" action="{{ url_for('login') }}">
         {% if login_message %}
             <h6 style="color:red;">{{ login_message }}</h6>
         {% endif %}
