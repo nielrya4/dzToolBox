@@ -9,7 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 import base64
 
 
-def do_monte_carlo(samples, num_trials=10000, test_type="r2"):
+def do_monte_carlo(samples, output_ids, num_trials=10000, test_type="r2"):
     sink_sample = samples[0]
     source_samples = samples[1:]
 
@@ -46,8 +46,8 @@ def do_monte_carlo(samples, num_trials=10000, test_type="r2"):
     source_std = np.std(random_configurations, axis=0) * 100
 
     contribution_table = build_contribution_table(source_samples, source_contributions, source_std, test_type=test_type)
-    contribution_graph = build_contribution_graph(source_samples, source_contributions, source_std, test_type=test_type, download_link=True)
-    top_trials_graph = build_top_trials_graph(sink_line, top_lines, download_link=True)
+    contribution_graph = build_contribution_graph(source_samples, source_contributions, source_std, output_ids[1], test_type=test_type, actions_button=True)
+    top_trials_graph = build_top_trials_graph(sink_line, top_lines, output_ids[2], actions_button=True)
     return contribution_table, contribution_graph, top_trials_graph
 
 
@@ -69,7 +69,7 @@ def build_contribution_table(samples, percent_contributions, standard_deviation,
     return output
 
 
-def build_contribution_graph(samples, percent_contributions, standard_deviations, test_type="r2", download_link=False):
+def build_contribution_graph(samples, percent_contributions, standard_deviations, output_id, test_type="r2", actions_button=False):
     sample_names = [sample.name for sample in samples]
     x = range(len(samples))
     y = percent_contributions
@@ -89,13 +89,25 @@ def build_contribution_graph(samples, percent_contributions, standard_deviations
     plt.close(fig)
 
     encoded_data = base64.b64encode(plotted_graph.encode('utf-8')).decode('utf-8')
-    if download_link:
-        html = f'<div><img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/> <br /> <a href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download SVG</a></div>'
+    if actions_button:
+        html = f"""
+                <div>
+                    <img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/>
+                    <div class="dropdown show">
+                        <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="{output_id}_dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="{output_id}_dropdown">
+                            <a class="dropdown-item" href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download SVG</a>
+                            <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Delete Output</a>
+                        </div>
+                    </div>
+                </div>"""
     else:
         html = f'<div><img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/></div>'
     return html
 
-def build_top_trials_graph(sink_line, model_lines, download_link=False):
+def build_top_trials_graph(sink_line, model_lines, output_id, actions_button=False):
     x = np.linspace(0, 4000, 1000).reshape(-1, 1)
     fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
     for i, model_kde in enumerate(model_lines):
@@ -112,8 +124,20 @@ def build_top_trials_graph(sink_line, model_lines, download_link=False):
     plt.close(fig)
 
     encoded_data = base64.b64encode(plotted_graph.encode('utf-8')).decode('utf-8')
-    if download_link:
-        html = f'<div><img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/> <br /> <a href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download SVG</a></div>'
+    if actions_button:
+        html = f"""
+                <div>
+                    <img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/>
+                    <div class="dropdown show">
+                        <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="{output_id}_dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="{output_id}_dropdown">
+                            <a class="dropdown-item" href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download SVG</a>
+                            <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Delete Output</a>
+                        </div>
+                    </div>
+                </div>"""
     else:
         html = f'<div><img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/></div>'
     return html
