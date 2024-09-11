@@ -2,6 +2,8 @@ from utils import test, graph
 import numpy as np
 import pandas as pd
 from io import BytesIO
+import base64
+import pyexcel as p
 
 
 
@@ -9,6 +11,7 @@ class Matrix:
     def __init__(self, samples, matrix_type):
         self.samples = samples
         self.matrix_type = matrix_type
+        self.data_frame = self.generate_data_frame(matrix_type=matrix_type)
 
     def generate_data_frame(self, row_labels=None, col_labels=None, matrix_type="similarity"):
         samples = self.samples
@@ -47,7 +50,6 @@ class Matrix:
                     cross_correlation_score = test.r2(sample1, sample2)
                     matrix[i, j] = cross_correlation_score
 
-        # Create a DataFrame with the normalized similarity scores and labels
         if row_labels is None:
             row_labels = [sample.name for sample in samples]
         if col_labels is None:
@@ -56,33 +58,57 @@ class Matrix:
         df = pd.DataFrame(matrix, columns=col_labels, index=row_labels)
         return df
 
-    def to_html(self):
-        data_frame = self.generate_data_frame(matrix_type=self.matrix_type)
-        html_data = data_frame.to_html(classes="table table-bordered table-striped", justify="center").replace('<th>','<th style = "background-color: White;">').replace('<td>','<td style = "background-color: White;">')
+    def to_html(self, output_id, actions_button=False):
+        data_frame = self.data_frame
+        xlsx_data = self.to_xlsx()
+        xls_data = self.to_xls()
+        csv_data = self.to_csv()
+
+        encoded_xlsx_data = base64.b64encode(xlsx_data.getvalue()).decode('utf-8')
+        encoded_xls_data = base64.b64encode(xls_data.getvalue()).decode('utf-8')
+        encoded_csv_data = base64.b64encode(csv_data.getvalue()).decode('utf-8')
+
+
+        html_data = "<div>"
+        html_data += data_frame.to_html(classes="table table-bordered table-striped", justify="center").replace('<th>','<th style = "background-color: White;">').replace('<td>','<td style = "background-color: White;">')
+        if actions_button:
+            html_data += f"""<div class="dropdown show">
+                                <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="{output_id}_dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Actions
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="{output_id}_dropdown">
+                                    <a class="dropdown-item" href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{encoded_xlsx_data}" download="file.xlsx">Download As XLSX</a>
+                                    <a class="dropdown-item" href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{encoded_xls_data}" download="file.xls">Download As XLS</a>
+                                    <a class="dropdown-item" href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{encoded_csv_data}" download="file.csv">Download As CSV</a>
+                                    <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Delete This Output</a>
+                                </div>
+                            </div>"""
+        html_data += "</div>"
         return html_data
 
     def to_xlsx(self):
         buffer = BytesIO()
-        xlsx_data = self.generate_data_frame(matrix_type=self.matrix_type)
+        xlsx_data = self.data_frame
         xlsx_data.to_excel(buffer, index=True, engine='openpyxl', header=True)
         buffer.seek(0)
         return buffer
 
     def to_xls(self):
         buffer = BytesIO()
-        xls_data = self.generate_data_frame(matrix_type=self.matrix_type)
-        xls_data.to_excel(buffer, index=True, engine='xlwt', header=True)
+        df = self.data_frame
+        records = df.reset_index().values.tolist()
+        p.save_as(array=records, dest_file_type='xls', dest_file_stream=buffer)
         buffer.seek(0)
         return buffer
 
     def to_csv(self):
         buffer = BytesIO()
-        csv_data = self.generate_data_frame(matrix_type=self.matrix_type)
+        csv_data = self.data_frame
         csv_data.to_csv(buffer, index=True, header=True)
         buffer.seek(0)
         return buffer
 
     def to_json(self):
-        json_data = self.generate_data_frame(matrix_type=self.matrix_type)
+        json_data = self.data_frame
         json_data.to_json()
         return json_data
