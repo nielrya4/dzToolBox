@@ -107,7 +107,7 @@ def register(app):
                 session["user_id"] = user.id
                 return redirect(url_for('projects'))
             else:
-                login_message = 'Login unsuccessful. Please check your username and password.'
+                login_message = f'Login unsuccessful. Please check your username and password.'
                 return render_template('init/pages/login.html', login_message=login_message, current_user=current_user)
         else:
             return render_template('init/pages/login.html', current_user=current_user)

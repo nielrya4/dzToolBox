@@ -20,7 +20,8 @@ def register(app):
     @login_required
     def projects():
         user_projects = database.get_all_files()
-        return render_template('project_browser/project_browser.html', user_projects=user_projects)
+        sorted_user_projects = sorted(user_projects, key=lambda x: str.lower(x.title))
+        return render_template('project_browser/project_browser.html', user_projects=sorted_user_projects)
 
     @app.route('/delete_project/<int:project_id>', methods=['POST'])
     @login_required
@@ -50,9 +51,10 @@ def register(app):
 
 def render_project_list():
     user_projects = database.get_all_files()
+    sorted_user_projects = sorted(user_projects, key=lambda x: str.lower(x.title))
     project_list_html = render_block(environment=environment,
                                      template_name="project_browser/project_browser.html",
                                      block_name="project_list",
-                                     user_projects=user_projects)
+                                     user_projects=sorted_user_projects)
     return project_list_html
 

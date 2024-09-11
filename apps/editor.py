@@ -39,7 +39,6 @@ def register(app):
                 samples_data.append([sample.name, active])
 
             project_outputs = get_all_outputs(project_content)
-            print(project_outputs)
             if not project_outputs:
                 project_outputs = [Output("Default", "graph", "<h1>No Outputs Yet</h1>")]
             return render_template("editor/editor.html",
@@ -61,7 +60,6 @@ def register(app):
                 for j, cell in enumerate(row):
                     if data[i][j] is not None:
                         if str(data[i][j]).strip() == '':
-                            print(data[i][j])
                             data[i][j] = None
                         elif is_float(data[i][j]):
                             data[i][j] = float(data[i][j].strip())
@@ -70,7 +68,6 @@ def register(app):
             try:
                 project_json = json.loads(project_content)
                 project_json["data"] = spreadsheet.array_to_text(data)
-                print(project_json["data"])
                 updated_project_content = json.dumps(project_json)
                 database.write_file(project_id, updated_project_content)
                 return jsonify({"success": True})
@@ -197,7 +194,7 @@ def register(app):
         for sample in active_samples:
             sample.replace_bandwidth(10)
             adjusted_samples.append(sample)
-
+        adjusted_samples.reverse()
         if output_type == "kde_graph":
             kde_bandwidth = kde_bandwidth_setting
             graph = Graph(samples=adjusted_samples,
@@ -205,9 +202,6 @@ def register(app):
                           stacked=stack_graphs_setting,
                           graph_type="kde",
                           kde_bandwidth=kde_bandwidth)
-            for sample in adjusted_samples:
-                for grain in sample.grains:
-                    print(grain)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "pdp_graph":
@@ -226,43 +220,43 @@ def register(app):
             output_type = "graph"
         elif output_type == "similarity_matrix":
             matrix = Matrix(adjusted_samples, "similarity")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "likeness_matrix":
             matrix = Matrix(adjusted_samples, "likeness")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "ks_matrix":
             matrix = Matrix(active_samples, "ks")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "kuiper_matrix":
             matrix = Matrix(active_samples, "kuiper")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "r2_matrix":
             matrix = Matrix(adjusted_samples, "r2")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_similarity_matrix":
             matrix = Matrix(adjusted_samples, "dissimilarity")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_likeness_matrix":
             matrix = Matrix(adjusted_samples, "similarity")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_ks_matrix":
             matrix = Matrix(active_samples, "similarity")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_kuiper_matrix":
             matrix = Matrix(active_samples, "similarity")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_r2_matrix":
             matrix = Matrix(adjusted_samples, "similarity")
-            output_data = matrix.to_html()
+            output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
 
         if get_all_outputs(project_content) is None:
@@ -298,7 +292,7 @@ def register(app):
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
 
         kde_bandwidth_setting = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] is not None else 10
-        download_link_setting = project_settings["download_links"] == "true" if project_settings["download_links"] is not None else False
+        actions_button_setting = project_settings["actions_button"] == "true" if project_settings["actions_button"] is not None else False
 
         output_data = ""
         active_samples = []

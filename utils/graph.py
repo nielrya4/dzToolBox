@@ -59,8 +59,8 @@ class Graph:
                                 Actions
                             </a>
                             <div class="dropdown-menu" aria-labelledby="{output_id}_dropdown">
-                                <a class="dropdown-item" href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download SVG</a>
-                                <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Delete Output</a>
+                                <a class="dropdown-item" href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download As SVG</a>
+                                <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Delete This Output</a>
                             </div>
                         </div>
                     </div>"""
@@ -115,8 +115,6 @@ def kde_function(sample, num_steps=1000, x_min=0, x_max=4000, kde_bandwidth=10):
 def cdf_function(sample):
     _, y_values = kde_function(sample)
     cdf_values = np.cumsum(y_values)
-    for val in cdf_values:
-        print(str(val) + "\n")
     return range(0, 1001), cdf_values
 
 

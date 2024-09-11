@@ -37,8 +37,7 @@ def do_monte_carlo(samples, output_ids, num_trials=10000, test_type="r2"):
         sorted_trials = sorted(trials, key=lambda x: x.test_val, reverse=True)
 
     top_trials = sorted_trials[:10]
-    for trial in top_trials:
-        print(trial.test_val)
+
     top_lines = [trial.model_line for trial in top_trials]
     random_configurations = [trial.random_configuration for trial in top_trials]
 
