@@ -102,6 +102,7 @@ def register(app):
         data = request.get_json()
         settings = {
             "kde_bandwidth" : data['kde_bandwidth'],
+            "matrix_function_type": data['matrix_function_type'],
             "actions_button" : data['actions_button'],
             "stack_graphs" : data['stack_graphs'],
             "n_trials" : data['n_trials']
@@ -182,6 +183,8 @@ def register(app):
         kde_bandwidth_setting = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] is not None else 10
         actions_button_setting = project_settings["actions_button"] == "true" if project_settings["actions_button"] is not None else False
         stack_graphs_setting = project_settings["stack_graphs"] == "true" if project_settings["stack_graphs"] is not None else False
+        matrix_function_type_setting = project_settings["matrix_function_type"] if project_settings["matrix_function_type"] is not None else "kde"
+
 
         output_data = ""
         active_samples = []
@@ -192,7 +195,8 @@ def register(app):
 
         adjusted_samples = []
         for sample in active_samples:
-            sample.replace_bandwidth(10)
+            if matrix_function_type_setting == "kde":
+                sample.replace_bandwidth(10)
             adjusted_samples.append(sample)
         adjusted_samples.reverse()
         if output_type == "kde_graph":
@@ -219,11 +223,11 @@ def register(app):
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "similarity_matrix":
-            matrix = Matrix(adjusted_samples, "similarity")
+            matrix = Matrix(adjusted_samples, "similarity", function_type=matrix_function_type_setting)
             output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "likeness_matrix":
-            matrix = Matrix(adjusted_samples, "likeness")
+            matrix = Matrix(adjusted_samples, "likeness", function_type=matrix_function_type_setting)
             output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "ks_matrix":
@@ -235,27 +239,27 @@ def register(app):
             output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "r2_matrix":
-            matrix = Matrix(adjusted_samples, "r2")
+            matrix = Matrix(adjusted_samples, "r2", function_type=matrix_function_type_setting)
             output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_similarity_matrix":
-            matrix = Matrix(adjusted_samples, "dissimilarity")
+            matrix = Matrix(adjusted_samples, "dissimilarity", function_type=matrix_function_type_setting)
             output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_likeness_matrix":
-            matrix = Matrix(adjusted_samples, "similarity")
+            matrix = Matrix(adjusted_samples, "similarity", function_type=matrix_function_type_setting)
             output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_ks_matrix":
-            matrix = Matrix(active_samples, "similarity")
+            matrix = Matrix(active_samples, "similarity", function_type=matrix_function_type_setting)
             output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_kuiper_matrix":
-            matrix = Matrix(active_samples, "similarity")
+            matrix = Matrix(active_samples, "similarity", function_type=matrix_function_type_setting)
             output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
         elif output_type == "dis_r2_matrix":
-            matrix = Matrix(adjusted_samples, "similarity")
+            matrix = Matrix(adjusted_samples, "similarity", function_type=matrix_function_type_setting)
             output_data = matrix.to_html(output_id, actions_button=actions_button_setting)
             output_type = "matrix"
 
@@ -293,6 +297,8 @@ def register(app):
 
         kde_bandwidth_setting = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] is not None else 10
         actions_button_setting = project_settings["actions_button"] == "true" if project_settings["actions_button"] is not None else False
+        matrix_function_type_setting = project_settings["matrix_function_type"] if project_settings["kde_bandwidth"] is not None else "kde"
+
 
         output_data = ""
         active_samples = []

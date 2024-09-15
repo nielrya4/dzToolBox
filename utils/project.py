@@ -5,6 +5,7 @@ class Project:
 
     __default_settings = {
         "kde_bandwidth": 10,
+        "matrix_function_type": "kde",
         "actions_button": "true",
         "graphs_stacked": "false",
         "n_trials": 10000
