@@ -21,7 +21,7 @@ def read_samples(spreadsheet_array):
                 uncertainty = row_data[i + 1] if i + 1 < len(row_data) else None  # Uncertainty is in the next column
                 if not (isinstance(uncertainty, float) or isinstance(uncertainty, int)):
                     uncertainty = None
-                if age is not None and uncertainty is not None:
+                if age is not None and uncertainty is not None and float(age) < 4500:
                     grains.append(Grain(float(age), float(uncertainty)))
             sample = Sample(sample_name, grains)
             samples.append(sample)
