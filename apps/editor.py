@@ -2,7 +2,7 @@ from flask import render_template, request, jsonify, session
 from flask_login import login_required, current_user
 from server import database
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from utils import spreadsheet, unmix
+from utils import spreadsheet, unmix, compression
 from utils.output import Output
 import json
 import openpyxl
@@ -27,9 +27,10 @@ def register(app):
         session["open_project"] = project_id
         file = database.get_file(project_id)
         project_content = file.content
+        decompressed_project = compression.decompress(project_content)
         project_author = f"<User {file.user_id}>"
         if str(project_author) == str(current_user):
-            project_data = get_project_data(project_content)
+            project_data = get_project_data(decompressed_project)
             spreadsheet_data = json.loads(project_data)
             loaded_samples = spreadsheet.read_samples(spreadsheet_data)
 
@@ -38,7 +39,7 @@ def register(app):
                 active = request.form.get(sample.name) == "true"
                 samples_data.append([sample.name, active])
 
-            project_outputs = get_all_outputs(project_content)
+            project_outputs = get_all_outputs(decompressed_project)
             if not project_outputs:
                 project_outputs = [Output("Default", "graph", "<h1>No Outputs Yet</h1>")]
             return render_template("editor/editor.html",
@@ -62,14 +63,15 @@ def register(app):
                         if str(data[i][j]).strip() == '':
                             data[i][j] = None
                         elif is_float(data[i][j]):
-                            data[i][j] = float(data[i][j].strip())
+                            data[i][j] = float(str(data[i][j]).strip())
             file = database.get_file(project_id)
-            project_content = file.content
+            project_content = compression.decompress(file.content)
             try:
                 project_json = json.loads(project_content)
                 project_json["data"] = spreadsheet.array_to_text(data)
                 updated_project_content = json.dumps(project_json)
-                database.write_file(project_id, updated_project_content)
+                compressed_proj_content = compression.compress(updated_project_content)
+                database.write_file(project_id, compressed_proj_content)
                 return jsonify({"success": True})
             except Exception as e:
                 print(f"Error updating project data: {e}")
@@ -98,7 +100,7 @@ def register(app):
     def update_settings():
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
-        project_content = file.content
+        project_content = compression.decompress(file.content)
         data = request.get_json()
         settings = {
             "kde_bandwidth" : data['kde_bandwidth'],
@@ -108,7 +110,8 @@ def register(app):
             "n_trials" : data['n_trials']
         }
         updated_project_content = set_project_settings(project_content, settings)
-        database.write_file(project_id, updated_project_content)
+        compressed_proj_content = compression.compress(updated_project_content)
+        database.write_file(project_id, compressed_proj_content)
         return jsonify({"result": "ok"})
 
     @app.route('/get_settings', methods=['POST'])
@@ -116,7 +119,7 @@ def register(app):
     def get_settings():
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
-        project_content = file.content
+        project_content = compression.decompress(file.content)
         settings = get_project_settings(project_content)
         return jsonify({"settings" : settings})
 
@@ -125,7 +128,7 @@ def register(app):
     def del_output(output_id):
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
-        project_content = file.content
+        project_content = compression.decompress(file.content)
         if get_all_outputs(project_content) is None:
             outputs = []
         else:
@@ -134,7 +137,8 @@ def register(app):
             if output.id == output_id:
                 outputs.remove(output)
         updated_project_content = set_all_outputs(project_content, outputs)
-        database.write_file(project_id, updated_project_content)
+        compressed_proj_content = compression.compress(updated_project_content)
+        database.write_file(project_id, compressed_proj_content)
         project_outputs = get_all_outputs(updated_project_content)
         return render_block(environment=environment,
                             template_name="editor/editor.html",
@@ -147,7 +151,7 @@ def register(app):
     def clear_outputs():
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
-        project_content = file.content
+        project_content = compression.decompress(file.content)
         if get_all_outputs(project_content) is None:
             outputs = []
         else:
@@ -156,7 +160,8 @@ def register(app):
         outputs.clear()
 
         updated_project_content = set_all_outputs(project_content, outputs)
-        database.write_file(project_id, updated_project_content)
+        compressed_proj_content = compression.compress(updated_project_content)
+        database.write_file(project_id, compressed_proj_content)
         project_outputs = get_all_outputs(updated_project_content)
         return render_block(environment=environment,
                             template_name="editor/editor.html",
@@ -174,7 +179,7 @@ def register(app):
 
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
-        project_content = file.content
+        project_content = compression.decompress(file.content)
         project_data = get_project_data(project_content)
         project_settings = get_project_settings(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
@@ -271,7 +276,8 @@ def register(app):
         outputs.append(output)
 
         updated_project_content = set_all_outputs(project_content, outputs)
-        database.write_file(project_id, updated_project_content)
+        compressed_proj_content = compression.compress(updated_project_content)
+        database.write_file(project_id, compressed_proj_content)
         project_outputs = get_all_outputs(updated_project_content)
         return render_block(environment=environment,
                             template_name="editor/editor.html",
@@ -289,7 +295,7 @@ def register(app):
 
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
-        project_content = file.content
+        project_content = compression.decompress(file.content)
         project_data = get_project_data(project_content)
         project_settings = get_project_settings(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
@@ -345,7 +351,8 @@ def register(app):
         outputs.append(output)
 
         updated_project_content = set_all_outputs(project_content, outputs)
-        database.write_file(project_id, updated_project_content)
+        compressed_proj_content = compression.compress(updated_project_content)
+        database.write_file(project_id, compressed_proj_content)
         project_outputs = get_all_outputs(updated_project_content)
         return render_block(environment=environment,
                             template_name="editor/editor.html",
@@ -364,7 +371,7 @@ def register(app):
 
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
-        project_content = file.content
+        project_content = compression.decompress(file.content)
         project_data = get_project_data(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
@@ -390,7 +397,8 @@ def register(app):
         outputs.append(trials_graph_output)
 
         updated_project_content = set_all_outputs(project_content, outputs)
-        database.write_file(project_id, updated_project_content)
+        compressed_proj_content = compression.compress(updated_project_content)
+        database.write_file(project_id, compressed_proj_content)
         project_outputs = get_all_outputs(updated_project_content)
         return render_block(environment=environment,
                             template_name="editor/editor.html",

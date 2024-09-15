@@ -7,7 +7,7 @@ class Project:
         "kde_bandwidth": 10,
         "matrix_function_type": "kde",
         "actions_button": "true",
-        "graphs_stacked": "false",
+        "stack_graphs": "false",
         "n_trials": 10000
     }
 

@@ -4,7 +4,7 @@ from server import database, files
 from jinja2_fragments import render_block
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from utils.project import Project
-from utils import spreadsheet
+from utils import spreadsheet, compression
 import numpy as np
 import json
 
@@ -44,7 +44,8 @@ def register(app):
         project_data = Project(name=project_name,
                                data=spreadsheet_data,
                                outputs="").generate_json_string()
-        file = database.new_file(project_name, project_data)
+        compressed_project = compression.compress(project_data)
+        file = database.new_file(project_name, compressed_project)
         session["open_project"] = 0
         return render_project_list()
 
