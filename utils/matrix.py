@@ -8,30 +8,32 @@ import pyexcel as p
 
 
 class Matrix:
-    def __init__(self, samples, matrix_type):
+    def __init__(self, samples, matrix_type, function_type="kde"):
         self.samples = samples
         self.matrix_type = matrix_type
-        self.data_frame = self.generate_data_frame(matrix_type=matrix_type)
+        self.function_type = function_type
+        self.data_frame = self.generate_data_frame(matrix_type=matrix_type, function_type=function_type)
 
-    def generate_data_frame(self, row_labels=None, col_labels=None, matrix_type="similarity"):
+    def generate_data_frame(self, row_labels=None, col_labels=None, matrix_type="similarity", function_type="kde"):
         samples = self.samples
         sample_kdes = [graph.kde_function(sample)[1] for sample in samples]
+        sample_pdps = [graph.pdp_function(sample)[1] for sample in samples]
         sample_cdfs = [graph.cdf_function(sample)[1] for sample in samples]
         num_data_sets = len(samples)
         matrix = np.zeros((num_data_sets, num_data_sets))
         if matrix_type == "similarity":
-            for i, sample1 in enumerate(sample_kdes):
-                for j, sample2 in enumerate(sample_kdes):
+            for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
+                for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                     similarity_score = test.similarity(sample1, sample2)
                     matrix[i, j] = similarity_score
         elif matrix_type == "dissimilarity":
-            for i, sample1 in enumerate(sample_kdes):
-                for j, sample2 in enumerate(sample_kdes):
+            for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
+                for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                     dissimilarity_score = test.dis_similarity(sample1, sample2)
                     matrix[i, j] = dissimilarity_score
         elif matrix_type == "likeness":
-            for i, sample1 in enumerate(sample_kdes):
-                for j, sample2 in enumerate(sample_kdes):
+            for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
+                for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                     likeness_score = test.likeness(sample1, sample2)
                     matrix[i, j] = likeness_score
         elif matrix_type == "ks":
@@ -45,8 +47,8 @@ class Matrix:
                     kuiper_score = test.kuiper(sample1, sample2)
                     matrix[i, j] = kuiper_score
         elif matrix_type == "r2":
-            for i, sample1 in enumerate(sample_kdes):
-                for j, sample2 in enumerate(sample_kdes):
+            for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
+                for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                     cross_correlation_score = test.r2(sample1, sample2)
                     matrix[i, j] = cross_correlation_score
 
