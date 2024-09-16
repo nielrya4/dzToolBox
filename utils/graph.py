@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 import secrets
+from scipy.interpolate import interp1d
+
 
 
 class Graph:
@@ -97,25 +99,40 @@ class Graph:
 
 
 # Graph functions that output ([x], [y]):
-def kde_function(sample, num_steps=1000, x_min=0, x_max=4000, kde_bandwidth=10):
-    grains = sample.grains
-    sample.replace_bandwidth(kde_bandwidth)
-    bandwidths = np.abs([grain.uncertainty for grain in grains])
-    mean_bandwidth = np.mean(bandwidths)
-    ages = np.array([grain.age for grain in grains])
-    x = np.linspace(x_min, x_max, num_steps).reshape(-1, 1)
-    kde = KernelDensity(bandwidth=mean_bandwidth, kernel='gaussian')
-    kde.fit(ages.reshape(-1, 1))
-    log_dens = kde.score_samples(x)
-    y = np.exp(log_dens)
-    y_normalized = y / np.sum(y)
-    return x.flatten(), y_normalized
+def kde_function(sample, num_steps=1000, x_min=0, x_max=4500, kde_bandwidth=10):
+    x = np.linspace(x_min, x_max, num_steps)
+    y = np.zeros_like(x)
+    ages = [grain.age for grain in sample.grains]
+    for i in range(len(ages)):
+        kernel_sum = np.zeros(num_steps)
+        s = kde_bandwidth
+        kernel_sum += (1.0 / (np.sqrt(2 * np.pi) * s)) * np.exp(-(x - float(ages[i])) ** 2 / (2 * float(s) ** 2))
+        kernel_sum /= np.sum(kernel_sum)
+        y += kernel_sum
+    y /= np.sum(y)
+    return x, y
 
 
-def cdf_function(sample):
-    _, y_values = kde_function(sample)
+def cdf_function(sample, min_age=0, max_age=4500, kde_bandwidth=10):
+    youngest_age = sample.get_youngest_grain().age
+    oldest_age = sample.get_oldest_grain().age
+    x_kde_values, y_values = kde_function(sample, x_min=youngest_age, x_max=oldest_age)
     cdf_values = np.cumsum(y_values)
-    return range(0, 1001), cdf_values
+    cdf_values = cdf_values / cdf_values[-1]
+    x_values = np.linspace(min_age, max_age, 1000)
+    x_combined = np.concatenate((
+        np.linspace(min_age, youngest_age, num=100),  # 0 to youngest age
+        x_kde_values,  # kde values between youngest and oldest ages
+        np.linspace(oldest_age, max_age, num=100)  # oldest age to 4500
+    ))
+    cdf_combined = np.concatenate((
+        np.zeros(100),  # CDF is 0 before youngest age
+        cdf_values,  # CDF from kde_function
+        np.ones(100)  # CDF is 1 after oldest age
+    ))
+    interpolator = interp1d(x_combined, cdf_combined, kind='linear', bounds_error=False, fill_value=(0, 1))
+    cdf_resampled = interpolator(x_values)
+    return x_values, cdf_resampled
 
 
 def pdp_function(sample, num_steps=1000, x_min=0, x_max=4000):
@@ -168,7 +185,7 @@ def kde_graph(samples, title, stacked=False, kde_bandwidth=10):
 def pdp_graph(samples, title, stacked=False):
     x_max = get_x_max(samples)
     x_min = get_x_min(samples)
-    fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+    fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
     if not stacked:
         for i, sample in enumerate(samples):
             header = sample.name
@@ -190,19 +207,26 @@ def pdp_graph(samples, title, stacked=False):
                 x, y = pdp_function(sample, x_max=x_max, x_min=x_min)
                 ax[i, 0].plot(x, y, label=header)
                 ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
-    fig.suptitle(title if not None else "Kernel Density Estimate")
-    fig.tight_layout()
+    fig.suptitle(title if not None else "Probability Density Plot")
+    fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=12)
+    fig.text(0.01, 0.5, 'Probability Differential', va='center', rotation='vertical', fontsize=12)
+    fig.tight_layout(rect=[0.025, 0.025, 0.975, 1])
     return fig
 
 
-def cdf_graph(samples, title):
-    fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+def cdf_graph(samples, title=None):
+    x_max = get_x_max(samples)
+    x_min = get_x_min(samples)
+    fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
+    samples.reverse()
     for sample in samples:
-        header = sample.name
-        bins_count, cdf_values = cdf_function(sample)
-        ax.plot(bins_count[1:], cdf_values, label=header)
-    ax.set_title(title if title is not None else "Cumulative Distribution Function")
+        header = sample.name  # Get sample name for labeling
+        x_values, cdf_values = cdf_function(sample, min_age=x_min, max_age=x_max)  # Get x-values and CDF
+        ax.plot(x_values, cdf_values, label=header)
+    ax.set_title(title if title else "Cumulative Distribution Function")
+    ax.set_xlabel("Age (Ma)")  # x-axis represents age
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    plt.tight_layout()
     return fig
 
 

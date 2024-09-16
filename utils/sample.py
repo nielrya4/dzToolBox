@@ -8,6 +8,13 @@ class Sample:
             grain.uncertainty = new_bandwidth
         return self
 
+    def get_oldest_grain(self):
+        grains = sorted(self.grains, key=lambda grain: grain.age, reverse=True)
+        return grains[0]
+
+    def get_youngest_grain(self):
+        grains = sorted(self.grains, key=lambda grain: grain.age, reverse=False)
+        return grains[0]
 
 class Grain:
     def __init__(self, age, uncertainty):
