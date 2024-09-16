@@ -62,7 +62,7 @@ class Graph:
                             </a>
                             <div class="dropdown-menu" aria-labelledby="{output_id}_dropdown">
                                 <a class="dropdown-item" href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download As SVG</a>
-                                <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Delete This Output</a>
+                                <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML" onclick="show_delete_output_spinner();">Delete This Output</a>
                             </div>
                         </div>
                     </div>"""
