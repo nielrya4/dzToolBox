@@ -1,0 +1,15 @@
+{% from "global/spinner.html" import spinner with context %}
+
+{{ spinner(id="delete_output_spinner", message="Deleting Output...") }}
+
+<script>
+    function show_delete_output_spinner(){
+        document.getElementById("delete_output_spinner").classList.remove("hidden");
+        document.getElementById("delete_output_spinner").classList.add("visible");
+    }
+
+    document.addEventListener("htmx:afterRequest", function() {
+        document.getElementById("delete_output_spinner").classList.remove("visible");
+        document.getElementById("delete_output_spinner").classList.add("hidden");
+    });
+</script>

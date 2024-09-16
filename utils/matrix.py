@@ -82,7 +82,7 @@ class Matrix:
                                     <a class="dropdown-item" href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{encoded_xlsx_data}" download="file.xlsx">Download As XLSX</a>
                                     <a class="dropdown-item" href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{encoded_xls_data}" download="file.xls">Download As XLS</a>
                                     <a class="dropdown-item" href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{encoded_csv_data}" download="file.csv">Download As CSV</a>
-                                    <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Delete This Output</a>
+                                    <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML" onclick="show_delete_output_spinner();">Delete This Output</a>
                                 </div>
                             </div>"""
         html_data += "</div>"
