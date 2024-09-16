@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 import secrets
 from utils.project import Project
 from server import database
-from utils import spreadsheet
+from utils import spreadsheet, compression
 
 environment = Environment(
     loader=FileSystemLoader("templates"),
@@ -69,7 +69,8 @@ def register(app):
         project_data = Project(name=project_name,
                                data=spreadsheet_data,
                                outputs="").generate_json_string()
-        file = database.new_file(project_name, project_data)
+        compressed_project = compression.compress(project_data)
+        file = database.new_file(project_name, compressed_project)
         session["open_project"] = file.id
         return redirect(f"/projects/{file.id}")
 
