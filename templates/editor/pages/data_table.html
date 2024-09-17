@@ -27,10 +27,13 @@
     }
 
     function saveData(jsonData) {
+        const jsonString = JSON.stringify(jsonData);
+        const compressedDataArray = pako.deflate(jsonString);
+        const compressedData = uint8ArrayToBase64(compressedDataArray);
         fetch('/json/save/spreadsheet', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 'jsonData': jsonData })
+            body: JSON.stringify({ 'compressedData': compressedData })
         }).then(response => {
             if (response.ok) {
                 console.log('Data saved successfully!');
@@ -41,11 +44,18 @@
             console.error('Error saving data:', error);
         });
     }
+    function uint8ArrayToBase64(uint8Array) {
+        let binary = '';
+        const len = uint8Array.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+        }
+        return window.btoa(binary);
+    }
 
     // Common event handler for buttons
     function handleButtonClick(event) {
-        var jsonData = { data: hot.getData() };
-        getSampleNames(jsonData);
+        getSampleNames();
     }
 
     // Add event listeners to buttons
@@ -55,11 +65,11 @@
         button.addEventListener('click', handleButtonClick);
     });
 
-    function getSampleNames(jsonData) {
+    function getSampleNames() {
         fetch('/get_sample_names', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 'jsonData': jsonData })
+            body: JSON.stringify({ 'jsonData': null })
         })
         .then(response => {
             if (response.ok) {

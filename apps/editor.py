@@ -5,13 +5,13 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from utils import spreadsheet, unmix, compression
 from utils.output import Output
 import json
-import openpyxl
-import os
+import zlib
 import secrets
 from utils.graph import Graph
 from utils.matrix import Matrix
 from utils.project import Project
 from jinja2_fragments import render_block
+import base64
 
 
 environment = Environment(
@@ -49,24 +49,30 @@ def register(app):
         else:
             return render_template("errors/403.html")
 
-
     @app.route('/json/save/spreadsheet', methods=['POST'])
     @login_required
     def json_save_spreadsheet():
-        if session.get("open_project", 0) is not 0:
-            json_data = request.get_json()['jsonData']
-            project_id = session["open_project"]
-            data = json_data.get("data", 0)
-            for i, row in enumerate(data):
-                for j, cell in enumerate(row):
-                    if data[i][j] is not None:
-                        if str(data[i][j]).strip() == '':
-                            data[i][j] = None
-                        elif is_float(data[i][j]):
-                            data[i][j] = float(str(data[i][j]).strip())
-            file = database.get_file(project_id)
-            project_content = compression.decompress(file.content)
+        if session.get("open_project", 0) != 0:
             try:
+                compressed_data = request.get_json().get('compressedData', '')
+                if not compressed_data:
+                    return jsonify({"success": False, "error": "No compressed data provided"})
+                compressed_data_bytes = base64.b64decode(compressed_data)
+                decompressed_data = zlib.decompress(compressed_data_bytes).decode('utf-8')
+                json_data = json.loads(decompressed_data)
+                project_id = session["open_project"]
+                data = json_data.get("data", [])
+                if not isinstance(data, list) or not all(isinstance(row, list) for row in data):
+                    raise ValueError("Data is not in the expected list of lists format.")
+                for i, row in enumerate(data):
+                    for j, cell in enumerate(row):
+                        if cell is not None:
+                            if str(cell).strip() == '':
+                                data[i][j] = None
+                            elif is_float(cell):
+                                data[i][j] = float(str(cell).strip())
+                file = database.get_file(project_id)
+                project_content = compression.decompress(file.content)
                 project_json = json.loads(project_content)
                 project_json["data"] = spreadsheet.array_to_text(data)
                 updated_project_content = json.dumps(project_json)
@@ -83,11 +89,13 @@ def register(app):
     @login_required
     def get_sample_names():
         if session.get("open_project", 0) != 0:
-            json_data = request.get_json()['jsonData']
-            project_id = session["open_project"]
-            data = json_data.get("data", 0)
+            project_id = session.get("open_project", 0)
+            file = database.get_file(project_id)
+            project_content = compression.decompress(file.content)
+            project_data = get_project_data(project_content)
+            spreadsheet_data = spreadsheet.text_to_array(project_data)
             try:
-                samples = spreadsheet.read_samples(data)
+                samples = spreadsheet.read_samples(spreadsheet_data)
                 sample_names = [sample.name for sample in samples]
                 return jsonify({"sample_names": sample_names})
             except Exception as e:
