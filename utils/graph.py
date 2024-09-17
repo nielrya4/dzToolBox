@@ -30,7 +30,7 @@ class Graph:
         elif gtype == 'pdp':
             return pdp_graph(samples, title, stacked=stacked)
         elif gtype == 'cdf':
-            return cdf_graph(samples, title)
+            return cdf_graph(samples, title, stacked=stacked)
         elif gtype == 'sim_mds':
             return mds_graph(samples, title, 'similarity')
         elif gtype == 'ks_mds':
@@ -169,7 +169,7 @@ def kde_graph(samples, title, stacked=False, kde_bandwidth=10):
                 ax[0, 0].plot(x, y, label=header)
                 ax[0, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
         else:
-            fig, ax = plt.subplots(nrows=len(samples), figsize=(9, 6), dpi=100, squeeze=False)
+            fig, ax = plt.subplots(nrows=len(samples), figsize=(9, 7), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
                 x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
@@ -194,14 +194,14 @@ def pdp_graph(samples, title, stacked=False):
             ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     else:
         if len(samples) == 1:
-            fig, ax = plt.subplots(nrows=1, figsize=(8, 6), dpi=100, squeeze=False)
+            fig, ax = plt.subplots(nrows=1, figsize=(9, 6), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
                 x, y = pdp_function(sample, x_max=x_max, x_min=x_min)
                 ax[0, 0].plot(x, y, label=header)
                 ax[0, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
         else:
-            fig, ax = plt.subplots(nrows=len(samples), figsize=(8, 6), dpi=100, squeeze=False)
+            fig, ax = plt.subplots(nrows=len(samples), figsize=(9, 7), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
                 x, y = pdp_function(sample, x_max=x_max, x_min=x_min)
@@ -214,19 +214,34 @@ def pdp_graph(samples, title, stacked=False):
     return fig
 
 
-def cdf_graph(samples, title=None):
+def cdf_graph(samples, title=None, stacked=False):
     x_max = get_x_max(samples)
     x_min = get_x_min(samples)
-    fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
-    samples.reverse()
-    for sample in samples:
-        header = sample.name  # Get sample name for labeling
-        x_values, cdf_values = cdf_function(sample, min_age=x_min, max_age=x_max)  # Get x-values and CDF
-        ax.plot(x_values, cdf_values, label=header)
-    ax.set_title(title if title else "Cumulative Distribution Function")
-    ax.set_xlabel("Age (Ma)")  # x-axis represents age
-    ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
-    plt.tight_layout()
+
+    if not stacked:
+        # Create a single subplot
+        fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
+        samples.reverse()
+        for sample in samples:
+            header = sample.name  # Get sample name for labeling
+            x_values, cdf_values = cdf_function(sample, min_age=x_min, max_age=x_max)  # Get x-values and CDF
+            ax.plot(x_values, cdf_values, label=header)
+        ax.set_title(title if title else "Cumulative Distribution Function")
+        ax.set_xlabel("Age (Ma)")  # x-axis represents age
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+    else:
+        # Stack the plots in subplots, one for each sample
+        fig, ax = plt.subplots(nrows=len(samples), figsize=(9, 7), dpi=100, squeeze=False)
+        samples.reverse()
+        for i, sample in enumerate(samples):
+            header = sample.name  # Get sample name for labeling
+            x_values, cdf_values = cdf_function(sample, min_age=x_min, max_age=x_max)  # Get x-values and CDF
+            ax[i, 0].plot(x_values, cdf_values, label=header)
+            ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
+            ax[i, 0].set_xlabel("Age (Ma)")
+
+    fig.tight_layout(rect=[0.025, 0.025, 0.975, 1])
     return fig
 
 
