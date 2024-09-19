@@ -33,6 +33,8 @@ class Graph:
             return cdf_graph(samples, title, stacked=stacked)
         elif gtype == 'sim_mds':
             return mds_graph(samples, title, 'similarity')
+        elif gtype == 'like_mds':
+            return mds_graph(samples, title, 'likeness')
         elif gtype == 'ks_mds':
             return mds_graph(samples, title, 'ks')
         elif gtype == 'kuiper_mds':
@@ -227,7 +229,6 @@ def cdf_graph(samples, title=None, stacked=False):
             x_values, cdf_values = cdf_function(sample, min_age=x_min, max_age=x_max)  # Get x-values and CDF
             ax.plot(x_values, cdf_values, label=header)
         ax.set_title(title if title else "Cumulative Distribution Function")
-        ax.set_xlabel("Age (Ma)")  # x-axis represents age
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
 
     else:
@@ -239,8 +240,7 @@ def cdf_graph(samples, title=None, stacked=False):
             x_values, cdf_values = cdf_function(sample, min_age=x_min, max_age=x_max)  # Get x-values and CDF
             ax[i, 0].plot(x_values, cdf_values, label=header)
             ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
-            ax[i, 0].set_xlabel("Age (Ma)")
-
+    fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=12)
     fig.tight_layout(rect=[0.025, 0.025, 0.975, 1])
     return fig
 
@@ -256,10 +256,12 @@ def mds_graph(samples, title, mds_type, kde_bandwidth=10):
         for j in range(i + 1, num_samples):
             if mds_type == 'similarity':
                 dissimilarity_matrix[i, j] = test.dis_similarity(sample_kdes[i], sample_kdes[j])
+            elif mds_type == 'likeness':
+                dissimilarity_matrix[i, j] = test.dis_likeness(sample_cdfs[i], sample_cdfs[j])
             elif mds_type == 'ks':
-                dissimilarity_matrix[i, j] = test.dis_ks(sample_cdfs[i], sample_cdfs[j])
+                dissimilarity_matrix[i, j] = test.ks(sample_cdfs[i], sample_cdfs[j])
             elif mds_type == 'kuiper':
-                dissimilarity_matrix[i, j] = test.dis_kuiper(sample_cdfs[i], sample_cdfs[j])
+                dissimilarity_matrix[i, j] = test.kuiper(sample_cdfs[i], sample_cdfs[j])
             elif mds_type == 'r2':
                 dissimilarity_matrix[i, j] = test.dis_r2(sample_kdes[i], sample_kdes[j])
             dissimilarity_matrix[j, i] = dissimilarity_matrix[i, j]
@@ -285,6 +287,8 @@ def mds_graph(samples, title, mds_type, kde_bandwidth=10):
             if i != j:  # Exclude the sample itself
                 if mds_type == 'similarity':
                     dissimilarity = test.dis_similarity(sample_kdes[i], sample_kdes[j])
+                elif mds_type == 'likeness':
+                    dissimilarity = test.dis_likeness(sample_cdfs[i], sample_cdfs[j])
                 elif mds_type == 'ks':
                     dissimilarity = test.dis_ks(sample_cdfs[i], sample_cdfs[j])
                 elif mds_type == 'kuiper':

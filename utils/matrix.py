@@ -6,7 +6,6 @@ import base64
 import pyexcel as p
 
 
-
 class Matrix:
     def __init__(self, samples, matrix_type, function_type="kde"):
         self.samples = samples
@@ -16,6 +15,8 @@ class Matrix:
 
     def generate_data_frame(self, row_labels=None, col_labels=None, matrix_type="similarity", function_type="kde"):
         samples = self.samples
+        if matrix_type == "ks" or matrix_type == "kuiper":
+            samples.reverse()
         sample_kdes = [graph.kde_function(sample)[1] for sample in samples]
         sample_pdps = [graph.pdp_function(sample)[1] for sample in samples]
         sample_cdfs = [graph.cdf_function(sample)[1] for sample in samples]
@@ -25,32 +26,32 @@ class Matrix:
             for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                 for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                     similarity_score = test.similarity(sample1, sample2)
-                    matrix[i, j] = similarity_score
+                    matrix[i, j] = np.round(similarity_score, 2)
         elif matrix_type == "dissimilarity":
             for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                 for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                     dissimilarity_score = test.dis_similarity(sample1, sample2)
-                    matrix[i, j] = dissimilarity_score
+                    matrix[i, j] = np.round(dissimilarity_score, 2)
         elif matrix_type == "likeness":
             for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                 for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                     likeness_score = test.likeness(sample1, sample2)
-                    matrix[i, j] = likeness_score
+                    matrix[i, j] = np.round(likeness_score, 2)
         elif matrix_type == "ks":
             for i, sample1 in enumerate(sample_cdfs):
                 for j, sample2 in enumerate(sample_cdfs):
                     ks_score = test.ks(sample1, sample2)
-                    matrix[i, j] = ks_score
+                    matrix[i, j] = np.round(ks_score, 2)
         elif matrix_type == "kuiper":
             for i, sample1 in enumerate(sample_cdfs):
                 for j, sample2 in enumerate(sample_cdfs):
                     kuiper_score = test.kuiper(sample1, sample2)
-                    matrix[i, j] = kuiper_score
+                    matrix[i, j] = np.round(kuiper_score, 2)
         elif matrix_type == "r2":
             for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                 for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
                     cross_correlation_score = test.r2(sample1, sample2)
-                    matrix[i, j] = cross_correlation_score
+                    matrix[i, j] = np.round(cross_correlation_score, 2)
 
         if row_labels is None:
             row_labels = [sample.name for sample in samples]
