@@ -328,6 +328,13 @@ def register(app):
                           graph_type="sim_mds",
                           kde_bandwidth=kde_bandwidth_setting)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
+        elif mds_type == "likeness":
+            graph = Graph(samples=active_samples,
+                          title=output_name,
+                          stacked=False,
+                          graph_type="like_mds",
+                          kde_bandwidth=kde_bandwidth_setting)
+            output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
         elif mds_type == "ks":
             graph = Graph(samples=active_samples,
                           title=output_name,
