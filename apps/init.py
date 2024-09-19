@@ -1,5 +1,8 @@
+import os.path
+
 from flask import render_template, request, redirect, url_for, flash, session
 from flask_login import login_user, login_required, logout_user, current_user
+from sqlalchemy.dialects.postgresql import array
 from werkzeug.security import generate_password_hash, check_password_hash
 import app as APP
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -65,7 +68,10 @@ def register(app):
         login_user(user)
         session["user_id"] = user.id
         project_name = "Default Project"
-        spreadsheet_data = spreadsheet.array_to_text([[None] * 6] * 6)
+        spreadsheet_file = os.path.join('static', 'global', 'docs', 'complex_synthetic.xlsx')
+        spreadsheet_array = spreadsheet.excel_to_array(spreadsheet_file)
+        transposed_array = [[spreadsheet_array[j][i] for j in range(len(spreadsheet_array))] for i in range(len(spreadsheet_array[0]))]
+        spreadsheet_data = spreadsheet.array_to_text(transposed_array)
         project_data = Project(name=project_name,
                                data=spreadsheet_data,
                                outputs="").generate_json_string()
