@@ -1,6 +1,23 @@
 <h1 style="text-align: center">dzToolBox</h1>
+<a href="https://www.dztoolbox.com">Try it out</a>
 <h3 style="text-align: center">Web-based tools for data analysis and interpretation for detrital zircon</h3>
 <h5 style="text-align: center">Developed by Ryan Nielsen in conjunction with Kurt Sundell</h5>
+
+<p>Download this code by running:
+
+```bash
+git clone https://www.github.com/nielrya4/dztoolbox.git
+```
+And run it locally with the following:
+```bash
+cd dztoolbox
+. venv/bin/activate
+cd setup/linux
+./setup.sh
+./setup/linux/run_local.sh
+```
+
+</p>
 <br />
 <br />
 <h3 style="text-align: center">How to navigate this code:</h3>
@@ -37,19 +54,3 @@ In the "scripts" folder are javascript files that control
 how the app behaves. All the functions that control the app,
 that don't need to be done by the server, are included here.
 </p>
-
-<h5>Todo:</h5>
-<p>Implement full dzMix functionality. Make it take up less CPU. Still need to 
-develop KS and Kuiper tests instead of just R^2. Implement deleting individual outputs.</p>
-
-<p>Finish writing the following files:</p>
-<ul>
-    <li style="color:cyan;">/apps</li>
-    <ul>
-        <li>editor.py</li>
-    </ul>
-    <li style="color:cyan;">/utils</li>
-    <ul>
-        <li>unmix.py</li>
-    </ul>
-</ul>
