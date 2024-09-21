@@ -26,5 +26,6 @@ if [ ! -d "venv" ]; then
 else
     echo "Virtual environment already exists."
 fi
+pwd
 . venv/bin/activate
 pip install -r requirements.txt
