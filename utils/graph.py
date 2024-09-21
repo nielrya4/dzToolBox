@@ -290,9 +290,9 @@ def mds_graph(samples, title, mds_type, kde_bandwidth=10):
                 elif mds_type == 'likeness':
                     dissimilarity = test.dis_likeness(sample_cdfs[i], sample_cdfs[j])
                 elif mds_type == 'ks':
-                    dissimilarity = test.dis_ks(sample_cdfs[i], sample_cdfs[j])
+                    dissimilarity = test.ks(sample_cdfs[i], sample_cdfs[j])
                 elif mds_type == 'kuiper':
-                    dissimilarity = test.dis_kuiper(sample_cdfs[i], sample_cdfs[j])
+                    dissimilarity = test.kuiper(sample_cdfs[i], sample_cdfs[j])
                 elif mds_type == 'r2':
                     dissimilarity = test.dis_r2(sample_kdes[i], sample_kdes[j])
                 else:
