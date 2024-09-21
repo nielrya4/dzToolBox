@@ -1,8 +1,7 @@
-from flask import render_template, request, redirect, url_for, flash, session
-from flask_login import UserMixin, login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import render_template, send_from_directory
+from flask_login import login_required
 import app as APP
-from jinja2_fragments import render_block
+import os
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 environment = Environment(
@@ -18,3 +17,8 @@ def register(app):
     @login_required
     def docs():
         return render_template("docs/docs.html")
+
+    @app.route('/gsa_poster.pdf', methods=['GET', 'POST'])
+    def gsa_poster():
+        return send_from_directory(os.path.join(app.root_path, 'static'), 'docs/poster_final.pdf',
+                                   mimetype='application/pdf')
