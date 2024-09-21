@@ -1,8 +1,100 @@
 <h1 style="text-align: center">dzToolBox</h1>
-<a href="https://www.dztoolbox.com">Try it out</a>
 <h3 style="text-align: center">Web-based tools for data analysis and interpretation for detrital zircon</h3>
 <h5 style="text-align: center">Developed by Ryan Nielsen in conjunction with Kurt Sundell</h5>
-
+<a href="https://www.dztoolbox.com">Try it out</a>
+<h3>Features:</h3>
+<p>(See <a href="https://www.dztoolbox.com/gsa_poster.pdf">my GSA poster</a> for more information!)</p>
+<ul>
+    <li>
+        <h5>Stats</h5>
+        <ul>
+            <li>
+                Graphs
+                <ul>
+                    <li>KDE (Kernel Density Estimate)</li>
+                    <li>PDP (Probability Density Function)</li>
+                    <li>CDF (Cumulative Distribution Function)</li>
+                </ul>
+            </li>
+            <li>
+                Matrices based on the following metrics:
+                <ul>
+                    <li>Similarity</li>
+                    <li>Likeness</li>
+                    <li>Cross-Correlation</li>
+                    <li>KS Test</li>
+                    <li>Kuiper Test</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+    <li>
+        <h5>MDS</h5>
+        <p>MDS plots based on the following metrics:</p>
+        <ul>
+            <li>Similarity</li>
+            <li>Likeness</li>
+            <li>Cross-Correlation</li>
+            <li>KS Test</li>
+            <li>Kuiper Test</li>
+        </ul>
+    </li>
+    <li>
+        <h5>Unmix</h5>
+        <ul>
+            <li>
+                <p>Unmixing using the metrics:</p>
+                <ul>
+                    <li>Cross-Correlation</li>
+                    <li>KS Test</li>
+                    <li>Kuiper Test</li>
+                </ul>
+            </li>
+            <li>
+                <p>Generate the outputs:</p>
+                <ul>
+                    <li>Relative Contribution Table</li>
+                    <li>Relative Contribution Graph</li>
+                    <li>Top Trials Graph</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+</ul>
+<h3>To Do:</h3>
+<ul>
+    <li>
+        <h5>Project Settings</h5>
+        <ul>
+            <li>Font Size</li>
+            <li>Graph Color Scheme</li>
+            <li>X and Y Labels</li>
+            <li>Editable Age Range</li>
+            <li>Figure Dimensions</li>
+        </ul>
+    </li>
+    <li>
+        <h5>Project Browser</h5>
+        <ul>
+            <li>Rename Project</li>
+        </ul>
+    </li>
+    <li>
+        <h5>Editor</h5>
+        <ul>
+            <li>Add More Spreadsheets</li>
+        </ul>
+    </li>
+    <li>
+        <h5>Future Directions</h5>
+        <ul>
+            <li>MDA</li>
+            <li>NMF</li>
+            <li>Multivariate Data Interpretation and Visualization</li>
+        </ul>
+    </li>
+</ul>
+<br />
 <p>Download this code by running:
 
 ```bash
@@ -16,11 +108,9 @@ cd setup/linux
 ./setup.sh
 ./setup/linux/run_local.sh
 ```
-
 </p>
 <br />
-<br />
-<h3 style="text-align: center">How to navigate this code:</h3>
+<h3>How to navigate this code:</h3>
 <h5>Python Code:</h5>
 <p>The main app routes are found in the "apps" folder. 
 They handle all requests from the frontend to the server 
@@ -54,3 +144,5 @@ In the "scripts" folder are javascript files that control
 how the app behaves. All the functions that control the app,
 that don't need to be done by the server, are included here.
 </p>
+
+
