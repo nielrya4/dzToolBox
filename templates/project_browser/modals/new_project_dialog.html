@@ -15,19 +15,29 @@
                         </div>
                         <br />
                         <div class="row">
-                            <label for="data_file">Import Data</label>
-                            <input class="form-control" type="file" id="data_file" name="data_file" accept=".xlsx, .xls, .csv" required hx-validate="true">
+                            <label for="data_file">Import Data (Optional)</label>
+                            <input class="form-control" type="file" id="data_file" name="data_file" accept=".xlsx, .xls, .csv" hx-validate="true">
                         </div>
                         <br />
                         <div class="row">
                             <div>
-                                <button class="btn btn-primary" id="create_new_project" type="post" data-bs-toggle="modal" data-bs-target="#new_project_modal">Create New Project</button>
+                                <button class="btn btn-primary" id="create_new_project" type="post">Create New Project</button>
                             </div>
                         </div>
                         <br />
                     </form>
+                    <button id="modal_hide_button" type="button" style="display: none" data-bs-toggle="modal" data-bs-target="#new_project_modal"></button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<script>
+    const create_proj_btn = document.getElementById("create_new_project")
+    const modal_hide_btn = document.getElementById("modal_hide_button")
+    const new_proj_form = document.getElementById("new_project_form")
+    new_proj_form.addEventListener('submit', function (){
+        modal_hide_btn.click();
+    });
+
+</script>

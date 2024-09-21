@@ -33,14 +33,14 @@ def register(app):
     @login_required
     def new_project():
         project_name = request.form.get('project_name', "New Project")
-        file = request.files['data_file']
+        file = request.files.get('data_file', None)
         if file is not None:
             spreadsheet_array = spreadsheet.excel_to_array(file)
             spreadsheet_transposed = np.transpose(spreadsheet_array)
             spreadsheet_list = np.ndarray.tolist(spreadsheet_transposed)
             spreadsheet_data = json.dumps(spreadsheet_list)
         else:
-            spreadsheet_data = "<h1>No Data</h1>"
+            spreadsheet_data = json.dumps(np.ndarray.tolist(np.array([[None]*6]*6)))
         project_data = Project(name=project_name,
                                data=spreadsheet_data,
                                outputs="").generate_json_string()
