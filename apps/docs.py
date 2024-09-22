@@ -14,7 +14,6 @@ def register(app):
     db = APP.db
 
     @app.route('/docs')
-    @login_required
     def docs():
         return render_template("docs/docs.html")
 
