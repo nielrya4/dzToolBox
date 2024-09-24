@@ -9,13 +9,21 @@
                 <br />
                 <div class="container-sm">
                     <form id="settings_form">
+                        <h6 style="text-align: center;">Data Settings:</h6>
+                        <label for="min_age">Minimum Age</label>
+                        <input type="number" class="form-control" id="min_age" name="min_age" value="0" required>
+                        <label for="max_age">Maximum Age</label>
+                        <input type="number" class="form-control" id="max_age" name="max_age" value="4500" required>
                         <label for="kde_bandwidth">Default KDE Bandwidth</label>
-                        <input type="text" class="form-control" id="kde_bandwidth" name="kde_bandwidth" value="10" required>
+                        <input type="number" class="form-control" id="kde_bandwidth" name="kde_bandwidth" value="10" required>
+                        <label for="n_trials">Default Unmixing Trials</label>
+                        <input type="number" class="form-control" id="n_trials" name="n_trials" required>
                         <label for="matrix_function_type">Function To Use While Generating Matrices</label>
                         <select id="matrix_function_type" name="matrix_function_type" class="form-select" aria-label="Default select example">
                             <option value="kde">KDE (Recommended)</option>
                             <option value="pdp">PDP</option>
                         </select>
+                        <h6 style="text-align: center;">Graph Settings:</h6>
                         <label for="show_links">Show Actions Button Under Images? </label>
                         <select id="show_links" name="show_links" class="form-select" aria-label="Default select example">
                             <option value="true">Yes (Recommended)</option>
@@ -26,8 +34,6 @@
                             <option value="true">Yes</option>
                             <option value="false">No</option>
                         </select>
-                        <label for="n_trials">Default Unmixing Trials</label>
-                        <input type="text" class="form-control" id="n_trials" name="n_trials" required>
                         <label for="graph_color_map">Graph Colormap</label>
                         <select id="graph_color_map" name="graph_color_map" class="form-select" aria-label="Default select example">
                             <option value="plasma">Plasma</option>
@@ -48,11 +54,11 @@
                             <option value="halant" style="font-family: 'halant', sans-serif">Halant</option>
                         </select>
                         <label for="font_size">Font Size</label>
-                        <input type="text" class="form-control" id="font_size" name="font_size" value="12" required>
+                        <input type="number" class="form-control" id="font_size" name="font_size" value="12" required>
                         <label for="figure_width">Figure Width</label>
-                        <input type="text" class="form-control" id="figure_width" name="figure_width" value="9" required>
+                        <input type="number" class="form-control" id="figure_width" name="figure_width" value="9" required>
                         <label for="figure_height">Figure Height</label>
-                        <input type="text" class="form-control" id="figure_height" name="figure_height" value="7" required>
+                        <input type="number" class="form-control" id="figure_height" name="figure_height" value="7" required>
                         <br />
                         <button
                                 type="button"
@@ -79,20 +85,26 @@
         const stack_graphs_select = document.getElementById('stack_graphs');
         const n_trials_textbox = document.getElementById('n_trials');
         const graph_color_map = document.getElementById('graph_color_map')
+        const font_select = document.getElementById('graph_font')
+        const font_size = document.getElementById('font_size')
+        const figure_width = document.getElementById('figure_width')
+        const figure_height = document.getElementById('figure_height')
+        const min_age = document.getElementById('min_age')
+        const max_age = document.getElementById('max_age')
 
         var settingsData = {
-            "kde_bandwidth" : parseInt(kde_bandwidth_textbox.value),
-            "min_age": 0,
-            "max_age": 4500,
+            "kde_bandwidth" : parseFloat(kde_bandwidth_textbox.value),
+            "min_age": parseFloat(min_age.value),
+            "max_age": parseFloat(max_age.value),
             "matrix_function_type" : matrix_function_type_select.value,
             "actions_button" : show_links_select.value,
             "stack_graphs" : stack_graphs_select.value,
             "n_trials" : parseInt(n_trials_textbox.value),
             "graph_figure_settings": {
-                "font_size": 12,
-                "font_name": "Ubuntu",
-                "figure_width": 9,
-                "figure_height": 7,
+                "font_size": parseFloat(font_size.value),
+                "font_name": font_select.value,
+                "figure_width": parseInt(figure_width.value),
+                "figure_height": parseInt(figure_height.value),
                 "graph_color_map": graph_color_map.value
             }
         };

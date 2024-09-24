@@ -17,13 +17,18 @@
 <script>
     const settings_btn = document.getElementById("project_settings")
     settings_btn.addEventListener('click', function(){
-        const kde_bandwidth_textbox = document.getElementById("kde_bandwidth")
-        const matrix_function_type_select = document.getElementById('matrix_function_type')
-        const show_links_select = document.getElementById('show_links')
-        const stack_graphs_select = document.getElementById('stack_graphs')
-        const n_trials_textbox = document.getElementById('n_trials')
+        const kde_bandwidth_textbox = document.getElementById('kde_bandwidth');
+        const matrix_function_type_select = document.getElementById('matrix_function_type');
+        const show_links_select = document.getElementById('show_links');
+        const stack_graphs_select = document.getElementById('stack_graphs');
+        const n_trials_textbox = document.getElementById('n_trials');
         const graph_color_map_select = document.getElementById('graph_color_map')
-
+        const font_select = document.getElementById('graph_font')
+        const font_size = document.getElementById('font_size')
+        const figure_width = document.getElementById('figure_width')
+        const figure_height = document.getElementById('figure_height')
+        const min_age = document.getElementById('min_age')
+        const max_age = document.getElementById('max_age')
         fetch('/get_settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -40,6 +45,12 @@
             var project_settings = data.settings;
 
             kde_bandwidth_textbox.value = project_settings["kde_bandwidth"];
+            n_trials_textbox.value = project_settings["n_trials"];
+            font_size.value = project_settings["graph_figure_settings"]["font_size"]
+            figure_width.value = project_settings["graph_figure_settings"]["figure_width"]
+            figure_height.value = project_settings["graph_figure_settings"]["figure_height"]
+            min_age.value = project_settings["min_age"]
+            max_age.value = project_settings["max_age"]
 
             if (project_settings["actions_button"] === "true") {
                 show_links_select.selectedIndex = 0;
@@ -47,6 +58,7 @@
             else if (project_settings["actions_button"] === "false") {
                 show_links_select.selectedIndex = 1;
             }
+
             if (project_settings["matrix_function_type"] === "kde") {
                 matrix_function_type_select.selectedIndex = 0;
             }
@@ -68,13 +80,38 @@
             else if (project_settings["graph_figure_settings"]["graph_color_map"] === "cividis") {
                 graph_color_map_select.selectedIndex = 4;
             }
+
+            if (project_settings["graph_figure_settings"]["font_name"] === "ubuntu") {
+                font_select.selectedIndex = 0;
+            }
+            else if (project_settings["graph_figure_settings"]["font_name"] === "ibm_plex_mono") {
+                font_select.selectedIndex = 1;
+            }
+            else if (project_settings["graph_figure_settings"]["font_name"] === "geologica") {
+                font_select.selectedIndex = 2;
+            }
+            else if (project_settings["graph_figure_settings"]["font_name"] === "proza_libre") {
+                font_select.selectedIndex = 3;
+            }
+            else if (project_settings["graph_figure_settings"]["font_name"] === "open_sans") {
+                font_select.selectedIndex = 4;
+            }
+            else if (project_settings["graph_figure_settings"]["font_name"] === "public_sans") {
+                font_select.selectedIndex = 5;
+            }
+            else if (project_settings["graph_figure_settings"]["font_name"] === "source_sans") {
+                font_select.selectedIndex = 6;
+            }
+            else if (project_settings["graph_figure_settings"]["font_name"] === "halant") {
+                font_select.selectedIndex = 7;
+            }
+
             if (project_settings["stack_graphs"] === "true") {
                 stack_graphs_select.selectedIndex = 0;
             }
             else if (project_settings["stack_graphs"] === "false") {
                 stack_graphs_select.selectedIndex = 1;
             }
-            n_trials_textbox.value = project_settings["n_trials"];
         })
         .catch(error => {
             console.error('Error fetching sample names:', error);

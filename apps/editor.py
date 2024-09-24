@@ -109,8 +109,7 @@ def register(app):
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
-        data = request.get_json()
-        settings = data
+        settings = request.get_json()
         updated_project_content = set_project_settings(project_content, settings)
         compressed_proj_content = compression.compress(updated_project_content)
         database.write_file(project_id, compressed_proj_content)
@@ -192,7 +191,10 @@ def register(app):
         stack_graphs_setting = project_settings["stack_graphs"] == "true" if project_settings["stack_graphs"] is not None else False
         matrix_function_type_setting = project_settings["matrix_function_type"] if project_settings["matrix_function_type"] is not None else "kde"
         color_map = project_settings["graph_figure_settings"]["graph_color_map"] if project_settings["graph_figure_settings"]["graph_color_map"] is not None else "plasma"
-
+        font_size = project_settings["graph_figure_settings"]["font_size"] if project_settings["graph_figure_settings"]["font_size"] is not None else 12
+        font_name = project_settings["graph_figure_settings"]["font_name"] if project_settings["graph_figure_settings"]["font_name"] is not None else "ubuntu"
+        figure_width = project_settings["graph_figure_settings"]["figure_width"] if project_settings["graph_figure_settings"]["figure_width"] is not None else 9
+        figure_height = project_settings["graph_figure_settings"]["figure_height"] if project_settings["graph_figure_settings"]["figure_height"] is not None else 7
 
         output_data = ""
         active_samples = []
