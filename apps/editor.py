@@ -110,13 +110,7 @@ def register(app):
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
         data = request.get_json()
-        settings = {
-            "kde_bandwidth" : data['kde_bandwidth'],
-            "matrix_function_type": data['matrix_function_type'],
-            "actions_button" : data['actions_button'],
-            "stack_graphs" : data['stack_graphs'],
-            "n_trials" : data['n_trials']
-        }
+        settings = data
         updated_project_content = set_project_settings(project_content, settings)
         compressed_proj_content = compression.compress(updated_project_content)
         database.write_file(project_id, compressed_proj_content)
@@ -197,6 +191,7 @@ def register(app):
         actions_button_setting = project_settings["actions_button"] == "true" if project_settings["actions_button"] is not None else False
         stack_graphs_setting = project_settings["stack_graphs"] == "true" if project_settings["stack_graphs"] is not None else False
         matrix_function_type_setting = project_settings["matrix_function_type"] if project_settings["matrix_function_type"] is not None else "kde"
+        color_map = project_settings["graph_figure_settings"]["graph_color_map"] if project_settings["graph_figure_settings"]["graph_color_map"] is not None else "plasma"
 
 
         output_data = ""
@@ -218,21 +213,24 @@ def register(app):
                           title=output_name,
                           stacked=stack_graphs_setting,
                           graph_type="kde",
-                          kde_bandwidth=kde_bandwidth)
+                          kde_bandwidth=kde_bandwidth,
+                          color_map=color_map)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "pdp_graph":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=stack_graphs_setting,
-                          graph_type="pdp")
+                          graph_type="pdp",
+                          color_map=color_map)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "cdf_graph":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=stack_graphs_setting,
-                          graph_type="cdf")
+                          graph_type="cdf",
+                          color_map=color_map)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "similarity_matrix":
@@ -312,7 +310,7 @@ def register(app):
         kde_bandwidth_setting = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] is not None else 10
         actions_button_setting = project_settings["actions_button"] == "true" if project_settings["actions_button"] is not None else False
         matrix_function_type_setting = project_settings["matrix_function_type"] if project_settings["kde_bandwidth"] is not None else "kde"
-
+        color_map = project_settings["graph_figure_settings"]["graph_color_map"] if project_settings["graph_figure_settings"]["graph_color_map"] is not None else "plasma"
 
         output_data = ""
         active_samples = []
@@ -326,35 +324,40 @@ def register(app):
                           title=output_name,
                           stacked=False,
                           graph_type="sim_mds",
-                          kde_bandwidth=kde_bandwidth_setting)
+                          kde_bandwidth=kde_bandwidth_setting,
+                          color_map=color_map)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
         elif mds_type == "likeness":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="like_mds",
-                          kde_bandwidth=kde_bandwidth_setting)
+                          kde_bandwidth=kde_bandwidth_setting,
+                          color_map=color_map)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
         elif mds_type == "ks":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="ks_mds",
-                          kde_bandwidth=kde_bandwidth_setting)
+                          kde_bandwidth=kde_bandwidth_setting,
+                          color_map=color_map)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
         elif mds_type == "kuiper":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="kuiper_mds",
-                          kde_bandwidth=kde_bandwidth_setting)
+                          kde_bandwidth=kde_bandwidth_setting,
+                          color_map=color_map)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
         elif mds_type == "r2":
             graph = Graph(samples=active_samples,
                           title=output_name,
                           stacked=False,
                           graph_type="r2_mds",
-                          kde_bandwidth=kde_bandwidth_setting)
+                          kde_bandwidth=kde_bandwidth_setting,
+                          color_map=color_map)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
 
         if get_all_outputs(project_content) is None:

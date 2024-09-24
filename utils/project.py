@@ -5,10 +5,19 @@ class Project:
 
     __default_settings = {
         "kde_bandwidth": 10,
+        "min_age": 0,
+        "max_age": 4500,
         "matrix_function_type": "kde",
         "actions_button": "true",
         "stack_graphs": "false",
-        "n_trials": 10000
+        "n_trials": 10000,
+        "graph_figure_settings": {
+            "font_size": 12,
+            "font_name": "Ubuntu",
+            "figure_width": 9,
+            "figure_height": 7,
+            "graph_color_map": "viridis"
+        }
     }
 
     def __init__(self, name, data, outputs, settings=__default_settings):

@@ -28,6 +28,31 @@
                         </select>
                         <label for="n_trials">Default Unmixing Trials</label>
                         <input type="text" class="form-control" id="n_trials" name="n_trials" required>
+                        <label for="graph_color_map">Graph Colormap</label>
+                        <select id="graph_color_map" name="graph_color_map" class="form-select" aria-label="Default select example">
+                            <option value="plasma">Plasma</option>
+                            <option value="viridis">Viridis</option>
+                            <option value="inferno">Inferno</option>
+                            <option value="magma">Magma</option>
+                            <option value="cividis">Cividis</option>
+                        </select>
+                        <label for="graph_font">Graph Font</label>
+                        <select id="graph_font" name="graph_font" class="form-select" aria-label="Default select example">
+                            <option value="ubuntu" style="font-family: 'ubuntu', sans-serif">Ubuntu</option>
+                            <option value="ibm_plex_mono" style="font-family: 'ibm_plex_mono', sans-serif">IBM Plex Mono</option>
+                            <option value="geologica" style="font-family: 'geologica', sans-serif">Geologica</option>
+                            <option value="proza_libre" style="font-family: 'proza_libre', sans-serif">Proza Libre</option>
+                            <option value="open_sans" style="font-family: 'open_sans', sans-serif">Open Sans</option>
+                            <option value="public_sans" style="font-family: 'public_sans', sans-serif">Public Sans</option>
+                            <option value="source_sans" style="font-family: 'source_sans', sans-serif">Source Sans</option>
+                            <option value="halant" style="font-family: 'halant', sans-serif">Halant</option>
+                        </select>
+                        <label for="font_size">Font Size</label>
+                        <input type="text" class="form-control" id="font_size" name="font_size" value="12" required>
+                        <label for="figure_width">Figure Width</label>
+                        <input type="text" class="form-control" id="figure_width" name="figure_width" value="9" required>
+                        <label for="figure_height">Figure Height</label>
+                        <input type="text" class="form-control" id="figure_height" name="figure_height" value="7" required>
                         <br />
                         <button
                                 type="button"
@@ -53,13 +78,23 @@
         const show_links_select = document.getElementById('show_links');
         const stack_graphs_select = document.getElementById('stack_graphs');
         const n_trials_textbox = document.getElementById('n_trials');
+        const graph_color_map = document.getElementById('graph_color_map')
 
         var settingsData = {
             "kde_bandwidth" : parseInt(kde_bandwidth_textbox.value),
+            "min_age": 0,
+            "max_age": 4500,
             "matrix_function_type" : matrix_function_type_select.value,
             "actions_button" : show_links_select.value,
             "stack_graphs" : stack_graphs_select.value,
-            "n_trials" : parseInt(n_trials_textbox.value)
+            "n_trials" : parseInt(n_trials_textbox.value),
+            "graph_figure_settings": {
+                "font_size": 12,
+                "font_name": "Ubuntu",
+                "figure_width": 9,
+                "figure_height": 7,
+                "graph_color_map": graph_color_map.value
+            }
         };
         fetch('/update_settings', {
             method: 'POST',
