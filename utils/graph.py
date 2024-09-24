@@ -11,13 +11,14 @@ from scipy.interpolate import interp1d
 
 
 class Graph:
-    def __init__(self, samples, title, graph_type, stacked=False, legend=True, kde_bandwidth=10):
+    def __init__(self, samples, title, graph_type, stacked=False, legend=True, kde_bandwidth=10, color_map='plasma'):
         self.samples = samples
         self.title = title
         self.graph_type = graph_type
         self.legend = legend
         self.stacked = stacked
         self.kde_bandwidth = kde_bandwidth
+        self.color_map = color_map
 
     def generate_fig(self):
         gtype = self.graph_type
@@ -26,21 +27,21 @@ class Graph:
         title = self.title
         kde_bandwidth = self.kde_bandwidth
         if gtype == 'kde':
-            return kde_graph(samples, title, stacked=stacked, kde_bandwidth=kde_bandwidth)
+            return kde_graph(samples, title, stacked=stacked, kde_bandwidth=kde_bandwidth, color_map=self.color_map)
         elif gtype == 'pdp':
-            return pdp_graph(samples, title, stacked=stacked)
+            return pdp_graph(samples, title, stacked=stacked, color_map=self.color_map)
         elif gtype == 'cdf':
-            return cdf_graph(samples, title, stacked=stacked)
+            return cdf_graph(samples, title, stacked=stacked, color_map=self.color_map)
         elif gtype == 'sim_mds':
-            return mds_graph(samples, title, 'similarity')
+            return mds_graph(samples, title, 'similarity', color_map=self.color_map)
         elif gtype == 'like_mds':
-            return mds_graph(samples, title, 'likeness')
+            return mds_graph(samples, title, 'likeness', color_map=self.color_map)
         elif gtype == 'ks_mds':
-            return mds_graph(samples, title, 'ks')
+            return mds_graph(samples, title, 'ks', color_map=self.color_map)
         elif gtype == 'kuiper_mds':
-            return mds_graph(samples, title, 'kuiper')
+            return mds_graph(samples, title, 'kuiper', color_map=self.color_map)
         elif gtype == 'r2_mds':
-            return mds_graph(samples, title, 'r2')
+            return mds_graph(samples, title, 'r2', color_map=self.color_map)
 
     def generate_svg(self):
         fig = self.generate_fig()
@@ -152,15 +153,18 @@ def pdp_function(sample, num_steps=1000, x_min=0, x_max=4000):
 
 
 # Graph functions that output a fig object
-def kde_graph(samples, title, stacked=False, kde_bandwidth=10):
+def kde_graph(samples, title, stacked=False, kde_bandwidth=10, color_map='plasma'):
     x_max = get_x_max(samples)
     x_min = get_x_min(samples)
+    num_samples = len(samples)
+    colors_map = plt.cm.get_cmap(color_map, num_samples)
+    colors = colors_map(np.linspace(0, 1, num_samples))
     fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
     if not stacked:
         for i, sample in enumerate(samples):
             header = sample.name
             x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
-            ax.plot(x, y, label=header)
+            ax.plot(x, y, label=header, color=colors[i])
             ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     else:
         if len(samples) == 1:
@@ -184,15 +188,18 @@ def kde_graph(samples, title, stacked=False, kde_bandwidth=10):
     return fig
 
 
-def pdp_graph(samples, title, stacked=False):
+def pdp_graph(samples, title, stacked=False, color_map='plasma'):
     x_max = get_x_max(samples)
     x_min = get_x_min(samples)
+    num_samples = len(samples)
+    colors_map = plt.cm.get_cmap(color_map, num_samples)
+    colors = colors_map(np.linspace(0, 1, num_samples))
     fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
     if not stacked:
         for i, sample in enumerate(samples):
             header = sample.name
             x, y = pdp_function(sample, x_max=x_max, x_min=x_min)
-            ax.plot(x, y, label=header)
+            ax.plot(x, y, label=header, color=colors[i])
             ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     else:
         if len(samples) == 1:
@@ -216,18 +223,21 @@ def pdp_graph(samples, title, stacked=False):
     return fig
 
 
-def cdf_graph(samples, title=None, stacked=False):
+def cdf_graph(samples, title=None, stacked=False, color_map='plasma'):
     x_max = get_x_max(samples)
     x_min = get_x_min(samples)
+    num_samples = len(samples)
+    colors_map = plt.cm.get_cmap(color_map, num_samples)
+    colors = colors_map(np.linspace(0, 1, num_samples))
 
     if not stacked:
         # Create a single subplot
         fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
         samples.reverse()
-        for sample in samples:
+        for i, sample in enumerate(samples):
             header = sample.name  # Get sample name for labeling
             x_values, cdf_values = cdf_function(sample, min_age=x_min, max_age=x_max)  # Get x-values and CDF
-            ax.plot(x_values, cdf_values, label=header)
+            ax.plot(x_values, cdf_values, label=header, color=colors[i])
         ax.set_title(title if title else "Cumulative Distribution Function")
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
 
@@ -245,7 +255,7 @@ def cdf_graph(samples, title=None, stacked=False):
     return fig
 
 
-def mds_graph(samples, title, mds_type, kde_bandwidth=10):
+def mds_graph(samples, title, mds_type, kde_bandwidth=10, color_map='plasma'):
     num_samples = len(samples)
     dissimilarity_matrix = np.zeros((num_samples, num_samples))
     sample_names = [sample.name for sample in samples]
@@ -269,8 +279,8 @@ def mds_graph(samples, title, mds_type, kde_bandwidth=10):
     embedding = MultidimensionalScaling(n_components=2, dissimilarity='precomputed')
     scaled_mds_result = embedding.fit_transform(dissimilarity_matrix)
 
-    viridis = plt.cm.get_cmap('gist_ncar', num_samples)
-    colors = viridis(np.linspace(0, 1, num_samples))
+    colors_map = plt.cm.get_cmap(color_map, num_samples)
+    colors = colors_map(np.linspace(0, 1, num_samples))
     fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
     for i, (x, y) in enumerate(scaled_mds_result):
         ax.scatter(x, y, color=colors[i])
