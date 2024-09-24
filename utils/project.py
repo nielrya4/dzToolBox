@@ -13,7 +13,7 @@ class Project:
         "n_trials": 10000,
         "graph_figure_settings": {
             "font_size": 12,
-            "font_name": "Ubuntu",
+            "font_name": "ubuntu",
             "figure_width": 9,
             "figure_height": 7,
             "graph_color_map": "viridis"

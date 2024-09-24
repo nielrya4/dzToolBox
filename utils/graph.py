@@ -1,17 +1,28 @@
 import numpy as np
-from sklearn.neighbors import KernelDensity
 from utils import test
 from sklearn.manifold import MDS as MultidimensionalScaling
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
-import secrets
 from scipy.interpolate import interp1d
 
 
 
 class Graph:
-    def __init__(self, samples, title, graph_type, stacked=False, legend=True, kde_bandwidth=10, color_map='plasma'):
+    def __init__(self,
+                 samples,
+                 title,
+                 graph_type,
+                 stacked=False,
+                 legend=True,
+                 min_age=0,
+                 max_age=4500,
+                 kde_bandwidth=10,
+                 color_map='plasma',
+                 font_size=12,
+                 font_name="ubuntu",
+                 fig_width=9,
+                 fig_height=7):
         self.samples = samples
         self.title = title
         self.graph_type = graph_type
@@ -19,6 +30,12 @@ class Graph:
         self.stacked = stacked
         self.kde_bandwidth = kde_bandwidth
         self.color_map = color_map
+        self.font_size = font_size
+        self.font_name = font_name
+        self.fig_width = fig_width
+        self.fig_height = fig_height
+        self.min_age = min_age
+        self.max_age = max_age
 
     def generate_fig(self):
         gtype = self.graph_type
