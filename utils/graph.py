@@ -1,5 +1,5 @@
 import numpy as np
-from utils import test
+from utils import test, fonts
 from sklearn.manifold import MDS as MultidimensionalScaling
 import matplotlib.pyplot as plt
 from io import BytesIO
@@ -44,11 +44,42 @@ class Graph:
         title = self.title
         kde_bandwidth = self.kde_bandwidth
         if gtype == 'kde':
-            return kde_graph(samples, title, stacked=stacked, kde_bandwidth=kde_bandwidth, color_map=self.color_map)
+            return kde_graph(samples,
+                             title,
+                             stacked=stacked,
+                             kde_bandwidth=kde_bandwidth,
+                             legend=self.legend,
+                             color_map=self.color_map,
+                             font_size=self.font_size,
+                             font_name=self.font_name,
+                             fig_width=self.fig_width,
+                             fig_height=self.fig_height,
+                             min_age=self.min_age,
+                             max_age=self.max_age)
         elif gtype == 'pdp':
-            return pdp_graph(samples, title, stacked=stacked, color_map=self.color_map)
+            return pdp_graph(samples,
+                             title,
+                             stacked=stacked,
+                             legend=self.legend,
+                             color_map=self.color_map,
+                             font_size=self.font_size,
+                             font_name=self.font_name,
+                             fig_width=self.fig_width,
+                             fig_height=self.fig_height,
+                             min_age=self.min_age,
+                             max_age=self.max_age)
         elif gtype == 'cdf':
-            return cdf_graph(samples, title, stacked=stacked, color_map=self.color_map)
+            return cdf_graph(samples,
+                             title,
+                             stacked=stacked,
+                             legend=self.legend,
+                             color_map=self.color_map,
+                             font_size=self.font_size,
+                             font_name=self.font_name,
+                             fig_width=self.fig_width,
+                             fig_height=self.fig_height,
+                             min_age=self.min_age,
+                             max_age=self.max_age)
         elif gtype == 'sim_mds':
             return mds_graph(samples, title, 'similarity', color_map=self.color_map)
         elif gtype == 'like_mds':
@@ -170,13 +201,26 @@ def pdp_function(sample, num_steps=1000, x_min=0, x_max=4000):
 
 
 # Graph functions that output a fig object
-def kde_graph(samples, title, stacked=False, kde_bandwidth=10, color_map='plasma'):
+def kde_graph(samples,
+              title,
+              stacked=False,
+              kde_bandwidth=10,
+              legend=True,
+              min_age=0,
+              max_age=4500,
+              color_map='plasma',
+              font_size=12,
+              font_name="ubuntu",
+              fig_width=9,
+              fig_height=7):
+    font = fonts.select_font(font_name)
+    title_size = font_size * 2
     x_max = get_x_max(samples)
     x_min = get_x_min(samples)
     num_samples = len(samples)
     colors_map = plt.cm.get_cmap(color_map, num_samples)
     colors = colors_map(np.linspace(0, 1, num_samples))
-    fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=100)
     if not stacked:
         for i, sample in enumerate(samples):
             header = sample.name
@@ -185,33 +229,45 @@ def kde_graph(samples, title, stacked=False, kde_bandwidth=10, color_map='plasma
             ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     else:
         if len(samples) == 1:
-            fig, ax = plt.subplots(nrows=1, figsize=(9, 6), dpi=100, squeeze=False)
+            fig, ax = plt.subplots(nrows=1, figsize=(fig_width, fig_height), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
                 x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
                 ax[0, 0].plot(x, y, label=header)
                 ax[0, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
         else:
-            fig, ax = plt.subplots(nrows=len(samples), figsize=(9, 7), dpi=100, squeeze=False)
+            fig, ax = plt.subplots(nrows=len(samples), figsize=(fig_width, fig_height), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
                 x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
                 ax[i, 0].plot(x, y, label=header)
                 ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
-    fig.suptitle(title if not None else "Kernel Density Estimate")
-    fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=12)
-    fig.text(0.01, 0.5, 'Probability Differential', va='center', rotation='vertical', fontsize=12)
+    fig.suptitle(title if title else "Kernel Density Estimate", fontsize=title_size, fontproperties=font)
+    fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=font_size, fontproperties=font)
+    fig.text(0.01, 0.5, 'Probability Differential', va='center', rotation='vertical', fontsize=font_size, fontproperties=font)
     fig.tight_layout(rect=[0.025, 0.025, 0.975, 1])
     return fig
 
 
-def pdp_graph(samples, title, stacked=False, color_map='plasma'):
+def pdp_graph(samples,
+              title,
+              stacked=False,
+              legend=True,
+              min_age=0,
+              max_age=4500,
+              color_map='plasma',
+              font_size=12,
+              font_name="ubuntu",
+              fig_width=9,
+              fig_height=7):
+    font = fonts.select_font(font_name)
+    title_size = font_size * 2
     x_max = get_x_max(samples)
     x_min = get_x_min(samples)
     num_samples = len(samples)
     colors_map = plt.cm.get_cmap(color_map, num_samples)
     colors = colors_map(np.linspace(0, 1, num_samples))
-    fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=100)
     if not stacked:
         for i, sample in enumerate(samples):
             header = sample.name
@@ -220,27 +276,39 @@ def pdp_graph(samples, title, stacked=False, color_map='plasma'):
             ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     else:
         if len(samples) == 1:
-            fig, ax = plt.subplots(nrows=1, figsize=(9, 6), dpi=100, squeeze=False)
+            fig, ax = plt.subplots(nrows=1, figsize=(fig_width, fig_height), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
                 x, y = pdp_function(sample, x_max=x_max, x_min=x_min)
                 ax[0, 0].plot(x, y, label=header)
                 ax[0, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
         else:
-            fig, ax = plt.subplots(nrows=len(samples), figsize=(9, 7), dpi=100, squeeze=False)
+            fig, ax = plt.subplots(nrows=len(samples), figsize=(fig_width, fig_height), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
                 x, y = pdp_function(sample, x_max=x_max, x_min=x_min)
                 ax[i, 0].plot(x, y, label=header)
                 ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
-    fig.suptitle(title if not None else "Probability Density Plot")
-    fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=12)
-    fig.text(0.01, 0.5, 'Probability Differential', va='center', rotation='vertical', fontsize=12)
+    fig.suptitle(title if title else "Probability Density Plit", fontsize=title_size, fontproperties=font)
+    fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=font_size, fontproperties=font)
+    fig.text(0.01, 0.5, 'Probability Differential', va='center', rotation='vertical', fontsize=font_size, fontproperties=font)
     fig.tight_layout(rect=[0.025, 0.025, 0.975, 1])
     return fig
 
 
-def cdf_graph(samples, title=None, stacked=False, color_map='plasma'):
+def cdf_graph(samples,
+              title=None,
+              stacked=False,
+              legend=True,
+              min_age=0,
+              max_age=4500,
+              color_map='plasma',
+              font_size=12,
+              font_name="ubuntu",
+              fig_width=9,
+              fig_height=7):
+    font = fonts.select_font(font_name)
+    title_size = font_size * 2
     x_max = get_x_max(samples)
     x_min = get_x_min(samples)
     num_samples = len(samples)
@@ -248,26 +316,25 @@ def cdf_graph(samples, title=None, stacked=False, color_map='plasma'):
     colors = colors_map(np.linspace(0, 1, num_samples))
 
     if not stacked:
-        # Create a single subplot
-        fig, ax = plt.subplots(figsize=(9, 6), dpi=100)
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=100)
         samples.reverse()
         for i, sample in enumerate(samples):
             header = sample.name  # Get sample name for labeling
             x_values, cdf_values = cdf_function(sample, min_age=x_min, max_age=x_max)  # Get x-values and CDF
             ax.plot(x_values, cdf_values, label=header, color=colors[i])
-        ax.set_title(title if title else "Cumulative Distribution Function")
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
-
+        if legend:
+            ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     else:
-        # Stack the plots in subplots, one for each sample
-        fig, ax = plt.subplots(nrows=len(samples), figsize=(9, 7), dpi=100, squeeze=False)
+        fig, ax = plt.subplots(nrows=len(samples), figsize=(fig_width, fig_height), dpi=100, squeeze=False)
         samples.reverse()
         for i, sample in enumerate(samples):
             header = sample.name  # Get sample name for labeling
             x_values, cdf_values = cdf_function(sample, min_age=x_min, max_age=x_max)  # Get x-values and CDF
             ax[i, 0].plot(x_values, cdf_values, label=header)
-            ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
-    fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=12)
+            if legend:
+                ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
+    fig.suptitle(title if title else "Cumulative Distribution Function", fontsize=title_size, fontproperties=font)
+    fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=font_size, fontproperties=font)
     fig.tight_layout(rect=[0.025, 0.025, 0.975, 1])
     return fig
 

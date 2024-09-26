@@ -1,0 +1,18 @@
+{% from "global/spinner.html" import spinner with context %}
+
+{{ spinner(id="get_settings_spinner", message="Retrieving Settings...") }}
+
+
+<script>
+    document.getElementById("project_settings").addEventListener("click", function (){
+        document.getElementById("get_settings_spinner").classList.remove("hidden");
+        document.getElementById("get_settings_spinner").classList.add("visible");
+    });
+
+    document.addEventListener("htmx:afterRequest", function() {
+        document.getElementById("get_settings_spinner").classList.remove("visible");
+        document.getElementById("get_settings_spinner").classList.add("hidden");
+        //See outputs_toolbar.html
+    });
+</script>
+

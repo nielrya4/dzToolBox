@@ -16,7 +16,7 @@ class Project:
             "font_name": "ubuntu",
             "figure_width": 9,
             "figure_height": 7,
-            "graph_color_map": "viridis"
+            "graph_color_map": "jet"
         }
     }
 

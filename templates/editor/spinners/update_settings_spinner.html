@@ -1,0 +1,18 @@
+{% from "global/spinner.html" import spinner with context %}
+
+{{ spinner(id="update_settings_spinner", message="Updating Settings...") }}
+
+
+<script>
+    document.getElementById("update_settings").addEventListener("click", function (){
+        document.getElementById("update_settings_spinner").classList.remove("hidden");
+        document.getElementById("update_settings_spinner").classList.add("visible");
+    });
+
+    document.addEventListener("htmx:afterRequest", function() {
+        document.getElementById("update_settings_spinner").classList.remove("visible");
+        document.getElementById("update_settings_spinner").classList.add("hidden");
+        //See settings_dialog.html
+    });
+</script>
+

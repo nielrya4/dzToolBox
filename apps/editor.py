@@ -185,7 +185,6 @@ def register(app):
         project_settings = get_project_settings(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
-
         kde_bandwidth_setting = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] is not None else 10
         actions_button_setting = project_settings["actions_button"] == "true" if project_settings["actions_button"] is not None else False
         stack_graphs_setting = project_settings["stack_graphs"] == "true" if project_settings["stack_graphs"] is not None else False
@@ -195,7 +194,8 @@ def register(app):
         font_name = project_settings["graph_figure_settings"]["font_name"] if project_settings["graph_figure_settings"]["font_name"] is not None else "ubuntu"
         figure_width = project_settings["graph_figure_settings"]["figure_width"] if project_settings["graph_figure_settings"]["figure_width"] is not None else 9
         figure_height = project_settings["graph_figure_settings"]["figure_height"] if project_settings["graph_figure_settings"]["figure_height"] is not None else 7
-
+        min_age = project_settings["min_age"] if project_settings["min_age"] is not None else 0
+        max_age = project_settings["max_age"] if project_settings["max_age"] is not None else 4500
         output_data = ""
         active_samples = []
         for sample in loaded_samples:
@@ -216,23 +216,41 @@ def register(app):
                           stacked=stack_graphs_setting,
                           graph_type="kde",
                           kde_bandwidth=kde_bandwidth,
-                          color_map=color_map)
+                          color_map=color_map,
+                          font_name=font_name,
+                          font_size=font_size,
+                          fig_width=figure_width,
+                          fig_height=figure_height,
+                          min_age=min_age,
+                          max_age=max_age)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "pdp_graph":
-            graph = Graph(samples=active_samples,
+            graph = Graph(samples=adjusted_samples,
                           title=output_name,
                           stacked=stack_graphs_setting,
                           graph_type="pdp",
-                          color_map=color_map)
+                          color_map=color_map,
+                          font_name=font_name,
+                          font_size=font_size,
+                          fig_width=figure_width,
+                          fig_height=figure_height,
+                          min_age=min_age,
+                          max_age=max_age)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "cdf_graph":
-            graph = Graph(samples=active_samples,
+            graph = Graph(samples=adjusted_samples,
                           title=output_name,
                           stacked=stack_graphs_setting,
                           graph_type="cdf",
-                          color_map=color_map)
+                          color_map=color_map,
+                          font_name=font_name,
+                          font_size=font_size,
+                          fig_width=figure_width,
+                          fig_height=figure_height,
+                          min_age=min_age,
+                          max_age=max_age)
             output_data = graph.generate_html(output_id, actions_button=actions_button_setting)
             output_type = "graph"
         elif output_type == "similarity_matrix":

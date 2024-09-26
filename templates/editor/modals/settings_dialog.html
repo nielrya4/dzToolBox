@@ -9,7 +9,7 @@
                 <br />
                 <div class="container-sm">
                     <form id="settings_form">
-                        <h6 style="text-align: center;">Data Settings:</h6>
+                        <h6 style="text-align: center; color:white; background: #001f3f;">Data Settings:</h6>
                         <label for="min_age">Minimum Age</label>
                         <input type="number" class="form-control" id="min_age" name="min_age" value="0" required>
                         <label for="max_age">Maximum Age</label>
@@ -23,7 +23,8 @@
                             <option value="kde">KDE (Recommended)</option>
                             <option value="pdp">PDP</option>
                         </select>
-                        <h6 style="text-align: center;">Graph Settings:</h6>
+                        <br />
+                        <h6 style="text-align: center; color:white; background: #001f3f">Graph Settings:</h6>
                         <label for="show_links">Show Actions Button Under Images? </label>
                         <select id="show_links" name="show_links" class="form-select" aria-label="Default select example">
                             <option value="true">Yes (Recommended)</option>
@@ -36,6 +37,7 @@
                         </select>
                         <label for="graph_color_map">Graph Colormap</label>
                         <select id="graph_color_map" name="graph_color_map" class="form-select" aria-label="Default select example">
+                            <option value="jet">Jet</option>
                             <option value="plasma">Plasma</option>
                             <option value="viridis">Viridis</option>
                             <option value="inferno">Inferno</option>
@@ -113,6 +115,8 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settingsData)
         }).then(response => {
+            document.getElementById("update_settings_spinner").classList.remove("visible");
+            document.getElementById("update_settings_spinner").classList.add("hidden");
             if (response.ok) {
                 console.log('Settings updated successfully!');
             } else {
