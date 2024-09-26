@@ -42,6 +42,8 @@
             }
         })
         .then(data => {
+            document.getElementById("get_settings_spinner").classList.remove("visible");
+            document.getElementById("get_settings_spinner").classList.add("hidden");
             var project_settings = data.settings;
 
             kde_bandwidth_textbox.value = project_settings["kde_bandwidth"];
@@ -65,20 +67,23 @@
             else if (project_settings["matrix_function_type"] === "pdp") {
                 matrix_function_type_select.selectedIndex = 1;
             }
-            if (project_settings["graph_figure_settings"]["graph_color_map"] === "viridis") {
+            if (project_settings["graph_figure_settings"]["graph_color_map"] === "jet") {
                 graph_color_map_select.selectedIndex = 0;
             }
             else if (project_settings["graph_figure_settings"]["graph_color_map"] === "plasma") {
                 graph_color_map_select.selectedIndex = 1;
             }
-            else if (project_settings["graph_figure_settings"]["graph_color_map"] === "inferno") {
+            else if (project_settings["graph_figure_settings"]["graph_color_map"] === "viridis") {
                 graph_color_map_select.selectedIndex = 2;
             }
-            else if (project_settings["graph_figure_settings"]["graph_color_map"] === "magma") {
+            else if (project_settings["graph_figure_settings"]["graph_color_map"] === "inferno") {
                 graph_color_map_select.selectedIndex = 3;
             }
-            else if (project_settings["graph_figure_settings"]["graph_color_map"] === "cividis") {
+            else if (project_settings["graph_figure_settings"]["graph_color_map"] === "magma") {
                 graph_color_map_select.selectedIndex = 4;
+            }
+            else if (project_settings["graph_figure_settings"]["graph_color_map"] === "cividis") {
+                graph_color_map_select.selectedIndex = 5;
             }
 
             if (project_settings["graph_figure_settings"]["font_name"] === "ubuntu") {

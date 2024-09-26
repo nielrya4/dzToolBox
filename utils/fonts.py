@@ -8,3 +8,6 @@ open_sans = fm.FontProperties(fname="static/global/fonts/open_sans.ttf")
 proza_libre = fm.FontProperties(fname="static/global/fonts/proza_libre.ttf")
 source_sans = fm.FontProperties(fname="static/global/fonts/source_sans.ttf")
 public_sans = fm.FontProperties(fname="static/global/fonts/public_sans.ttf")
+
+def select_font(font_name):
+    return fm.FontProperties(fname=f"static/global/fonts/{font_name}.ttf")
