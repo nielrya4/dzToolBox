@@ -1,31 +1,25 @@
 import openpyxl
-import base64
 from utils.sample import Sample, Grain
 import json
-from io import BytesIO
-import tempfile
 
 
 def read_samples(spreadsheet_array):
     samples = []
-
-    # Iterate over transposed array
-    for i in range(0, len(spreadsheet_array[0]), 2):  # Step by 2 for each sample
-        sample_name = spreadsheet_array[0][i]  # Sample name is in the first row and first column of each pair
+    for i in range(0, len(spreadsheet_array[0]), 2):
+        sample_name = spreadsheet_array[0][i]
         if sample_name is not None:
             grains = []
-            for row_data in spreadsheet_array[1:]:  # Start from second row
-                age = row_data[i]  # Age is in the same column as sample name
+            for row_data in spreadsheet_array[1:]:
+                age = row_data[i]
                 if not (isinstance(age, float) or isinstance(age, int)):
                     age = None
-                uncertainty = row_data[i + 1] if i + 1 < len(row_data) else None  # Uncertainty is in the next column
+                uncertainty = row_data[i + 1] if i + 1 < len(row_data) else None
                 if not (isinstance(uncertainty, float) or isinstance(uncertainty, int)):
                     uncertainty = None
                 if age is not None and uncertainty is not None and float(age) < 4500: # TODO: make min and max grains a project setting.
                     grains.append(Grain(float(age), float(uncertainty)))
             sample = Sample(sample_name, grains)
             samples.append(sample)
-
     return samples
 
 
