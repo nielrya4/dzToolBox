@@ -7,7 +7,6 @@ import base64
 from scipy.interpolate import interp1d
 
 
-
 class Graph:
     def __init__(self,
                  samples,
@@ -226,7 +225,8 @@ def kde_graph(samples,
             header = sample.name
             x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
             ax.plot(x, y, label=header, color=colors[i])
-            ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+            if legend:
+                ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     else:
         if len(samples) == 1:
             fig, ax = plt.subplots(nrows=1, figsize=(fig_width, fig_height), dpi=100, squeeze=False)
@@ -234,14 +234,16 @@ def kde_graph(samples,
                 header = sample.name
                 x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
                 ax[0, 0].plot(x, y, label=header)
-                ax[0, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
+                if legend:
+                    ax[0, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
         else:
             fig, ax = plt.subplots(nrows=len(samples), figsize=(fig_width, fig_height), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
                 x, y = kde_function(sample, x_max=x_max, x_min=x_min, kde_bandwidth=kde_bandwidth)
                 ax[i, 0].plot(x, y, label=header)
-                ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
+                if legend:
+                    ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
     fig.suptitle(title if title else "Kernel Density Estimate", fontsize=title_size, fontproperties=font)
     fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=font_size, fontproperties=font)
     fig.text(0.01, 0.5, 'Probability Differential', va='center', rotation='vertical', fontsize=font_size, fontproperties=font)
@@ -273,7 +275,8 @@ def pdp_graph(samples,
             header = sample.name
             x, y = pdp_function(sample, x_max=x_max, x_min=x_min)
             ax.plot(x, y, label=header, color=colors[i])
-            ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+            if legend:
+                ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
     else:
         if len(samples) == 1:
             fig, ax = plt.subplots(nrows=1, figsize=(fig_width, fig_height), dpi=100, squeeze=False)
@@ -281,14 +284,16 @@ def pdp_graph(samples,
                 header = sample.name
                 x, y = pdp_function(sample, x_max=x_max, x_min=x_min)
                 ax[0, 0].plot(x, y, label=header)
-                ax[0, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
+                if legend:
+                    ax[0, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
         else:
             fig, ax = plt.subplots(nrows=len(samples), figsize=(fig_width, fig_height), dpi=100, squeeze=False)
             for i, sample in enumerate(samples):
                 header = sample.name
                 x, y = pdp_function(sample, x_max=x_max, x_min=x_min)
                 ax[i, 0].plot(x, y, label=header)
-                ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
+                if legend:
+                    ax[i, 0].legend(loc='upper left', bbox_to_anchor=(1, 1))
     fig.suptitle(title if title else "Probability Density Plit", fontsize=title_size, fontproperties=font)
     fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=font_size, fontproperties=font)
     fig.text(0.01, 0.5, 'Probability Differential', va='center', rotation='vertical', fontsize=font_size, fontproperties=font)
@@ -337,7 +342,6 @@ def cdf_graph(samples,
     fig.text(0.5, 0.01, 'Age (Ma)', ha='center', va='center', fontsize=font_size, fontproperties=font)
     fig.tight_layout(rect=[0.025, 0.025, 0.975, 1])
     return fig
-
 
 def mds_graph(samples, title, mds_type, kde_bandwidth=10, color_map='plasma'):
     num_samples = len(samples)
@@ -402,7 +406,7 @@ def mds_graph(samples, title, mds_type, kde_bandwidth=10, color_map='plasma'):
 
     stress = embedding.stress_
 
-    fig.suptitle(title if title is not None else f"Multidimensional Scaling Plot (Stress: {np.round(stress, decimals=6)})")
+    fig.suptitle((title if title != "" else f"Multidimensional Scaling Plot") + f" (Stress: {np.round(stress, decimals=6)})")
     fig.text(0.5, 0.01, 'Dimension 1', ha='center', va='center', fontsize=12)
     fig.text(0.01, 0.5, 'Dimension 2', va='center', rotation='vertical', fontsize=12)
     fig.tight_layout()
