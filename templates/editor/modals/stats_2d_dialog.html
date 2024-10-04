@@ -1,0 +1,91 @@
+<div id="stats_2d_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Stats 2D</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="stats_2d_form" data-hx-trigger="click">
+                        <label for="stats_2d_output_name">Output Title</label>
+                        <input type="text" id="stats_2d_output_name" name="stats_2d_output_name" required>
+                        <br />
+                        <div id="stats_2d_sample_list" class="table_list">
+                            <br />
+                            <table class="table_list">
+                                <tr class="table_list">
+                                    <th>Sample Name:</th>
+                                    <th>Active:</th>
+                                </tr>
+                                {% for sample in samples %}
+                                    <tr class="table_list">
+                                        <td><label class="form-check-label" for="{{ sample[0] }}"></label> {{ sample[0] }}</td>
+                                        <td>
+                                            <div class="form-check form-switch">
+                                                <input class="stats-2d-sample-checkbox form-check-input" type="checkbox" role="switch" id="{{ sample[0] }}" name="{{ sample[0] }}" value="{{ sample[0] }}" checked>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                        <br />
+                        <div class="table_list" id="stats_2d_graphs">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <label for="stats_2d_select">Select an Stats 2D type...</label>
+                                        <select name="stats_2d_select" id="stats_2d_select">
+                                            <option value="similarity">Similarity</option>
+                                            <option value="likeness">Likeness</option>
+                                            <option value="ks">KS</option>
+                                            <option value="kuiper">Kuiper</option>
+                                            <option value="r2">R^2</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary" type="button" onclick="stats_2d_send_args()">Create Stats 2D</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <button data-bs-toggle="modal"
+                                data-bs-target="#stats_2d_modal"
+                                name="send_it_stats_2d"
+                                id="send_it_stats_2d"
+                                style="display: none"
+                                type="button"
+                                data-hx-target="#outputs_container"
+                                data-hx-swap="innerHTML">
+                        </button>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const stats_2d_SampleList = document.getElementById("stats_2d_sample_list")
+    function stats_2d_send_args() {
+        var selectedSamples = [];
+        var stats_2d_checkboxes = stats_2d_SampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < stats_2d_checkboxes.length; i++) {
+            if (stats_2d_checkboxes[i].checked) {
+                selectedSamples.push(stats_2d_checkboxes[i].value);
+            }
+        }
+        var stats_2d_type = document.getElementById("stats_2d_select").value;
+
+        var stats_2d_outputName = document.getElementById("stats_2d_output_name").value;
+        var queryString = "/new_stats_2d?samples=" + selectedSamples.join("&samples=") + "&stats_2d_type=" + stats_2d_type;
+        if (stats_2d_outputName !== "") {
+            queryString += "&output_name=" + stats_2d_outputName;
+        }
+        document.getElementById("send_it_stats_2d").setAttribute("data-hx-get", queryString);
+        htmx.process(document.getElementById("send_it_stats_2d"));
+        document.getElementById("send_it_stats_2d").click();
+    }
+</script>

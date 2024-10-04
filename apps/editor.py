@@ -205,7 +205,7 @@ def register(app):
 
         adjusted_samples = []
         for sample in active_samples:
-            if matrix_function_type_setting == "kde":
+            if matrix_function_type_setting == "kde" and output_type != "pdp_graph":
                 sample.replace_bandwidth(10)
             adjusted_samples.append(sample)
         adjusted_samples.reverse()
@@ -433,6 +433,43 @@ def register(app):
         outputs.append(table_output)
         outputs.append(contribution_graph_output)
         outputs.append(trials_graph_output)
+
+        updated_project_content = set_all_outputs(project_content, outputs)
+        compressed_proj_content = compression.compress(updated_project_content)
+        database.write_file(project_id, compressed_proj_content)
+        project_outputs = get_all_outputs(updated_project_content)
+        return render_block(environment=environment,
+                            template_name="editor/editor.html",
+                            block_name="outputs",
+                            outputs_data=project_outputs)
+
+    @app.route('/new_stats_2d', methods=['GET'])
+    @login_required
+    def new_stats_2d():
+        sample_names = request.args.getlist('samples')
+        output_name = request.args.get('output_name', '')
+        output_id = secrets.token_hex(15)
+
+        project_id = session.get("open_project", 0)
+        file = database.get_file(project_id)
+        project_content = compression.decompress(file.content)
+        project_data = get_project_data(project_content)
+        spreadsheet_data = spreadsheet.text_to_array(project_data)
+        loaded_samples = spreadsheet.read_samples(spreadsheet_data)
+        active_samples = []
+        for sample in loaded_samples:
+            for sample_name in sample_names:
+                if sample.name == sample_name:
+                    active_samples.append(sample)
+
+        output_content = Graph(title=output_name, samples=active_samples, graph_type="kde2d").generate_fig()
+
+        if get_all_outputs(project_content) is None:
+            outputs = []
+        else:
+            outputs = get_all_outputs(project_content)
+        output3d = Output(output_id, 'graph', output_content)
+        outputs.append(output3d)
 
         updated_project_content = set_all_outputs(project_content, outputs)
         compressed_proj_content = compression.compress(updated_project_content)

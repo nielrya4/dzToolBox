@@ -1,11 +1,10 @@
 import numpy as np
-from utils import test, fonts
+from utils import test, fonts, graph_3d
 from sklearn.manifold import MDS as MultidimensionalScaling
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 from scipy.interpolate import interp1d
-
 
 class Graph:
     def __init__(self,
@@ -89,6 +88,8 @@ class Graph:
             return mds_graph(samples, title, 'kuiper', color_map=self.color_map)
         elif gtype == 'r2_mds':
             return mds_graph(samples, title, 'r2', color_map=self.color_map)
+        elif gtype == "kde2d":
+            return graph_3d.kde_graph_2d(samples[-1])
 
     def generate_svg(self):
         fig = self.generate_fig()
