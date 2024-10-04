@@ -59,7 +59,7 @@
     }
 
     // Add event listeners to buttons
-    const buttons = ['new_output', 'new_mds', 'new_unmix'];
+    const buttons = ['new_output', 'new_mds', 'new_unmix', 'new_stats_2d'];
     buttons.forEach(buttonId => {
         const button = document.getElementById(buttonId);
         button.addEventListener('click', handleButtonClick);
@@ -158,16 +158,19 @@
         var sampleList = document.getElementById("sample_list");
         var mdsSampleList = document.getElementById("mds_sample_list");
         var unmixSampleList = document.getElementById("unmix_sample_list");
+        var stats2dSampleList = document.getElementById("stats_2d_sample_list");
 
         // Clear the lists first to ensure no duplicates
         sampleList.innerHTML = "";
         mdsSampleList.innerHTML = "";
         unmixSampleList.innerHTML = "";
+        stats2dSampleList.innerHTML = "";
 
         // Create table content for each list
         createTableContent(sampleList);
         createTableContent(mdsSampleList);
         createTableContent(unmixSampleList);
+        createTableContent(stats2dSampleList);
     }
 });
 
