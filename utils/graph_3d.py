@@ -2,7 +2,6 @@ import numpy as np
 import plotly.graph_objects as go
 import scipy.stats as st
 
-
 def kde_function_2d(sample):
     x = [grain.age for grain in sample.grains]
     y = [grain.uncertainty for grain in sample.grains]
@@ -16,9 +15,10 @@ def kde_function_2d(sample):
     positions = np.vstack([xx.ravel(), yy.ravel()])
     values = np.vstack([x, y])
     kernel = st.gaussian_kde(values)
+    bandwidths = np.array([10, 0.25])
+    kernel.covariance = np.diag(bandwidths ** 2)
     f = np.reshape(kernel(positions).T, xx.shape)
     return xx, yy, f, kernel
-
 
 def kde_graph_2d(sample,
                  title="2D Kernel Density Estimate",
@@ -50,47 +50,57 @@ def kde_graph_2d(sample,
         fig.add_trace(scatter)
 
     fig.update_layout(
-        title=dict(text=title,
-            font=dict(
-                family=font,
-                size=title_size,
-                color='black'
-            ),
-        ),
-        scene=dict(
-            xaxis=dict(
-                title=dict(
-                    text=x_axis_title,
-                    font=dict(
-                        family=font,
-                        size=font_size,
-                        color='black'
-                    )
-                )
-            ),
-            yaxis=dict(
-                title=dict(
-                    text=y_axis_title,
-                    font=dict(
-                        family=font,
-                        size=font_size,
-                        color='black'
-                    )
-                )
-            ),
-            zaxis=dict(
-                title=dict(
-                    text=z_axis_title,
-                    font=dict(
-                        family=font,
-                        size=font_size,
-                        color='black'
-                    )
-                )
-            ),
-        ),
-        width=fig_width*100,
-        height=fig_height*100
+        width=fig_width * 100,
+        height=fig_height * 100,
+        title={
+            "text": title,
+            "font": {
+                "family": font,
+                "size": title_size,
+                "color": "black"
+            },
+        },
+        scene={
+            "xaxis": {
+                "title": {
+                    "text": x_axis_title,
+                    "font": {
+                        "family": font,
+                        "size": font_size,
+                        "color": "black"
+                    }
+                }
+            },
+            "yaxis": {
+                "title": {
+                    "text": y_axis_title,
+                    "font": {
+                        "family": font,
+                        "size": font_size,
+                        "color": "black"
+                    }
+                }
+            },
+            "zaxis": {
+                "title": {
+                    "text": z_axis_title,
+                    "font": {
+                        "family": font,
+                        "size": font_size,
+                        "color": "black"
+                    }
+                }
+            }
+        }
     )
-    html_str = fig.to_html(full_html=False)
+    config = {
+        'toImageButtonOptions': {
+            'format': 'svg',
+            'filename': 'multivariate_plot',
+            'height': fig_height*100,
+            'width': fig_width*100,
+            'scale': 1
+        }
+    }
+    html_str = fig.to_html(full_html=False, config=config)
     return html_str
