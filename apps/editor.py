@@ -445,38 +445,32 @@ def register(app):
         sample_names = request.args.getlist('samples')
         unmix_type = request.args.get('unmix_type', '')
         unmix_outputs = request.args.getlist('unmix_outputs')
-        print(unmix_outputs)
-
         output_ids = [secrets.token_hex(15), secrets.token_hex(15), secrets.token_hex(15)]
-
-
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
         project_data = get_project_data(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
-        contribution_table, contribution_graph, trials_graph = "", "", ""
         active_samples = []
         for sample in loaded_samples:
             for sample_name in sample_names:
                 if sample.name == sample_name:
                     active_samples.append(sample)
-
         contribution_table, contribution_graph, trials_graph = unmix.do_monte_carlo(active_samples, output_ids, num_trials=10000, test_type=unmix_type)
-
         if get_all_outputs(project_content) is None:
             outputs = []
         else:
             outputs = get_all_outputs(project_content)
-
         table_output = Output(output_ids[0], 'matrix', contribution_table)
         contribution_graph_output = Output(output_ids[1], 'graph', contribution_graph)
         trials_graph_output = Output(output_ids[2], 'graph', trials_graph)
-        outputs.append(table_output)
-        outputs.append(contribution_graph_output)
-        outputs.append(trials_graph_output)
-
+        if "contribution_table" in unmix_outputs:
+            outputs.append(table_output)
+        if "contribution_graph" in unmix_outputs:
+            outputs.append(contribution_graph_output)
+        if "trials_graph" in unmix_outputs:
+            outputs.append(trials_graph_output)
         updated_project_content = set_all_outputs(project_content, outputs)
         compressed_proj_content = compression.compress(updated_project_content)
         database.write_file(project_id, compressed_proj_content)
