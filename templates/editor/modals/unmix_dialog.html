@@ -3,48 +3,37 @@
         <div class="modal-content">
             <div class="frame" id="content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Unmixing Model</h5>
+                    <h5 class="modal-title">Top-Down Mixture Model</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <br />
                 <div class="container-sm">
-                    <form id="mds_form" data-hx-trigger="click">
+                    <form id="unmix_form" data-hx-trigger="click">
                         <label for="unmix_output_name">Output Title</label>
                         <input type="text" id="unmix_output_name" name="unmix_output_name" required>
                         <br />
-                        <div id="unmix_sample_list" class="table_list">
-                            <br />
-                            <table class="table_list">
-                                <tr class="table_list">
-                                    <th>Sample Name:</th>
-                                    <th>Active:</th>
-                                </tr>
-                                {% for sample in samples %}
-                                    <tr class="table_list">
-                                        <td><label class="form-check-label" for="{{ sample[0] }}"></label> {{ sample[0] }}</td>
-                                        <td>
-                                            <div class="form-check form-switch">
-                                                <input class="unmix-sample-checkbox form-check-input" type="checkbox" role="switch" id="{{ sample[0] }}" name="{{ sample[0] }}" value="{{ sample[0] }}" checked>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </table>
-                        </div>
                         <br />
-                        <div class="table_list" id="unmix_graphs">
+                        {{ sample_select(id="unmix_sample_select", sender="unmix_link", event='click', multi_select=True) }}
+                        <br />
+                        <div class="table_list">
                             <table>
                                 <tr>
                                     <td>
-                                        <label for="unmix_select">Select an unmixing type...</label>
+                                        <h6>Select Output Types:</h6>
+                                        <div id="unmix_outputs_select"></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="unmix_select">Select a metric...</label>
                                         <select name="unmix_select" id="unmix_select">
-                                            <option value="r2">R^2</option>
-                                            <option value="ks">KS</option>
-                                            <option value="kuiper">Kuiper</option>
+                                            <option value="cross_correlation">Cross Correlation of KDEs</option>
+                                            <option value="ks">KS Test of CDFs</option>
+                                            <option value="kuiper">Kuiper Test of CDFs</option>
                                         </select>
                                     </td>
                                     <td>
-                                        <button class="btn btn-primary" type="button" onclick="unmix_send_args()">Create Unmixing Model</button>
+                                        <button class="btn btn-primary" type="button" onclick="unmix_send_args()">Create model</button>
                                     </td>
                                 </tr>
                             </table>
@@ -66,8 +55,9 @@
     </div>
 </div>
 <script>
-    const unmixSampleList = document.getElementById("unmix_sample_list")
+    const unmixSampleList = document.getElementById("unmix_sample_select")
     function unmix_send_args() {
+        // Get the selected samples (checkboxes)
         var selectedSamples = [];
         var unmix_checkboxes = unmixSampleList.querySelectorAll(".sample-checkbox");
         for (var i = 0; i < unmix_checkboxes.length; i++) {
@@ -75,15 +65,32 @@
                 selectedSamples.push(unmix_checkboxes[i].value);
             }
         }
-        var unmix_type = document.getElementById("unmix_select").value;
 
-        var unmix_outputName = document.getElementById("unmix_output_name").value;
-        var queryString = "/new_unmix?samples=" + selectedSamples.join("&samples=") + "&unmix_type=" + unmix_type;
+        // Get the selected unmix type (dropdown)
+        const unmix_type = document.getElementById("unmix_select").value;
+
+        // Get the output title
+        const unmix_outputName = document.getElementById("unmix_output_name").value;
+
+        // Capture selected values from the MultiSelect dropdown
+        const unmix_outputs_select = Array.from(
+            document.querySelectorAll(`#unmix_outputs_select input[type="hidden"]`)
+        ).map(input => input.value);
+
+        // Build query string
+        var queryString = "/new_unmix?samples="
+            + selectedSamples.join("&samples=")
+            + "&unmix_type=" + unmix_type
+            + "&unmix_outputs=" + unmix_outputs_select.join("&unmix_outputs=");  // Send the selected output types
+
         if (unmix_outputName !== "") {
             queryString += "&output_name=" + unmix_outputName;
         }
+
+        // Set the hx-get attribute for HTMX and trigger the request
         document.getElementById("send_it_unmix").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_unmix"));
         document.getElementById("send_it_unmix").click();
     }
+
 </script>

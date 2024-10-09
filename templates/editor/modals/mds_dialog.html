@@ -3,7 +3,7 @@
         <div class="modal-content">
             <div class="frame" id="content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New MDS</h5>
+                    <h5 class="modal-title">New Multidimensional Scaling Plot</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <br />
@@ -12,41 +12,24 @@
                         <label for="mds_output_name">Output Title</label>
                         <input type="text" id="mds_output_name" name="mds_output_name" required>
                         <br />
-                        <div id="mds_sample_list" class="table_list">
-                            <br />
-                            <table class="table_list">
-                                <tr class="table_list">
-                                    <th>Sample Name:</th>
-                                    <th>Active:</th>
-                                </tr>
-                                {% for sample in samples %}
-                                    <tr class="table_list">
-                                        <td><label class="form-check-label" for="{{ sample[0] }}"></label> {{ sample[0] }}</td>
-                                        <td>
-                                            <div class="form-check form-switch">
-                                                <input class="mds-sample-checkbox form-check-input" type="checkbox" role="switch" id="{{ sample[0] }}" name="{{ sample[0] }}" value="{{ sample[0] }}" checked>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </table>
-                        </div>
                         <br />
-                        <div class="table_list" id="mds_graphs">
+                        {{ sample_select(id="mds_sample_select", sender="mds_link", event='click', multi_select=True) }}
+                        <br />
+                        <div class="table_list">
                             <table>
                                 <tr>
                                     <td>
-                                        <label for="mds_select">Select an MDS type...</label>
+                                        <label for="mds_select">Select a metric...</label>
                                         <select name="mds_select" id="mds_select">
                                             <option value="similarity">Similarity</option>
                                             <option value="likeness">Likeness</option>
+                                            <option value="cross_correlation">Cross-Correlation</option>
                                             <option value="ks">KS</option>
                                             <option value="kuiper">Kuiper</option>
-                                            <option value="r2">R^2</option>
                                         </select>
                                     </td>
                                     <td>
-                                        <button class="btn btn-primary" type="button" onclick="mds_send_args()">Create MDS</button>
+                                        <button class="btn btn-primary" type="button" onclick="mds_send_args()">Create mds</button>
                                     </td>
                                 </tr>
                             </table>
@@ -68,7 +51,7 @@
     </div>
 </div>
 <script>
-    const mdsSampleList = document.getElementById("mds_sample_list")
+    const mdsSampleList = document.getElementById("mds_sample_select")
     function mds_send_args() {
         var selectedSamples = [];
         var mds_checkboxes = mdsSampleList.querySelectorAll(".sample-checkbox");

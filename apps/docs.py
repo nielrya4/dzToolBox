@@ -17,7 +17,11 @@ def register(app):
     def docs():
         return render_template("docs/docs.html")
 
-    @app.route('/gsa_poster.pdf', methods=['GET', 'POST'])
+    @app.route('/docs/api')
+    def api_docs():
+        return render_template("docs/api_docs.html")
+
+    @app.route('/docs/gsa_poster.pdf', methods=['GET', 'POST'])
     def gsa_poster():
         return send_from_directory(os.path.join(app.root_path, 'static'), 'docs/poster_final.pdf',
                                    mimetype='application/pdf')
