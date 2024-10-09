@@ -1,0 +1,53 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/night-owl.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+	<script>hljs.highlightAll();</script>
+    {% include "global/head.html" %}
+    <title>Document</title>
+</head>
+<body>
+	<h3>Primer On Making HTTP Requests</h3>
+	<ul>
+		<li>
+			<h5>With Python</h5>
+			<pre>
+				<code class="language-python">
+import requests
+response = requests.post('https://api.dztoolbox.com/metrics/ks', json={"y1_values": [1, 2, 3, 4], "y2_values": [6, 7, 8, 9]})
+if response.ok:
+	print(f"{response.json()["metric"]} score is: {response.json()["score"]}")
+				</code>
+			</pre>
+		</li>
+		<li>
+			<h5>With JavaScript</h5>
+			<pre>
+				<code class="language-javascript">
+fetch('https://api.dztoolbox.com/metrics/ks', {
+	method: 'POST',
+	headers: { 'Content-Type': 'application/json' },
+	body: JSON.stringify({
+		"y1_values": [1, 2, 3],
+		"y2_values": [5, 6, 7]
+	})
+}).then(response => {
+	if (response.ok) {
+		return response.json();
+	} else {
+		throw new Error('Network response was not ok');
+	}
+}).then(data => {
+	console.log(data["metric"] + " score is: " + data["score"]);
+}).catch(error => {
+	console.error('Error updating settings', error);
+});
+				</code>
+			</pre>
+		</li>
+		</ul>
+</body>
+</html>

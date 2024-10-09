@@ -1,0 +1,74 @@
+<div id="matrix_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Intersample Comparison Matrix</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="matrix_form" data-hx-trigger="click">
+                        <label for="matrix_output_name">Output Title</label>
+                        <input type="text" id="matrix_output_name" name="matrix_output_name" required>
+                        <br />
+                        <br />
+                        {{ sample_select(id="matrix_sample_select", sender="matrix_link", event='click', multi_select=True) }}
+                        <br />
+                        <div class="table_list">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <label for="matrix_select">Select a metric...</label>
+                                        <select name="matrix_select" id="matrix_select">
+                                            <option value="similarity">Similarity</option>
+                                            <option value="likeness">Likeness</option>
+                                            <option value="ks">KS</option>
+                                            <option value="kuiper">Kuiper</option>
+                                            <option value="cross_correlation">Cross-Correlation</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary" type="button" onclick="matrix_send_args()">Create matrix</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <button data-bs-toggle="modal"
+                                data-bs-target="#matrix_modal"
+                                name="send_it_matrix"
+                                id="send_it_matrix"
+                                style="display: none"
+                                type="button"
+                                data-hx-target="#outputs_container"
+                                data-hx-swap="innerHTML">
+                        </button>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const matrixSampleList = document.getElementById("matrix_sample_select")
+    function matrix_send_args() {
+        var selectedSamples = [];
+        var matrix_checkboxes = matrixSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < matrix_checkboxes.length; i++) {
+            if (matrix_checkboxes[i].checked) {
+                selectedSamples.push(matrix_checkboxes[i].value);
+            }
+        }
+        var matrix_type = document.getElementById("matrix_select").value;
+
+        var matrix_outputName = document.getElementById("matrix_output_name").value;
+        var queryString = "/new_matrix?samples=" + selectedSamples.join("&samples=") + "&matrix_type=" + matrix_type;
+        if (matrix_outputName !== "") {
+            queryString += "&output_name=" + matrix_outputName;
+        }
+        document.getElementById("send_it_matrix").setAttribute("data-hx-get", queryString);
+        htmx.process(document.getElementById("send_it_matrix"));
+        document.getElementById("send_it_matrix").click();
+    }
+</script>

@@ -1,0 +1,71 @@
+<div id="hafnium_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Hafnium Plotter</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="hafnium_form" data-hx-trigger="click">
+                        <label for="hafnium_output_name">Output Title</label>
+                        <input type="text" id="hafnium_output_name" name="hafnium_output_name" required>
+                        <br />
+                        <br />
+                        {{ sample_select(id="hafnium_sample_select", sender="hafnium_link", event='click', multi_select=True) }}
+                        <br />
+                        <div class="table_list">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <label for="hafnium_select">Graph type:</label>
+                                        <select name="hafnium_select" id="hafnium_select">
+                                            <option value="density">Bivariate KDE</option>
+                                            <option value="heatmap">Heatmap</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary" type="button" onclick="hafnium_send_args()">Create graph</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <button data-bs-toggle="modal"
+                                data-bs-target="#hafnium_modal"
+                                name="send_it_hafnium"
+                                id="send_it_hafnium"
+                                style="display: none"
+                                type="button"
+                                data-hx-target="#outputs_container"
+                                data-hx-swap="innerHTML">
+                        </button>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const hafniumSampleList = document.getElementById("hafnium_sample_select")
+    function hafnium_send_args() {
+        var selectedSamples = [];
+        var hafnium_checkboxes = hafniumSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < hafnium_checkboxes.length; i++) {
+            if (hafnium_checkboxes[i].checked) {
+                selectedSamples.push(hafnium_checkboxes[i].value);
+            }
+        }
+        var hafnium_type = document.getElementById("hafnium_select").value;
+
+        var hafnium_outputName = document.getElementById("hafnium_output_name").value;
+        var queryString = "/new_hafnium?samples=" + selectedSamples.join("&samples=") + "&hafnium_type=" + hafnium_type;
+        if (hafnium_outputName !== "") {
+            queryString += "&output_name=" + hafnium_outputName;
+        }
+        document.getElementById("send_it_hafnium").setAttribute("data-hx-get", queryString);
+        htmx.process(document.getElementById("send_it_hafnium"));
+        document.getElementById("send_it_hafnium").click();
+    }
+</script>

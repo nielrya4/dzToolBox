@@ -1,0 +1,98 @@
+{% macro sample_select(id="sample_select", sender="#", event='click', multi_select=True) %}
+    {% from "global/spinner.html" import spinner with context %}
+    {{ spinner(id=id+"_spinner", message="Loading Samples...") }}
+    <div id="{{ id }}" class="table_list"></div>
+    <script>
+        document.getElementById("{{sender}}").addEventListener("{{event}}", function (){
+            {{ id }}getSampleNames();
+            document.getElementById("{{id}}_spinner").classList.remove("hidden");
+            document.getElementById("{{id}}_spinner").classList.add("visible");
+        });
+        function {{ id }}getSampleNames() {
+            fetch('/get_sample_names', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 'jsonData': null })
+            })
+            .then(response => {
+                document.getElementById("{{id}}_spinner").classList.remove("visible");
+                document.getElementById("{{id}}_spinner").classList.add("hidden");
+                if (response.ok) {
+                    return response.json(); // Parse the response body as JSON
+                } else {
+                    throw new Error('Error fetching sample names');
+                }
+            })
+            .then(data => {
+                var sampleNames = data.sample_names;
+                {{ id }}displaySampleNames(sampleNames);
+            })
+            .catch(error => {
+                console.error('Error fetching sample names:', error);
+            });
+        }
+
+        function {{ id }}displaySampleNames(sampleNames) {
+            function {{id}}createTableContent(container) {
+                container.innerHTML = "";
+                var table = document.createElement("table");
+                table.classList.add("table_list");
+                var tbody = document.createElement("tbody");
+                sampleNames.forEach(function(sampleName, index) {
+                    if (index === 0) {
+                        var trHeader = document.createElement("tr");
+                        var thSampleName = document.createElement("th");
+                        thSampleName.textContent = "Sample Name:";
+                        var thActive = document.createElement("th");
+                        thActive.textContent = "Active:";
+                        trHeader.appendChild(thSampleName);
+                        trHeader.appendChild(thActive);
+                        tbody.appendChild(trHeader);
+                    }
+                    var tr = document.createElement("tr");
+                    tr.setAttribute("class", "table_list");
+                    var tdSampleName = document.createElement("td");
+                    var tdCheckbox = document.createElement("td");
+                    var checkContainer = document.createElement("div");
+                    checkContainer.classList.add("form-check");
+                    var checkbox = document.createElement("input");
+                    {% if multi_select %}
+                        checkbox.type = "checkbox";
+                        checkbox.checked = true;
+                        checkContainer.classList.add("form-switch");
+                    {% else %}
+                        checkbox.type = "radio";
+                        checkbox.name = "{{id}}_radio"; // Ensures only one can be selected
+                    {% endif %}
+                    checkbox.classList.add("sample-checkbox");
+                    checkbox.classList.add("form-check-input");
+                    checkbox.value = sampleName;
+                    checkbox.id = sampleName;
+                    var label = document.createElement("label");
+                    label.setAttribute("for", sampleName);
+                    label.textContent = sampleName;
+                    label.classList.add("form-check-label");
+                    tdSampleName.appendChild(label);
+                    checkContainer.appendChild(checkbox);
+                    tdCheckbox.appendChild(checkContainer);
+                    tr.appendChild(tdSampleName);
+                    tr.appendChild(tdCheckbox);
+                    tbody.appendChild(tr);
+                    tr.addEventListener("click", function(event) {
+                        if (event.target !== checkbox) {
+                            checkbox.checked = !checkbox.checked;
+                        }
+                    });
+                    checkbox.addEventListener("click", function(event) {
+                        event.stopPropagation();
+                    });
+                });
+                table.appendChild(tbody);
+                container.appendChild(table);
+            }
+            const sampleList{{ id }} = document.getElementById("{{ id }}")
+            sampleList{{ id }}.innerHTML = "";
+            {{id}}createTableContent(sampleList{{ id }});
+        }
+    </script>
+{% endmacro %}
