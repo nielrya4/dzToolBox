@@ -1,6 +1,10 @@
 import numpy as np
 import plotly.graph_objects as go
 import scipy.stats as st
+from scipy.interpolate import griddata
+import matplotlib.pyplot as plt
+from sqlalchemy import false
+
 
 def kde_function_2d(sample):
     x = [grain.age for grain in sample.grains]
@@ -104,3 +108,14 @@ def kde_graph_2d(sample,
     }
     html_str = fig.to_html(full_html=False, config=config)
     return html_str
+
+
+def heatmap(x, y, z, title="Heatmap", color_map="viridis"):
+    print(color_map)
+    fig, ax = plt.subplots()
+    c = ax.pcolormesh(x, y, z, shading='nearest', cmap=color_map, edgecolors='face')
+    fig.colorbar(c, ax=ax)
+    ax.set_xlabel('Age (Ma)')
+    ax.set_ylabel('εHf(t)')
+    ax.set_title(title)
+    return fig

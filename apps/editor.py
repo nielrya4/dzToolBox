@@ -175,9 +175,7 @@ def register(app):
         output_name = request.args.get('output_name', '')
         sample_names = request.args.getlist('samples')
         output_type = request.args.get('distro_type', '')
-
         output_id = secrets.token_hex(15)
-
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
@@ -357,9 +355,7 @@ def register(app):
         output_name = request.args.get('output_name', '')
         sample_names = request.args.getlist('samples')
         mds_type = request.args.get('mds_type', '')
-
         output_id = secrets.token_hex(15)
-
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
@@ -367,12 +363,10 @@ def register(app):
         project_settings = get_project_settings(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
-
         kde_bandwidth_setting = project_settings["kde_bandwidth"] if project_settings["kde_bandwidth"] is not None else 10
         actions_button_setting = project_settings["actions_button"] == "true" if project_settings["actions_button"] is not None else False
         matrix_function_type_setting = project_settings["matrix_function_type"] if project_settings["kde_bandwidth"] is not None else "kde"
         color_map = project_settings["graph_figure_settings"]["graph_color_map"] if project_settings["graph_figure_settings"]["graph_color_map"] is not None else "plasma"
-
         output_data = ""
         active_samples = []
         for sample in loaded_samples:
@@ -487,13 +481,15 @@ def register(app):
         output_name = request.args.get('output_name', '')
         output_type = request.args.get('hafnium_type', '')
         output_id = secrets.token_hex(15)
-
         project_id = session.get("open_project", 0)
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
         project_data = get_project_data(project_content)
         spreadsheet_data = spreadsheet.text_to_array(project_data)
         loaded_samples = spreadsheet.read_samples(spreadsheet_data)
+        project_settings = get_project_settings(project_content)
+        color_map = project_settings["graph_figure_settings"]["graph_color_map"] if project_settings["graph_figure_settings"]["graph_color_map"] is not None else "plasma"
+
         active_samples = []
         for sample in loaded_samples:
             for sample_name in sample_names:
@@ -502,7 +498,7 @@ def register(app):
         if output_type == "density":
             output_content = Graph(title=output_name, samples=active_samples, graph_type="kde2d").generate_fig()
         elif output_type == "heatmap":
-            output_content = "<h6>heatmap not yet supported</>"
+            output_content = Graph(title=output_name, samples=active_samples, color_map=color_map, graph_type="heatmap").generate_html(output_id=output_id)
 
         if get_all_outputs(project_content) is None:
             outputs = []

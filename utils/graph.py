@@ -90,6 +90,9 @@ class Graph:
             return mds_graph(samples, title, 'r2', color_map=self.color_map)
         elif gtype == "kde2d":
             return graph_3d.kde_graph_2d(samples[-1])
+        elif gtype == "heatmap":
+            x, y, z, kernel = graph_3d.kde_function_2d(samples[-1])
+            return graph_3d.heatmap(x, y, z, title=title, color_map=self.color_map)
 
     def generate_svg(self):
         fig = self.generate_fig()
@@ -100,7 +103,7 @@ class Graph:
         plt.close(fig)
         return plotted_graph
 
-    def generate_html(self, output_id, actions_button=False):
+    def generate_html(self, output_id, actions_button=True):
         svg = self.generate_svg()
         encoded_data = base64.b64encode(svg.encode('utf-8')).decode('utf-8')
         if actions_button:
