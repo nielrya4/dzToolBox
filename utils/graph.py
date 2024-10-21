@@ -4,6 +4,7 @@ from sklearn.manifold import MDS as MultidimensionalScaling
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
+import cairosvg
 from scipy.interpolate import interp1d
 
 class Graph:
@@ -92,7 +93,7 @@ class Graph:
             return graph_3d.kde_graph_2d(samples[-1])
         elif gtype == "heatmap":
             x, y, z, kernel = graph_3d.kde_function_2d(samples[-1])
-            return graph_3d.heatmap(x, y, z, title=title, color_map=self.color_map)
+            return graph_3d.heatmap(x, y, z, title=title, color_map=self.color_map, fig_width=self.fig_width, fig_height=self.fig_height)
 
     def generate_svg(self):
         fig = self.generate_fig()
@@ -104,18 +105,28 @@ class Graph:
         return plotted_graph
 
     def generate_html(self, output_id, actions_button=True):
-        svg = self.generate_svg()
-        encoded_data = base64.b64encode(svg.encode('utf-8')).decode('utf-8')
+
+        if self.graph_type == "heatmap":
+            png = self.generate_png()
+            encoded_data = base64.b64encode(png).decode("utf-8")
+            img_tag = f'<img src="data:image/png;base64,{encoded_data}" download="image.png"/>'
+            download_tag = f'<a class="dropdown-item" href="data:image/png;base64,{encoded_data}" download="image.png">Download As PNG</a>'
+        else:
+            svg = self.generate_svg()
+            encoded_data = base64.b64encode(svg.encode('utf-8')).decode('utf-8')
+            img_tag = f'<img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/>'
+            download_tag = f'<a class="dropdown-item" href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download As SVG</a>'
+
         if actions_button:
             html = f"""
                     <div>
-                        <img src="data:image/svg+xml;base64,{encoded_data}" download="image.svg"/>
+                        {img_tag}
                         <div class="dropdown show">
                             <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="{output_id}_dropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 Actions
                             </a>
                             <div class="dropdown-menu" aria-labelledby="{output_id}_dropdown">
-                                <a class="dropdown-item" href="data:image/svg+xml;base64,{encoded_data}" download="image.svg">Download As SVG</a>
+                                {download_tag}
                                 <a class="dropdown-item" href="#" data-hx-post="/delete_output/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML" onclick="show_delete_output_spinner();">Delete This Output</a>
                             </div>
                         </div>
@@ -147,7 +158,7 @@ class Graph:
         image_buffer = BytesIO()
         fig.savefig(image_buffer, format="png", bbox_inches="tight")
         image_buffer.seek(0)
-        plotted_graph = image_buffer.getvalue().decode("utf-8")
+        plotted_graph = image_buffer.getvalue()
         plt.close(fig)
         return plotted_graph
 
@@ -434,3 +445,11 @@ def get_x_min(samples):
             if grain.age - grain.uncertainty < x_min:
                 x_min = grain.age - grain.uncertainty
     return x_min
+
+
+def svg_to_png(decoded_svg):
+    png_image_buffer = BytesIO()
+    cairosvg.svg2png(bytestring=decoded_svg.encode('utf-8'), write_to=png_image_buffer)
+    png_image_buffer.seek(0)
+    png_data = png_image_buffer.getvalue()
+    return png_data

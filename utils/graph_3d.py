@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 import scipy.stats as st
-from scipy.interpolate import griddata
+from scipy.ndimage import zoom
 import matplotlib.pyplot as plt
 from sqlalchemy import false
 
@@ -110,10 +110,12 @@ def kde_graph_2d(sample,
     return html_str
 
 
-def heatmap(x, y, z, title="Heatmap", color_map="viridis"):
-    print(color_map)
-    fig, ax = plt.subplots()
-    c = ax.pcolormesh(x, y, z, shading='nearest', cmap=color_map, edgecolors='face')
+def heatmap(x, y, z, title="Heatmap", color_map="viridis", rescale_factor=1, fig_width=9, fig_height=7):
+    x_rescaled = zoom(x, rescale_factor)
+    y_rescaled = zoom(y, rescale_factor)
+    z_rescaled = zoom(z, rescale_factor)
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=100)
+    c = ax.pcolormesh(x_rescaled, y_rescaled, z_rescaled, shading='gouraud', cmap=color_map, edgecolors='face')
     fig.colorbar(c, ax=ax)
     ax.set_xlabel('Age (Ma)')
     ax.set_ylabel('εHf(t)')
