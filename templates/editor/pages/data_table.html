@@ -30,7 +30,7 @@
         const jsonString = JSON.stringify(jsonData);
         const compressedDataArray = pako.deflate(jsonString);
         const compressedData = uint8ArrayToBase64(compressedDataArray);
-        fetch('/json/save/spreadsheet', {
+        fetch('/projects/{{ project_id }}/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 'compressedData': compressedData })

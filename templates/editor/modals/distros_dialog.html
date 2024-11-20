@@ -21,9 +21,9 @@
                                     <td>
                                         <label for="distro_select">Select a distribution type...</label>
                                         <select name="distro_select" id="distro_select">
-                                            <option value="kde_graph">Kernel Density Estimate</option>
-                                            <option value="pdp_graph">Probability Density Plot</option>
-                                            <option value="cdf_graph">Cumulative Distribution Function</option>
+                                            <option value="kde">Kernel Density Estimate</option>
+                                            <option value="pdp">Probability Density Plot</option>
+                                            <option value="cdf">Cumulative Distribution Function</option>
                                         </select>
                                     </td>
                                     <td>
@@ -61,9 +61,9 @@
         var distro_type = document.getElementById("distro_select").value;
 
         var distro_outputName = document.getElementById("distro_output_name").value;
-        var queryString = "/new_distro?samples=" + selectedSamples.join("&samples=") + "&distro_type=" + distro_type;
+        var queryString = "/projects/{{ project_id }}/outputs/new/distribution?sampleNames=" + selectedSamples.join("&sampleNames=") + "&outputType=" + distro_type;
         if (distro_outputName !== "") {
-            queryString += "&output_name=" + distro_outputName;
+            queryString += "&outputTitle=" + distro_outputName;
         }
         document.getElementById("send_it_distro").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_distro"));

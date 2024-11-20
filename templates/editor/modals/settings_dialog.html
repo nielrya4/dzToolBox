@@ -25,13 +25,13 @@
                         </select>
                         <br />
                         <h6 style="text-align: center; color:white; background: #001f3f">Graph Settings:</h6>
-                        <label for="show_links">Show Actions Button Under Images? </label>
-                        <select id="show_links" name="show_links" class="form-select" aria-label="Default select example">
-                            <option value="true">Yes (Recommended)</option>
-                            <option value="false">No</option>
-                        </select>
                         <label for="stack_graphs">Stack Graph Subplots?</label>
                         <select id="stack_graphs" name="stack_graphs" class="form-select" aria-label="Default select example">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                        <label for="showLegendSelect">Show Graph Legend?</label>
+                        <select id="showLegendSelect" name="showLegendSelect" class="form-select" aria-label="Default select example">
                             <option value="true">Yes</option>
                             <option value="false">No</option>
                         </select>
@@ -83,7 +83,6 @@
     update_btn.addEventListener('click', function () {
         const kde_bandwidth_textbox = document.getElementById('kde_bandwidth');
         const matrix_function_type_select = document.getElementById('matrix_function_type');
-        const show_links_select = document.getElementById('show_links');
         const stack_graphs_select = document.getElementById('stack_graphs');
         const n_trials_textbox = document.getElementById('n_trials');
         const graph_color_map = document.getElementById('graph_color_map')
@@ -93,24 +92,23 @@
         const figure_height = document.getElementById('figure_height')
         const min_age = document.getElementById('min_age')
         const max_age = document.getElementById('max_age')
+        const showLegendSelect = document.getElementById('showLegendSelect')
 
         var settingsData = {
-            "kde_bandwidth" : parseFloat(kde_bandwidth_textbox.value),
             "min_age": parseFloat(min_age.value),
             "max_age": parseFloat(max_age.value),
+            "kde_bandwidth" : parseFloat(kde_bandwidth_textbox.value),
             "matrix_function_type" : matrix_function_type_select.value,
-            "actions_button" : show_links_select.value,
             "stack_graphs" : stack_graphs_select.value,
-            "n_trials" : parseInt(n_trials_textbox.value),
-            "graph_figure_settings": {
-                "font_size": parseFloat(font_size.value),
-                "font_name": font_select.value,
-                "figure_width": parseInt(figure_width.value),
-                "figure_height": parseInt(figure_height.value),
-                "graph_color_map": graph_color_map.value
-            }
+            "n_unmix_trials" : parseInt(n_trials_textbox.value),
+            "font_size": parseFloat(font_size.value),
+            "font_name": font_select.value,
+            "figure_width": parseInt(figure_width.value),
+            "figure_height": parseInt(figure_height.value),
+            "color_map": graph_color_map.value,
+            "show_legend": showLegendSelect.value,
         };
-        fetch('/update_settings', {
+        fetch('/projects/{{ project_id }}/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settingsData)

@@ -9,10 +9,9 @@
             document.getElementById("{{id}}_spinner").classList.add("visible");
         });
         function {{ id }}getSampleNames() {
-            fetch('/get_sample_names', {
-                method: 'POST',
+            fetch('/projects/{{ project_id }}/sample-names', {
+                method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 'jsonData': null })
             })
             .then(response => {
                 document.getElementById("{{id}}_spinner").classList.remove("visible");

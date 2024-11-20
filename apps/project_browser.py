@@ -43,7 +43,7 @@ def register(app):
             spreadsheet_data = json.dumps(np.ndarray.tolist(np.array([[None]*6]*6)))
         project_data = Project(name=project_name,
                                data=spreadsheet_data,
-                               outputs="").generate_json_string()
+                               outputs="").to_json()
         compressed_project = compression.compress(project_data)
         file = database.new_file(project_name, compressed_project)
         session["open_project"] = 0

@@ -25,7 +25,7 @@
                 <tr class="table_list">
                     <td>{{ project.title }}</td>
                     <td>
-                        <form method="POST" action="/projects/{{ project.id }}">
+                        <form method="GET" action="/projects/{{ project.id }}">
                             <button class="btn btn-primary" type="submit" onclick="show_open_spinner()">Open</button>
                             <button class="btn btn-primary delete-project-btn" hx-post="/delete_project/{{ project.id }}" type="button" hx-target="#project-list" hx-swap="outerHTML" onclick="show_del_spinner()">Delete</button>
                         </form>

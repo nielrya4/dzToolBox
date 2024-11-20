@@ -42,7 +42,7 @@
             <br />
                 {% block outputs %}
                     {% for output in outputs_data %}
-                        {{ output.data | safe }}
+                        {{ output.output_data | safe }}
                         <br />
                     {% endfor %}
                 {% endblock %}
@@ -55,7 +55,6 @@
     {% include "editor/modals/hafnium_dialog.html" %}
     {% include "editor/modals/mds_dialog.html" %}
     {% include "editor/modals/mda_dialog.html" %}
-    {% include "editor/modals/age_calc_dialog.html" %}
     {% include "editor/modals/distros_dialog.html" %}
     {% include "editor/modals/unmix_dialog.html" %}
     {% include "editor/modals/settings_dialog.html" %}
