@@ -4,7 +4,7 @@ from dz_lib.utils.encode import get_mime_type, safe_filename
 
 
 def embed_graph(fig, output_id, project_id, fig_type="matplotlib", img_format='svg', download_formats=['svg']):
-    accepted_image_formats = ['jpg', 'jpeg', 'png', 'pdf', 'eps', 'webp', 'svg']
+    accepted_image_formats = ['jpg', 'jpeg', 'png', 'pdf', 'eps', 'svg']
     if not formats.check(file_format=img_format, accepted_formats=accepted_image_formats):
         raise ValueError("Image format is not supported.")
     for download_format in download_formats:

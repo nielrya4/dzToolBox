@@ -235,7 +235,7 @@ def register(app):
                     project_id=project_id,
                     fig_type="matplotlib",
                     img_format='svg',
-                    download_formats=['svg', 'png', 'jpg', 'pdf', 'eps', 'webp']
+                    download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                 )
                 new_output = Output(
                     output_id=output_id,
@@ -359,7 +359,7 @@ def register(app):
                     project_id=project_id,
                     fig_type="matplotlib",
                     img_format='svg',
-                    download_formats=['svg', 'png', 'jpg', 'pdf', 'eps', 'webp']
+                    download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                 )
                 new_output = Output(
                     output_id=output_id,
@@ -465,7 +465,7 @@ def register(app):
                         project_id=project_id,
                         fig_type="matplotlib",
                         img_format='svg',
-                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps', 'webp']
+                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                     )
                     project.outputs.append(
                         Output(
@@ -492,7 +492,7 @@ def register(app):
                         project_id=project_id,
                         fig_type="matplotlib",
                         img_format='svg',
-                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps', 'webp']
+                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                     )
                     project.outputs.append(
                         Output(
@@ -622,7 +622,7 @@ def register(app):
                     project_id=project_id,
                     fig_type=fig_type,
                     img_format=img_format,
-                    download_formats=['svg', 'png', 'jpg', 'pdf', 'webp']
+                    download_formats=['svg', 'png', 'jpg', 'pdf']
                 )
                 new_output = Output(
                     output_id=output_id,
