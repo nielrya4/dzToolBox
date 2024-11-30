@@ -11,6 +11,7 @@ import zlib
 import secrets
 import base64
 from dz_lib import univariate, bivariate
+from dz_lib.bivariate.distributions import *
 from dz_lib.univariate import mds, unmix
 from dz_lib.utils import data, matrices
 from utils import embedding
@@ -576,11 +577,10 @@ def register(app):
     def new_2d_distro(project_id):
         if session.get("open_project", 0) == project_id:
             project = __get_project(project_id)
-            if request.method == "POST":
-                json_data = request.get_json()
-                output_title = json_data.get("outputTitle", None)
-                output_type = json_data.get("outputType", "kde")
-                sample_names = json_data.get("sampleNames", [])
+            if request.method == "GET":
+                output_title = request.args.get("outputTitle", None)
+                output_type = request.args.get("outputType", "kde")
+                sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
                 loaded_samples = data.read_2d_samples(spreadsheet_data)
                 active_samples = []
@@ -588,27 +588,31 @@ def register(app):
                     for sample_name in sample_names:
                         if sample.name == sample_name:
                             active_samples.append(sample)
-                bivariate_distro = bivariate.distributions.kde_function_2d(active_samples[0])
-                if output_type == 'kde_2d_heatmap':
-                    fig_type = "matplotlib"
-                    graph_fig = bivariate.distributions.kde_graph_2d(
+                bivariate_distro = kde_function_2d(active_samples[0])
+                if output_type == 'kde_2d_surface':
+                    fig_type = "plotly"
+                    graph_fig = kde_graph_2d(
                         bivariate_distro=bivariate_distro,
                         title=output_title,
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
+                        font_name=project.settings.font_name,
                         font_size=project.settings.font_size,
-                        fig_width=project.settings.fig_width,
-                        fig_height=project.settings.fig_height
+                        fig_width=project.settings.figure_width,
+                        fig_height=project.settings.figure_height
                     )
-                elif output_type == 'kde_2d_surface':
-                    fig_type = "plotly"
-                    graph_fig = bivariate.distributions.heatmap(
+                    img_format='png'
+                elif output_type == 'kde_2d_heatmap':
+                    fig_type = "matplotlib"
+                    graph_fig = heatmap(
                         bivariate_distro=bivariate_distro,
                         show_points=True,
                         title=output_title,
+                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
+                        font_size=project.settings.font_size,
                         color_map=project.settings.color_map,
-                        fig_width=project.settings.fig_width,
-                        fig_height=project.settings.fig_height
+                        fig_width=project.settings.figure_width,
+                        fig_height=project.settings.figure_height
                     )
+                    img_format='png'
                 else:
                     raise ValueError("output_type is not supported")
                 output_id = secrets.token_hex(15)
@@ -617,8 +621,8 @@ def register(app):
                     output_id=output_id,
                     project_id=project_id,
                     fig_type=fig_type,
-                    img_format='svg',
-                    download_formats=['svg', 'png', 'jpg', 'pdf', 'eps', 'webp']
+                    img_format=img_format,
+                    download_formats=['svg', 'png', 'jpg', 'pdf', 'webp']
                 )
                 new_output = Output(
                     output_id=output_id,

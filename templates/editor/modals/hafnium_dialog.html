@@ -21,8 +21,8 @@
                                     <td>
                                         <label for="hafnium_select">Graph type:</label>
                                         <select name="hafnium_select" id="hafnium_select">
-                                            <option value="density">Bivariate KDE</option>
-                                            <option value="heatmap">Heatmap</option>
+                                            <option value="kde_2d_surface">Bivariate KDE</option>
+                                            <option value="kde_2d_heatmap">Heatmap</option>
                                         </select>
                                     </td>
                                     <td>
@@ -60,9 +60,9 @@
         var hafnium_type = document.getElementById("hafnium_select").value;
 
         var hafnium_outputName = document.getElementById("hafnium_output_name").value;
-        var queryString = "/new_hafnium?samples=" + selectedSamples.join("&samples=") + "&hafnium_type=" + hafnium_type;
+        var queryString = "/projects/{{ project_id }}/outputs/new/2d-distribution?sampleNames=" + selectedSamples.join("&sampleNames=") + "&outputType=" + hafnium_type;
         if (hafnium_outputName !== "") {
-            queryString += "&output_name=" + hafnium_outputName;
+            queryString += "&outputTitle=" + hafnium_outputName;
         }
         document.getElementById("send_it_hafnium").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_hafnium"));
