@@ -26,6 +26,11 @@
                                             <option value="ks">KS</option>
                                             <option value="kuiper">Kuiper</option>
                                             <option value="cross_correlation">Cross-Correlation</option>
+                                            <option value="dis_similarity">Dis-Similarity</option>
+                                            <option value="dis_likeness">Dis-Likeness</option>
+                                            <option value="dis_ks">Dis-KS</option>
+                                            <option value="dis_kuiper">Dis-Kuiper</option>
+                                            <option value="dis_cross_correlation">Dis-Cross-Correlation</option>
                                         </select>
                                     </td>
                                     <td>
@@ -61,14 +66,21 @@
             }
         }
         var matrix_type = document.getElementById("matrix_select").value;
-
         var matrix_outputName = document.getElementById("matrix_output_name").value;
-        var queryString = "/new_matrix?samples=" + selectedSamples.join("&samples=") + "&matrix_type=" + matrix_type;
+        var queryString = "/projects/{{ project_id }}/outputs/new/matrix?sampleNames=" + selectedSamples.join("&sampleNames=") + "&outputType=" + matrix_type;
         if (matrix_outputName !== "") {
-            queryString += "&output_name=" + matrix_outputName;
+            queryString += "&outputTitle=" + matrix_outputName;
         }
         document.getElementById("send_it_matrix").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_matrix"));
         document.getElementById("send_it_matrix").click();
     }
+</script>
+<script>
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' && $('.modal.show').length) { // Check if a modal is open
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
 </script>

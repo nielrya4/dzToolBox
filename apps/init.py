@@ -73,7 +73,7 @@ def register(app):
         spreadsheet_data = spreadsheet.array_to_text(transposed_array)
         project_data = Project(name=project_name,
                                data=spreadsheet_data,
-                               outputs="").generate_json_string()
+                               outputs="").to_json()
         compressed_project = compression.compress(project_data)
         file = database.new_file(project_name, compressed_project)
         session["open_project"] = file.id

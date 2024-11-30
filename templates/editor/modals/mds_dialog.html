@@ -21,11 +21,11 @@
                                     <td>
                                         <label for="mds_select">Select a metric...</label>
                                         <select name="mds_select" id="mds_select">
-                                            <option value="similarity">Similarity</option>
-                                            <option value="likeness">Likeness</option>
-                                            <option value="cross_correlation">Cross-Correlation</option>
-                                            <option value="ks">KS</option>
-                                            <option value="kuiper">Kuiper</option>
+                                            <option value="mds_similarity">Similarity</option>
+                                            <option value="mds_likeness">Likeness</option>
+                                            <option value="mds_cross_correlation">Cross-Correlation</option>
+                                            <option value="mds_ks">KS</option>
+                                            <option value="mds_kuiper">Kuiper</option>
                                         </select>
                                     </td>
                                     <td>
@@ -63,10 +63,8 @@
         var mds_type = document.getElementById("mds_select").value;
 
         var mds_outputName = document.getElementById("mds_output_name").value;
-        var queryString = "/new_mds?samples=" + selectedSamples.join("&samples=") + "&mds_type=" + mds_type;
-        if (mds_outputName !== "") {
-            queryString += "&output_name=" + mds_outputName;
-        }
+        var queryString = "/projects/{{ project_id }}/outputs/new/mds?sampleNames=" + selectedSamples.join("&sampleNames=") + "&outputType=" + mds_type;
+        queryString += "&outputTitle=" + mds_outputName;
         document.getElementById("send_it_mds").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_mds"));
         document.getElementById("send_it_mds").click();

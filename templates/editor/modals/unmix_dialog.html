@@ -78,13 +78,13 @@
         ).map(input => input.value);
 
         // Build query string
-        var queryString = "/new_unmix?samples="
-            + selectedSamples.join("&samples=")
-            + "&unmix_type=" + unmix_type
-            + "&unmix_outputs=" + unmix_outputs_select.join("&unmix_outputs=");  // Send the selected output types
+        var queryString = "/projects/{{ project_id }}/outputs/new/unmix?sampleNames="
+            + selectedSamples.join("&sampleNames=")
+            + "&unmixMetric=" + unmix_type
+            + "&outputType=" + unmix_outputs_select.join("&outputType=");  // Send the selected output types
 
         if (unmix_outputName !== "") {
-            queryString += "&output_name=" + unmix_outputName;
+            queryString += "&outputTitle=" + unmix_outputName;
         }
 
         // Set the hx-get attribute for HTMX and trigger the request
