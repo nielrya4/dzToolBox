@@ -34,6 +34,14 @@
             {% endfor %}
         </table>
     {% endblock %}
+    <br />
+    <br />
+    <h3 style="color:red;">Notice:</h3>
+    <p>
+        If you have projects created before 1 Dec 2024, please <a href="/update-projects" onclick="show_update_spinner()">convert them to the new format.</a>
+        If you do not convert them, they will be unreadable to the new version of dzToolBox, and
+        they will raise an internal server error when you try to open them.
+    </p>
 
     {% from "global/spinner.html" import spinner with context %}
     {% include "project_browser/modals/new_project_dialog.html" %}
@@ -44,6 +52,8 @@
     {{ spinner(id="new_proj_spinner", message="Creating New Project...") }}
     {{ spinner(id="del_proj_spinner", message="Deleting Project...") }}
     {{ spinner(id="open_proj_spinner", message="Loading Project...") }}
+    {{ spinner(id="updating_proj_spinner", message="Updating Projects...") }}
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
@@ -57,6 +67,10 @@
         function show_del_spinner() {
             document.getElementById("del_proj_spinner").classList.remove("hidden");
             document.getElementById("del_proj_spinner").classList.add("visible");
+        }
+        function show_update_spinner() {
+            document.getElementById("updating_proj_spinner").classList.remove("hidden");
+            document.getElementById("updating_proj_spinner").classList.add("visible");
         }
 
         function show_open_spinner() {

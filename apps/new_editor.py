@@ -594,7 +594,7 @@ def register(app):
                     graph_fig = kde_graph_2d(
                         bivariate_distro=bivariate_distro,
                         title=output_title,
-                        font_name=project.settings.font_name,
+                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
                         font_size=project.settings.font_size,
                         fig_width=project.settings.figure_width,
                         fig_height=project.settings.figure_height
