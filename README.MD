@@ -3,7 +3,7 @@
 <h5 style="text-align: center">Developed by Ryan Nielsen in conjunction with Kurt Sundell</h5>
 <a href="https://www.dztoolbox.com">Try it out</a>
 <h3>Features:</h3>
-<p>(See <a href="https://www.dztoolbox.com/gsa_poster.pdf">my GSA poster</a> for more information!)</p>
+<p>(See <a href="https://www.dztoolbox.com/docs/gsa_poster.pdf">my GSA poster</a> for more information!)</p>
 <ul>
     <li>
         <h5>Stats</h5>
