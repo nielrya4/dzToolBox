@@ -8,11 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/shim.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/table_list.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/toolbars.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/frame.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/MultiSelect.css') }}">
-
+    <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
     {% include "editor/misc/font_style.html" %}
     {% include "global/head.html" %}
 </head>
@@ -59,6 +62,8 @@
     {% include "editor/modals/distros_dialog.html" %}
     {% include "editor/modals/unmix_dialog.html" %}
     {% include "editor/modals/settings_dialog.html" %}
+    {% include "editor/modals/databases_dialog.html" %}
+    {% include "editor/modals/export_spreadsheet_dialog.html" %}
     {% include "editor/spinners/new_output_spinner.html" %}
     {% include "editor/spinners/clear_outputs_spinner.html" %}
     {% include "editor/spinners/delete_output_spinner.html" %}

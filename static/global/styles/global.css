@@ -4,7 +4,7 @@ body {
     color: white;
     background: linear-gradient(to bottom, #000000, #001f3f);
     min-height: 100vh;
-    font-family: 'Ubuntu Light', sans-serif;
+    font-family: 'Ubuntu', sans-serif;
     margin: 10px;
     display: flex;
     flex-direction: column;

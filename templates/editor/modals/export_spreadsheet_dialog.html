@@ -1,0 +1,69 @@
+<div id="export_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Export Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="export_form" data-hx-trigger="click">
+                        <label for="export_filename">Filename</label>
+                        <input type="text" id="export_filename" name="export_filename" required value="{{ project_name }}">
+                        <br />
+                        <br />
+                        <label for="export_file_format">Choose File Format</label>
+                        <select name="export_file_format" id="export_file_format" required>
+                            <option value="xlsx">Excel (.xlsx)</option>
+                            <option value="xls">Old Excel (.xls)</option>
+                            <option value="csv">CSV (.csv)</option>
+                            <option value="json">JSON (.json)</option>
+                        </select>
+                        <br />
+                        <br />
+                        <button data-bs-toggle="modal" data-bs-target="#export_modal" class="btn btn-primary" type="button" onclick="export_send_args()">Download</button>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function export_send_args() {
+        var filename = document.getElementById("export_filename").value;
+        var fileFormat = document.getElementById("export_file_format").value;
+
+        if (filename === "") {
+            alert("Please enter a filename.");
+            return;
+        }
+
+        // Build the query string with the chosen format and filename
+        var queryString = `/projects/{{ project_id }}/data/export?filename=${filename}&format=${fileFormat}`;
+
+        try {
+            const response = await fetch(queryString, {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${filename}.${fileFormat}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error("Error downloading the file:", error);
+            alert("Failed to download the file. Please try again.");
+        }
+    }
+</script>

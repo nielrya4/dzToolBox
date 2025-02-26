@@ -1,3 +1,4 @@
+import dz_lib.utils.encode
 from flask import render_template, request, jsonify, session
 from flask_login import login_required, current_user
 from server import database
@@ -6,7 +7,6 @@ from utils.output import Output
 from utils.project import project_from_json
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from jinja2_fragments import render_block
-import json
 import zlib
 import secrets
 import base64
@@ -15,6 +15,11 @@ from dz_lib.bivariate.distributions import *
 from dz_lib.univariate import mds, unmix, distributions, mda
 from dz_lib.utils import data, matrices
 from utils import embedding
+from flask import send_file
+from pathvalidate import sanitize_filename
+import pandas as pd
+import json
+
 environment = Environment(
     loader=FileSystemLoader("templates"),
     autoescape=select_autoescape(("html", "jinja2"))
@@ -41,7 +46,8 @@ def register(app):
                                    spreadsheet_data=project.data,
                                    samples=samples_data,
                                    outputs_data=project.outputs,
-                                   project_id=project_id)
+                                   project_id=project_id,
+                                   project_name=project.name)
         else:
             return render_template("errors/403.html")
 
@@ -92,6 +98,52 @@ def register(app):
                 return jsonify({"success": False, "error": str(e)})
         else:
             return jsonify({"sample-names": "access_denied"})
+
+    @app.route('/projects/<int:project_id>/data/export', methods=['GET'])
+    @login_required
+    def export_data(project_id):
+        if session.get("open_project", 0) == project_id:
+            project = __get_project(project_id)
+            spreadsheet_data = spreadsheet.text_to_array(project.data)
+            filename = sanitize_filename(request.args.get("filename", "exported_data"))
+            file_format = request.args.get("format", "xlsx")
+            try:
+                df = pd.DataFrame(spreadsheet_data)
+                if file_format == "xlsx":
+                    buffer = matrices.to_xlsx(df, include_header=False, include_index=False)
+                    return send_file(
+                        buffer,
+                        as_attachment=True,
+                        download_name=f"{filename}.xlsx",
+                        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                elif file_format == "csv":
+                    buffer = matrices.to_csv(df, include_header=False, include_index=False)
+                    buffer.seek(0)
+                    return send_file(
+                        buffer,
+                        as_attachment=True,
+                        download_name=f"{filename}.csv",
+                        mimetype="text/csv"
+                    )
+                elif file_format == "xls":
+                    buffer = matrices.to_xls(df, include_header=False, include_index=False)
+                    buffer.seek(0)
+                    return send_file(
+                        buffer,
+                        as_attachment=True,
+                        download_name=f"{filename}.csv",
+                        mimetype=dz_lib.utils.encode.get_mime_type("xls")
+                    )
+                elif file_format == "json":
+                    json_data = df.to_json(orient='values')
+                    return jsonify(json_data)
+                return jsonify({"success": False, "error": "Unsupported format"})
+            except Exception as e:
+                print(f"Error exporting data: {e}")
+                return jsonify({"success": False, "error": str(e)})
+        else:
+            return jsonify({"error": "access_denied"})
 
     @app.route('/projects/<int:project_id>/settings', methods=['GET', 'POST'])
     @login_required

@@ -1,0 +1,53 @@
+<div id="databases_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Distribution</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <div id="example-table"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+
+//Build Tabulator
+var table = new Tabulator("#example-table", {
+    height:"450px",
+    spreadsheet:true,
+    spreadsheetRows:50,
+    spreadsheetColumns:50,
+    spreadsheetColumnDefinition:{editor:"input", resizable:"header"},
+    spreadsheetSheetTabs:true,
+
+    rowHeader:{field:"_id", hozAlign:"center", headerSort:false, frozen:true},
+
+    editTriggerEvent:"dblclick", //change edit trigger mode to make cell navigation smoother
+    editorEmptyValue:undefined, //ensure empty values are set to undefined so they arent included in spreadsheet output data
+
+    //enable range selection
+    selectableRange:1,
+    selectableRangeColumns:true,
+    selectableRangeRows:true,
+    selectableRangeClearCells:true,
+
+    //configure clipboard to allow copy and paste of range format data
+    clipboard:true,
+    clipboardCopyStyled:false,
+    clipboardCopyConfig:{
+        rowHeaders:false,
+        columnHeaders:false,
+    },
+    clipboardCopyRowRange:"range",
+    clipboardPasteParser:"range",
+    clipboardPasteAction:"range",
+});
+document.getElementById("databases_link").addEventListener("click", function(){
+    table.setData("/databases/belt_db.json");
+});
+</script>

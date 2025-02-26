@@ -1,5 +1,5 @@
 from server import cleanup
-from apps import project_browser, init, new_editor, errors, docs, updates
+from apps import project_browser, init, new_editor, errors, docs, updates, databases
 
 
 def register_routes(app):
@@ -9,3 +9,4 @@ def register_routes(app):
     errors.register(app)
     docs.register(app)
     updates.register(app)
+    databases.register(app)
