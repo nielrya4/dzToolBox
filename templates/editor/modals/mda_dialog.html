@@ -19,17 +19,13 @@
                             <table>
                                 <tr>
                                     <td>
-                                        <label for="mda_select">Select an MDA type...</label>
-                                        <select name="mda_select" id="mda_select">
-                                            <option value="similarity">mda_select</option>
-                                            <option value="likeness">Likeness</option>
-                                            <option value="ks">KS</option>
-                                            <option value="kuiper">Kuiper</option>
-                                            <option value="r2">R^2</option>
-                                        </select>
+                                        <h6>Select Output Types</h6>
+                                        <div id="mda_outputs_select"></div>
                                     </td>
+                                </tr>
+                                <tr>
                                     <td>
-                                        <button class="btn btn-primary" type="button" onclick="mda_send_args()">Create MDA</button>
+                                        <button class="btn btn-primary" type="button" onclick="mda_send_args();">Create model</button>
                                     </td>
                                 </tr>
                             </table>
@@ -60,12 +56,15 @@
                 selectedSamples.push(mda_checkboxes[i].value);
             }
         }
-        var mda_type = document.getElementById("mda_select").value;
-
-        var mda_outputName = document.getElementById("mda_output_name").value;
-        var queryString = "/new_mda?samples=" + selectedSamples.join("&samples=") + "&mda_type=" + mda_type;
+        const mda_outputName = document.getElementById("mda_output_name").value;
+        const mda_outputs_select = Array.from(
+            document.querySelectorAll(`#mda_outputs_select input[type="hidden"]`)
+        ).map(input => input.value);
+        var queryString = "/projects/{{ project_id }}/outputs/new/mda?sampleNames="
+            + selectedSamples.join("&sampleNames=")
+            + "&outputType=" + mda_outputs_select.join("&outputType=");
         if (mda_outputName !== "") {
-            queryString += "&output_name=" + mda_outputName;
+            queryString += "&outputTitle=" + mda_outputName;
         }
         document.getElementById("send_it_mda").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_mda"));

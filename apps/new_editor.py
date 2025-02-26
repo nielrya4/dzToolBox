@@ -12,7 +12,7 @@ import secrets
 import base64
 from dz_lib import univariate, bivariate
 from dz_lib.bivariate.distributions import *
-from dz_lib.univariate import mds, unmix
+from dz_lib.univariate import mds, unmix, distributions, mda
 from dz_lib.utils import data, matrices
 from utils import embedding
 environment = Environment(
@@ -151,27 +151,23 @@ def register(app):
                     for sample_name in sample_names:
                         if sample.name == sample_name:
                             active_samples.append(sample)
-                x_min = data.get_x_min(active_samples)
-                x_max = data.get_x_max(active_samples)
                 adjusted_samples = []
                 for sample in active_samples:
-                    if project.settings.matrix_function_type == "kde" and output_type != "pdp_graph":
+                    if project.settings.matrix_function_type == "kde" and output_type != "pdp":
                         sample.replace_grain_uncertainties(project.settings.kde_bandwidth)
                     adjusted_samples.append(sample)
                 adjusted_samples.reverse()
                 if output_type == 'kde':
-                    distributions = []
+                    distros = []
                     for sample in adjusted_samples:
-                        distributions.append(
+                        distros.append(
                             univariate.distributions.kde_function(
                                 sample=sample,
-                                bandwidth=float(project.settings.kde_bandwidth),
-                                x_min=x_min,
-                                x_max=x_max
+                                bandwidth=float(project.settings.kde_bandwidth)
                             )
                         )
                     graph_fig = univariate.distributions.distribution_graph(
-                        distributions=distributions,
+                        distributions=distros,
                         stacked=project.settings.stack_graphs == "true",
                         legend=project.settings.legend == "true",
                         title=output_title,
@@ -179,20 +175,18 @@ def register(app):
                         font_size=project.settings.font_size,
                         fig_width=project.settings.figure_width,
                         fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map
+                        color_map=project.settings.color_map,
+                        x_min=project.settings.min_age,
+                        x_max=project.settings.max_age
                     )
                 elif output_type == 'pdp':
-                    distributions = []
+                    distros = []
                     for sample in adjusted_samples:
-                        distributions.append(
-                            univariate.distributions.pdp_function(
-                                sample=sample,
-                                x_min=x_min,
-                                x_max=x_max
-                            )
+                        distros.append(
+                            univariate.distributions.pdp_function(sample)
                         )
                     graph_fig = univariate.distributions.distribution_graph(
-                        distributions=distributions,
+                        distributions=distros,
                         stacked=project.settings.stack_graphs == "true",
                         legend=project.settings.legend == "true",
                         title=output_title,
@@ -200,23 +194,23 @@ def register(app):
                         font_size=project.settings.font_size,
                         fig_width=project.settings.figure_width,
                         fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map
+                        color_map=project.settings.color_map,
+                        x_min=project.settings.min_age,
+                        x_max=project.settings.max_age
                     )
                 elif output_type == 'cdf':
-                    distributions = []
+                    distros = []
                     for sample in adjusted_samples:
-                        distributions.append(
+                        distros.append(
                             univariate.distributions.cdf_function(
                                 univariate.distributions.kde_function(
                                     sample=sample,
-                                    bandwidth=float(project.settings.kde_bandwidth),
-                                    x_min=x_min,
-                                    x_max=x_max
+                                    bandwidth=float(project.settings.kde_bandwidth)
                                 )
                             )
                         )
                     graph_fig = univariate.distributions.distribution_graph(
-                        distributions=distributions,
+                        distributions=distros,
                         stacked=project.settings.stack_graphs == "true",
                         legend=project.settings.legend == "true",
                         title=output_title,
@@ -224,7 +218,9 @@ def register(app):
                         font_size=project.settings.font_size,
                         fig_width=project.settings.figure_width,
                         fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map
+                        color_map=project.settings.color_map,
+                        x_min=project.settings.min_age,
+                        x_max=project.settings.max_age
                     )
                 else:
                     raise ValueError("output_type is not supported")
@@ -645,6 +641,136 @@ def register(app):
         else:
             return jsonify({"outputs": "access_denied"})
 
+    @app.route('/projects/<int:project_id>/outputs/new/mda', methods=['GET'])
+    @login_required
+    def new_mda(project_id):
+        if session.get("open_project", 0) == project_id:
+            project = __get_project(project_id)
+            if request.method == "GET":
+                output_title = request.args.get("outputTitle", "")
+                output_types = request.args.getlist("outputType")
+                sample_names = request.args.getlist("sampleNames")
+                spreadsheet_data = spreadsheet.text_to_array(project.data)
+                loaded_samples = data.read_1d_samples(spreadsheet_data)
+                active_samples = []
+                for sample in loaded_samples:
+                    for sample_name in sample_names:
+                        if sample.name == sample_name:
+                            active_samples.append(sample)
+                sample = active_samples[0]
+                if "mda_table" in output_types:
+                    matrix_df = univariate.mda.comparison_table(sample.grains)
+                    output_id = secrets.token_hex(15)
+                    output_data = embedding.embed_matrix(
+                        dataframe=matrix_df,
+                        output_id=output_id,
+                        project_id=project_id,
+                        download_formats=['xlsx', 'xls', 'csv']
+                    )
+                    project.outputs.append(
+                        Output(
+                            output_id=output_id,
+                            output_type='matrix',
+                            output_data=output_data
+                        )
+                    )
+                if "mda_graph" in output_types:
+                    graph_fig = univariate.mda.comparison_graph(
+                        grains=sample.grains,
+                        title=output_title,
+                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
+                        font_size=project.settings.font_size,
+                        fig_width=project.settings.figure_width,
+                        fig_height=project.settings.figure_height
+                    )
+                    output_id = secrets.token_hex(15)
+                    output_data = embedding.embed_graph(
+                        fig=graph_fig,
+                        output_id=output_id,
+                        project_id=project_id,
+                        fig_type="matplotlib",
+                        img_format='svg',
+                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                    )
+                    project.outputs.append(
+                        Output(
+                            output_id=output_id,
+                            output_type='graph',
+                            output_data=output_data
+                        )
+                    )
+                if "rank_plot" in output_types:
+                    graph_fig = univariate.mda.ranked_ages_plot(
+                        grains=sample.grains,
+                        title=output_title,
+                        x_min=project.settings.min_age,
+                        x_max=project.settings.max_age,
+                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
+                        font_size=project.settings.font_size,
+                        fig_width=project.settings.figure_width,
+                        fig_height=project.settings.figure_height
+                    )
+                    output_id = secrets.token_hex(15)
+                    output_data = embedding.embed_graph(
+                        fig=graph_fig,
+                        output_id=output_id,
+                        project_id=project_id,
+                        fig_type="matplotlib",
+                        img_format='svg',
+                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                    )
+                    project.outputs.append(
+                        Output(
+                            output_id=output_id,
+                            output_type='graph',
+                            output_data=output_data
+                        )
+                    )
+                if "ygf_graph" in output_types:
+                    distro = distributions.pdp_function(sample)
+                    fitted_grain, fitted_distro = mda.youngest_gaussian_fit(sample.grains)
+                    graph_fig = distributions.distribution_graph(
+                        distributions=[distro, fitted_distro],
+                        color_map="rainbow",
+                        x_min=project.settings.min_age,
+                        x_max=project.settings.max_age,
+                        title=output_title,
+                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
+                        font_size=project.settings.font_size,
+                        fig_width=project.settings.figure_width,
+                        fig_height=project.settings.figure_height
+                    )
+                    output_id = secrets.token_hex(15)
+                    output_data = embedding.embed_graph(
+                        fig=graph_fig,
+                        output_id=output_id,
+                        project_id=project_id,
+                        fig_type="matplotlib",
+                        img_format='svg',
+                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                    )
+                    project.outputs.append(
+                        Output(
+                            output_id=output_id,
+                            output_type='graph',
+                            output_data=output_data
+                        )
+                    )
+
+                updated_project_content = project.to_json()
+                compressed_proj_content = compression.compress(updated_project_content)
+                database.write_file(project_id, compressed_proj_content)
+                return render_block(
+                    environment=environment,
+                    template_name="editor/editor.html",
+                    block_name="outputs",
+                    outputs_data=project.outputs,
+                    project_id=project_id
+                )
+            else:
+                return jsonify({"outputs": "method not allowed"})
+        else:
+            return jsonify({"outputs": "access_denied"})
 
     @app.route('/projects/<int:project_id>/outputs/clear', methods=['POST'])
     @login_required

@@ -281,3 +281,29 @@ new MultiSelect(document.getElementById('unmix_outputs_select'), {
     selectAll: false
 });
 
+new MultiSelect(document.getElementById('mda_outputs_select'), {
+    data: [
+        {
+            value: 'mda_table',
+            text: 'MDA Comparison Table',
+            selected: true
+        },
+        {
+            value: 'mda_graph',
+            text: 'MDA Comparison Graph',
+            selected: true
+        },
+        {
+            value: 'rank_plot',
+            text: 'Ranked Ages Plot',
+            selected: true
+        },
+        {
+            value: 'ygf_graph',
+            text: 'Youngest Gaussian Fit Graph',
+            selected: true
+        }
+    ],
+    search: false,
+    selectAll: false
+});
