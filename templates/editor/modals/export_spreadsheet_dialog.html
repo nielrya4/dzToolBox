@@ -10,11 +10,11 @@
                 <div class="container-sm">
                     <form id="export_form" data-hx-trigger="click">
                         <label for="export_filename">Filename</label>
-                        <input type="text" id="export_filename" name="export_filename" required value="{{ project_name }}">
+                        <input type="text" class="form-control" id="export_filename" name="export_filename" required value="{{ project_name }}">
                         <br />
                         <br />
                         <label for="export_file_format">Choose File Format</label>
-                        <select name="export_file_format" id="export_file_format" required>
+                        <select name="export_file_format" id="export_file_format" class="form-control" required>
                             <option value="xlsx">Excel (.xlsx)</option>
                             <option value="xls">Old Excel (.xls)</option>
                             <option value="csv">CSV (.csv)</option>

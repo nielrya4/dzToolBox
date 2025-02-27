@@ -1,72 +1,122 @@
-<div id="distro_modal" class="modal">
+<div id="import_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="frame" id="content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Distribution</h5>
+                    <h5 class="modal-title">Import Data</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <br />
                 <div class="container-sm">
-                    <form id="distro_form" data-hx-trigger="click">
-                        <label for="distro_output_name">Output Title</label>
-                        <input type="text" id="distro_output_name" name="distro_output_name" required>
-                        <br />
-                        <br />
-                        {{ sample_select(id="distro_sample_select", sender="distro_link", event='click', multi_select=True) }}
-                        <br />
-                        <div class="table_list">
-                            <table>
-                                <tr>
-                                    <td>
-                                        <label for="distro_select">Select a distribution type...</label>
-                                        <select name="distro_select" id="distro_select">
-                                            <option value="kde">Kernel Density Estimate</option>
-                                            <option value="pdp">Probability Density Plot</option>
-                                            <option value="cdf">Cumulative Distribution Function</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-primary" type="button" onclick="distro_send_args()">Create distro</button>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                        <button data-bs-toggle="modal"
-                                data-bs-target="#distro_modal"
-                                name="send_it_distro"
-                                id="send_it_distro"
-                                style="display: none"
-                                type="button"
-                                data-hx-target="#outputs_container"
-                                data-hx-swap="innerHTML">
-                        </button>
-                    </form>
+                    <input type="file" class="form-control btn-primary" id="import_file" accept=".xlsx,.csv,.ods" />
                     <br />
+                    <div id="import-table"></div>
+                    <br />
+                    <h6>Copy and paste data from this table into the main project spreadsheet</h6>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <script>
-    const distroSampleList = document.getElementById("distro_sample_select")
-    function distro_send_args() {
-        var selectedSamples = [];
-        var distro_checkboxes = distroSampleList.querySelectorAll(".sample-checkbox");
-        for (var i = 0; i < distro_checkboxes.length; i++) {
-            if (distro_checkboxes[i].checked) {
-                selectedSamples.push(distro_checkboxes[i].value);
+    // Function to generate column labels A, B, C, ..., Z, AA, AB...
+    function generateColumnLabels(num) {
+        let labels = [];
+        for (let i = 0; i < num; i++) {
+            let label = "";
+            let index = i;
+            while (index >= 0) {
+                label = String.fromCharCode((index % 26) + 65) + label;
+                index = Math.floor(index / 26) - 1;
+            }
+            labels.push(label);
+        }
+        return labels;
+    }
+
+    const sheets = [
+        ["Import", "data", "above"],
+        [":)", "", ""],
+    ];
+
+    // Initialize Tabulator
+    var importTable = new Tabulator("#import-table", {
+        height: "450px",
+        spreadsheet: true,
+        spreadsheetData: sheets,
+        spreadsheetRows: 50,
+        spreadsheetColumns: 50,
+        spreadsheetColumnDefinition: { editor: "input", resizable: "header" },
+        spreadsheetSheetTabs: true,
+
+        // Row indices
+        index: "rowNum",
+        columns: [{ title: "", field: "rowNum", width: 50, hozAlign: "center", headerSort: false, frozen: true }],
+
+        editTriggerEvent: "dblclick",
+        editorEmptyValue: undefined, // Ensure empty values are treated properly
+
+        // Enable range selection
+        selectableRange: 1,
+        selectableRangeColumns: true,
+        selectableRangeRows: true,
+        selectableRangeClearCells: true,
+
+        // Configure clipboard to allow copy and paste of range format data
+        clipboard: true,
+        clipboardCopyStyled: false,
+        clipboardCopyConfig: {
+            rowHeaders: false,
+            columnHeaders: false,
+        },
+        clipboardCopyRowRange: "range",
+        clipboardPasteParser: "range",
+        clipboardPasteAction: "range",
+    });
+
+    // Handle file import
+    document.getElementById("import_file").addEventListener("change", async function(event) {
+        let file = event.target.files[0];
+        if (file) {
+            let data = await file.arrayBuffer();
+            let workbook = XLSX.read(data, { type: "array" });
+            let sheetName = workbook.SheetNames[0]; // Get the first sheet
+            let jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false });
+
+            if (jsonData.length > 0) {
+                let numColumns = jsonData[0].length; // Count columns in the first row
+                let headers = generateColumnLabels(numColumns); // Generate "A, B, C..." headers
+
+                // Convert rows into data while maintaining row index
+                let tableData = jsonData.map((row, index) => {
+                    let obj = { rowNum: index + 1 }; // Row index starts from 1
+                    headers.forEach((col, i) => {
+                        obj[col] = row[i] || ""; // Fill with data
+                    });
+                    return obj;
+                });
+
+                // Define columns dynamically with a minimum width of 100px
+                let columns = [{
+                        title: "",
+                        field: "rowNum",
+                        width: 50,
+                        hozAlign: "center",
+                        headerSort: false,
+                        frozen: true
+                    }].concat(headers.map(col => ({
+                        title: col,
+                        field: col,
+                        editor: "input",
+                        headerSort: false,
+                        minWidth: 100 // Ensure each column is at least 100 pixels wide
+                    })));
+
+                // Set table data with headers
+                importTable.setColumns(columns);
+                importTable.setData(tableData);
             }
         }
-        var distro_type = document.getElementById("distro_select").value;
-
-        var distro_outputName = document.getElementById("distro_output_name").value;
-        var queryString = "/projects/{{ project_id }}/outputs/new/distribution?sampleNames=" + selectedSamples.join("&sampleNames=") + "&outputType=" + distro_type;
-        if (distro_outputName !== "") {
-            queryString += "&outputTitle=" + distro_outputName;
-        }
-        document.getElementById("send_it_distro").setAttribute("data-hx-get", queryString);
-        htmx.process(document.getElementById("send_it_distro"));
-        document.getElementById("send_it_distro").click();
-    }
+    });
 </script>
