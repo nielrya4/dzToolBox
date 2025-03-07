@@ -1,4 +1,88 @@
-<div id="databases_modal" class="modal">
+<style>
+    #databases_modal .modal-dialog {
+        max-width: 90vw;
+        width: 90vw;
+        height: 90vh; /* Fixed modal height */
+    }
+
+    #databases_modal .modal-content {
+        width: 100%;
+        height: 100%;
+    }
+
+    #databases_modal .frame {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hot-table {
+        overflow: auto;
+        width: 100%;
+        height: 80%;
+        color: black !important;
+    }
+
+    /* Tab styles */
+    .tab {
+        overflow: hidden;
+        border-bottom: 1px solid #ccc;
+        background-color: #f1f1f1;
+    }
+
+    .tab button {
+        background-color: inherit;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 10px 15px;
+        transition: 0.3s;
+        font-size: 17px;
+    }
+
+    .tab button:hover {
+        background-color: #ddd;
+    }
+
+    .tab button.active {
+        background-color: #ccc;
+    }
+
+    .tabcontent {
+        display: none;
+        padding: 10px;
+        border-top: none;
+        position: relative;
+        height: calc(90vh - 100px); /* Adjust height dynamically */
+        overflow: hidden; /* Prevents overflow issues */
+    }
+
+    .tabcontent.active {
+        display: block;
+    }
+
+    /* Loader styles */
+    .loader {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+</style>
+
+<div id="databases_modal" class="modal fade" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="frame" id="content">
@@ -6,50 +90,92 @@
                     <h5 class="modal-title">Import Data from Database</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <br />
-                <div class="container-sm">
-                    <div id="example-table"></div>
+                <div class="container-lg">
                     <br />
-                    <h6>Copy and paste data from this table into the main project spreadsheet</h6>
+                    <h6>After the databases load, copy and paste data from these tables into the main project spreadsheet</h6>
+                    <br />
+                    <div class="tab">
+                        <button class="tablinks active" onclick="openTab(event, 'world-dz')">World DZ</button>
+                        <button class="tablinks" onclick="openTab(event, 'world-ig')">World IG</button>
+                        <button class="tablinks" onclick="openTab(event, 'belt-dz')">Belt DZ</button>
+                    </div>
+                    <br />
+                    <div id="world-dz" class="tabcontent active">
+                        <div class="loader"></div>
+                        <div class="hot-table" style="display: none;"></div>
+                    </div>
+                    <div id="world-ig" class="tabcontent">
+                        <div class="loader"></div>
+                        <div class="hot-table" style="display: none;"></div>
+                    </div>
+                    <div id="belt-dz" class="tabcontent">
+                        <div class="loader"></div>
+                        <div class="hot-table" style="display: none;"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <script>
+    function createHandsontable(containerId, dataUrl) {
+        var container = document.querySelector("#" + containerId + " .hot-table");
+        var loader = document.querySelector("#" + containerId + " .loader");
 
-//Build Tabulator
-var table = new Tabulator("#example-table", {
-    height:"450px",
-    spreadsheet:true,
-    spreadsheetRows:50,
-    spreadsheetColumns:50,
-    spreadsheetColumnDefinition:{editor:"input", resizable:"header"},
-    spreadsheetSheetTabs:true,
+        // Show loader, hide table initially
+        loader.style.display = "block";
+        container.style.display = "none";
 
-    rowHeader:{field:"_id", hozAlign:"center", headerSort:false, frozen:true},
+        fetch(dataUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (!container.handsontableInstance) {
+                    container.handsontableInstance = new Handsontable(container, {
+                        data: data,
+                        rowHeaders: true,
+                        colHeaders: true,
+                        contextMenu: false, // Disable right-click menu
+                        readOnly: true, // Make all cells non-editable
+                        licenseKey: 'non-commercial-and-evaluation', // Required for Handsontable
+                        autoWrapRow: true, // Expand rows to fit content
+                        autoWrapCol: true, // Expand columns to fit content
+                        stretchH: "all", // Stretch columns to fit container width
+                        wordWrap: false, // Prevent text from being cut off
+                    });
+                } else {
+                    container.handsontableInstance.loadData(data);
+                }
 
-    editTriggerEvent:"dblclick", //change edit trigger mode to make cell navigation smoother
-    editorEmptyValue:undefined, //ensure empty values are set to undefined so they arent included in spreadsheet output data
+                // Hide loader, show table after data loads
+                loader.style.display = "none";
+                container.style.display = "block";
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+                loader.style.display = "none"; // Hide loader on error
+            });
+    }
 
-    //enable range selection
-    selectableRange:1,
-    selectableRangeColumns:true,
-    selectableRangeRows:true,
-    selectableRangeClearCells:true,
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].classList.remove("active");
+        }
 
-    //configure clipboard to allow copy and paste of range format data
-    clipboard:true,
-    clipboardCopyStyled:false,
-    clipboardCopyConfig:{
-        rowHeaders:false,
-        columnHeaders:false,
-    },
-    clipboardCopyRowRange:"range",
-    clipboardPasteParser:"range",
-    clipboardPasteAction:"range",
-});
-document.getElementById("databases_link").addEventListener("click", function(){
-    table.setData("/databases/belt_db.json");
-});
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+        }
+
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
+    window.onload = function() {
+        createHandsontable("belt-dz", "/databases/belt-dz");
+        createHandsontable("world-ig", "/databases/world-ig");
+        createHandsontable("world-dz", "/databases/world-dz");
+    };
 </script>

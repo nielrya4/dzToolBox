@@ -1,5 +1,5 @@
 import os
-import app as APP
+import dzToolBox as APP
 from datetime import datetime, timezone, timedelta
 import schedule
 import threading

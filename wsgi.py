@@ -1,5 +1,9 @@
-from app import app, db
+from dzToolBox import app, db
+from flask_cloudflared import run_with_cloudflared
+
+run_with_cloudflared(app)
 
 if __name__ == "__main__":
-    db.create_all()
-    app.run()
+    with app.app_context():
+        db.create_all()
+        app.run()

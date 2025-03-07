@@ -3,7 +3,7 @@ from flask import render_template, request, redirect, url_for, flash, session
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.dialects.postgresql import array
 from werkzeug.security import generate_password_hash, check_password_hash
-import app as APP
+import dzToolBox as APP
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import secrets
 from utils.project import Project

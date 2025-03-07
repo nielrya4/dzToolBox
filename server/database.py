@@ -1,5 +1,5 @@
 from flask_login import current_user
-import app as APP
+import dzToolBox as APP
 
 
 def get_file(file_id):

@@ -1,6 +1,6 @@
 from flask import render_template, send_from_directory
 from flask_login import login_required
-import app as APP
+import dzToolBox as APP
 import os
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 

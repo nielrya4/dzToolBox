@@ -1,6 +1,6 @@
 from werkzeug.utils import secure_filename
 import os
-import app as APP
+import dzToolBox as APP
 
 
 def upload_file(file):

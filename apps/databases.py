@@ -1,38 +1,16 @@
-import flask
 import pandas as pd
 from flask import jsonify
 from flask_login import login_required
 
 
 def register(app):
-    @app.route('/databases/belt_db.json', methods=['GET'])
+    @app.route('/databases/<string:file>', methods=['GET'])
     @login_required
-    def belt_db():
-        # Load all sheets from the Excel file
-        df_sheets = pd.read_excel("static/databases/belt_db.xlsx", sheet_name=None, header=None)
+    def load_databases(file):
+        df_sheets = pd.read_excel(f"static/databases/{file}.xlsx", sheet_name=None, header=None)
 
-        # Process each sheet
-        sheets = []
-        for index, (sheet_name, df) in enumerate(df_sheets.items()):
-            df = df.dropna(how="all")  # Remove empty rows
-            if df.empty:
-                continue  # Skip empty sheets
+        # Extracting the first sheet only for Handsontable
+        first_sheet_name, first_df = next(iter(df_sheets.items()))
+        first_df = first_df.dropna(how="all").fillna("").reset_index(drop=True)
 
-            df.reset_index(drop=True, inplace=True)  # Reset index for clean JSON output
-
-            # Convert entire DataFrame to a raw list of lists (including headers)
-            sheet_data = df.fillna("").values.tolist()
-
-            sheet_obj = {
-                "title": sheet_name,  # Use sheet name as title
-                "key": f"sheet{index + 1}",  # Generate a unique key
-                "data": sheet_data  # Preserve full data including headers
-            }
-
-            if sheet_data:
-                sheet_obj["rows"] = len(sheet_data)
-                sheet_obj["columns"] = len(sheet_data[0]) if sheet_data[0] else 0  # Ensure valid column count
-
-            sheets.append(sheet_obj)
-
-        return jsonify(sheets)  # Send JSON response
+        return jsonify(first_df.values.tolist())
