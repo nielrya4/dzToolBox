@@ -10,22 +10,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/frame.css') }}">
     {% include "global/head.html" %}
     <style>
-        /* Base styles */
         body {
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
         }
-
-        /* Layout for desktop */
         .container {
             display: flex;
             flex: 1;
             line-height: 2;
         }
-
-        /* Sidebar */
         #toc {
             width: 250px;
             background: #062340;
@@ -35,34 +30,27 @@
             height: 100vh;
             overflow-y: auto;
         }
-
         #toc strong {
             display: block;
             margin-bottom: 10px;
             font-size: 1.2em;
         }
-
         #toc a {
             display: block;
             color: #66b3ff;
             text-decoration: none;
             padding: 5px 0;
         }
-
         #toc a:hover {
             text-decoration: underline;
         }
-
-        /* Content area */
         .content {
-            margin-left: 270px; /* Leaves space for sidebar */
+            margin-left: 270px;
             padding: 20px;
             flex: 1;
             margin-bottom: 100px;
             background: #062340;
         }
-
-        /* Responsive Design */
         @media (max-width: 768px) {
             #toc {
                 position: relative;
@@ -71,16 +59,13 @@
                 padding: 10px;
                 text-align: center;
             }
-
             .container {
                 flex-direction: column;
             }
-
             .content {
                 margin-left: 0;
                 padding: 15px;
             }
-
             #toc a {
                 display: inline-block;
                 margin: 5px;
@@ -89,7 +74,6 @@
     </style>
 </head>
 <body>
-
     <div class="container">
         <nav id="toc">
             <strong>Table of Contents</strong>
