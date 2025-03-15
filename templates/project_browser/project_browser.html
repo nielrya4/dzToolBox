@@ -38,7 +38,8 @@
     <br />
     <h3 style="color:red;">Notice:</h3>
     <p>
-        If you have projects created before 1 Feb 2025, please <a href="/update-projects" onclick="show_update_spinner()">convert them to the new format.</a>
+        If you have projects created before 20 March 2025, please
+        <a href="/update-projects" onclick="show_update_spinner()">convert them to the new format.</a>
         If you do not convert them, they will be unreadable to the new version of dzToolBox, and
         they will raise an internal server error when you try to open them.
     </p>
@@ -48,7 +49,6 @@
     {% include "project_browser/modals/account_settings_dialog.html" %}
     {% include 'global/footer.html' %}
 
-    <!-- Spinners -->
     {{ spinner(id="new_proj_spinner", message="Creating New Project...") }}
     {{ spinner(id="del_proj_spinner", message="Deleting Project...") }}
     {{ spinner(id="open_proj_spinner", message="Loading Project...") }}
