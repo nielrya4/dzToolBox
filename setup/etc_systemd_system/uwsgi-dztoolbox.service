@@ -1,0 +1,22 @@
+[Unit]
+Description=uWSGI instance to serve dzToolBox
+After=network-online.target
+
+[Service]
+ExecStart=/home/dztoolbox/dztoolbox/venv/bin/uwsgi --ini /home/dztoolbox/dztoolbox/dztoolbox.ini
+WorkingDirectory=/home/dztoolbox/dztoolbox
+Restart=always
+RestartSec=5
+User=dztoolbox
+Group=dztoolbox
+StandardOutput=append:/var/log/uwsgi-dztoolbox.log
+StandardError=append:/var/log/uwsgi-dztoolbox.log
+Environment="PYTHONUNBUFFERED=1"
+
+# Ensures the service runs even when no user is logged in
+TTYPath=/dev/console
+StandardOutput=append:/var/log/dztoolbox.log
+StandardError=append:/var/log/dztoolbox.log
+
+[Install]
+WantedBy=multi-user.target

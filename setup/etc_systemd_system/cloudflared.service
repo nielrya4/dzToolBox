@@ -1,0 +1,18 @@
+[Unit]
+Description=Cloudflare Tunnel
+After=network-online.target
+
+[Service]
+Type=simple
+User=dztoolbox
+ExecStart=/usr/local/bin/cloudflared tunnel --config /home/dztoolbox/.cloudflared/config.yml run
+Restart=always
+RestartSec=5
+Environment="PYTHONUNBUFFERED=1"
+
+# Ensures the service runs even when no user is logged in
+TTYPath=/dev/console
+StandardOutput=append:/var/log/dztoolbox.log
+StandardError=append:/var/log/dztoolbox.log
+[Install]
+WantedBy=multi-user.target
