@@ -6,10 +6,12 @@ from server import route, cleanup
 import os
 import secrets
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 
 
 app = Flask(__name__)
+CORS(app)
 load_dotenv()
 database_url = os.getenv('DATABASE_URL', 'not found')
 app.config['SQLALCHEMY_DATABASE_URI'] = (

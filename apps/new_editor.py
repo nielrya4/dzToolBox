@@ -200,6 +200,7 @@ def register(app):
                 loaded_samples = data.read_1d_samples(spreadsheet_data)
                 active_samples = []
                 for sample in loaded_samples:
+                    sample.name = clean_sample_name(sample.name)
                     for sample_name in sample_names:
                         if sample.name == sample_name:
                             active_samples.append(sample)
@@ -209,6 +210,7 @@ def register(app):
                         sample.replace_grain_uncertainties(project.settings.kde_bandwidth)
                     adjusted_samples.append(sample)
                 adjusted_samples.reverse()
+
                 if output_type == 'kde':
                     distros = []
                     for sample in adjusted_samples:
@@ -319,6 +321,7 @@ def register(app):
                 loaded_samples = data.read_1d_samples(spreadsheet_data)
                 active_samples = []
                 for sample in loaded_samples:
+                    sample.name = clean_sample_name(sample.name)
                     for sample_name in sample_names:
                         if sample.name == sample_name:
                             active_samples.append(sample)
@@ -444,6 +447,7 @@ def register(app):
                 loaded_samples = data.read_1d_samples(spreadsheet_data)
                 active_samples = []
                 for sample in loaded_samples:
+                    sample.name = clean_sample_name(sample.name)
                     for sample_name in sample_names:
                         if sample.name == sample_name:
                             active_samples.append(sample)
@@ -578,6 +582,7 @@ def register(app):
                 loaded_samples = data.read_1d_samples(spreadsheet_data)
                 active_samples = []
                 for sample in loaded_samples:
+                    sample.name = clean_sample_name(sample.name)
                     for sample_name in sample_names:
                         if sample.name == sample_name:
                             active_samples.append(sample)
@@ -633,6 +638,7 @@ def register(app):
                 loaded_samples = data.read_2d_samples(spreadsheet_data)
                 active_samples = []
                 for sample in loaded_samples:
+                    sample.name = clean_sample_name(sample.name)
                     for sample_name in sample_names:
                         if sample.name == sample_name:
                             active_samples.append(sample)
@@ -706,6 +712,7 @@ def register(app):
                 loaded_samples = data.read_1d_samples(spreadsheet_data)
                 active_samples = []
                 for sample in loaded_samples:
+                    sample.name = clean_sample_name(sample.name)
                     for sample_name in sample_names:
                         if sample.name == sample_name:
                             active_samples.append(sample)
@@ -852,6 +859,15 @@ def is_float(element: any) -> bool:
         return True
     except ValueError:
         return False
+
+def clean_sample_name(sample_name):
+    try:
+        num = float(sample_name)
+        if num.is_integer():
+            return str(int(num))
+    except ValueError:
+        pass
+    return str(sample_name)
 
 def __get_project(project_id):
     if session.get("open_project", 0) == project_id:

@@ -57,7 +57,6 @@
 <script>
     const unmixSampleList = document.getElementById("unmix_sample_select")
     function unmix_send_args() {
-        // Get the selected samples (checkboxes)
         var selectedSamples = [];
         var unmix_checkboxes = unmixSampleList.querySelectorAll(".sample-checkbox");
         for (var i = 0; i < unmix_checkboxes.length; i++) {
@@ -65,32 +64,22 @@
                 selectedSamples.push(unmix_checkboxes[i].value);
             }
         }
-
-        // Get the selected unmix type (dropdown)
-        const unmix_type = document.getElementById("unmix_select").value;
-
-        // Get the output title
-        const unmix_outputName = document.getElementById("unmix_output_name").value;
-
-        // Capture selected values from the MultiSelect dropdown
-        const unmix_outputs_select = Array.from(
+		const unmix_type = document.getElementById("unmix_select").value;
+		const unmix_outputName = document.getElementById("unmix_output_name").value;
+		const unmix_outputs_select = Array.from(
             document.querySelectorAll(`#unmix_outputs_select input[type="hidden"]`)
         ).map(input => input.value);
-
-        // Build query string
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
         var queryString = "/projects/{{ project_id }}/outputs/new/unmix?sampleNames="
-            + selectedSamples.join("&sampleNames=")
+            + encodedSamples.join("&sampleNames=")
             + "&unmixMetric=" + unmix_type
-            + "&outputType=" + unmix_outputs_select.join("&outputType=");  // Send the selected output types
+            + "&outputType=" + unmix_outputs_select.join("&outputType=");
 
         if (unmix_outputName !== "") {
             queryString += "&outputTitle=" + unmix_outputName;
         }
-
-        // Set the hx-get attribute for HTMX and trigger the request
-        document.getElementById("send_it_unmix").setAttribute("data-hx-get", queryString);
+		document.getElementById("send_it_unmix").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_unmix"));
         document.getElementById("send_it_unmix").click();
     }
-
 </script>

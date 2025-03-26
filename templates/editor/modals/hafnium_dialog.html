@@ -60,7 +60,8 @@
         var hafnium_type = document.getElementById("hafnium_select").value;
 
         var hafnium_outputName = document.getElementById("hafnium_output_name").value;
-        var queryString = "/projects/{{ project_id }}/outputs/new/2d-distribution?sampleNames=" + selectedSamples.join("&sampleNames=") + "&outputType=" + hafnium_type;
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+        var queryString = "/projects/{{ project_id }}/outputs/new/2d-distribution?sampleNames=" + encodedSamples.join("&sampleNames=") + "&outputType=" + hafnium_type;
         if (hafnium_outputName !== "") {
             queryString += "&outputTitle=" + hafnium_outputName;
         }

@@ -60,8 +60,9 @@
         const mda_outputs_select = Array.from(
             document.querySelectorAll(`#mda_outputs_select input[type="hidden"]`)
         ).map(input => input.value);
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
         var queryString = "/projects/{{ project_id }}/outputs/new/mda?sampleNames="
-            + selectedSamples.join("&sampleNames=")
+            + encodedSamples.join("&sampleNames=")
             + "&outputType=" + mda_outputs_select.join("&outputType=");
         if (mda_outputName !== "") {
             queryString += "&outputTitle=" + mda_outputName;

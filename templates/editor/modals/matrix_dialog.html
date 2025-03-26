@@ -67,7 +67,8 @@
         }
         var matrix_type = document.getElementById("matrix_select").value;
         var matrix_outputName = document.getElementById("matrix_output_name").value;
-        var queryString = "/projects/{{ project_id }}/outputs/new/matrix?sampleNames=" + selectedSamples.join("&sampleNames=") + "&outputType=" + matrix_type;
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+        var queryString = "/projects/{{ project_id }}/outputs/new/matrix?sampleNames=" + encodedSamples.join("&sampleNames=") + "&outputType=" + matrix_type;
         if (matrix_outputName !== "") {
             queryString += "&outputTitle=" + matrix_outputName;
         }
