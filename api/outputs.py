@@ -1,7 +1,9 @@
 from flask import request, jsonify, send_file
 import io
-from dz_lib.univariate import distributions
+from dz_lib.univariate import distributions, mds
+from dz_lib.utils import matrices, data
 from dz_lib.univariate.data import Sample, Grain
+from utils import spreadsheet
 import secrets
 import json
 from api.account import token_required
@@ -41,7 +43,7 @@ def register(app):
             adjusted_samples = []
             for sample in active_samples:
                 if output_type == "kde":
-                    sample.replace_grain_uncertainties(10)
+                    sample.replace_grain_uncertainties(float(kde_bandwidth))
                 adjusted_samples.append(sample)
             if output_type == 'kde':
                 distros = [distributions.kde_function(sample, bandwidth=kde_bandwidth) for sample in adjusted_samples]
@@ -85,15 +87,11 @@ def register(app):
                 print("no json data")
                 return jsonify({"error": "Invalid JSON data."}), 400
             output_title = request_data.get("outputTitle", "Distribution Graph")
-            output_type = request_data.get("outputType", "kde")
+            output_type = request_data.get("outputType", "similarity")
             sample_names = request_data.get("sampleNames", [])
-            stacked = request_data.get("stacked", False)
-            legend = request_data.get("legend", False)
             font_name = request_data.get("fontName", "Arial")
             font_size = int(request_data.get("fontSize", 12))
             color_map = request_data.get("colorMap", "viridis")
-            x_min = float(request_data.get("xMin", 0))
-            x_max = float(request_data.get("xMax", 100))
             fig_width = float(request_data.get("figWidth", 8))
             fig_height = float(request_data.get("figHeight", 6))
             kde_bandwidth = float(request_data.get("kdeBandwidth", 1.0))
@@ -109,38 +107,97 @@ def register(app):
             active_samples = [sample for sample in loaded_samples if sample.name in sample_names]
             adjusted_samples = []
             for sample in active_samples:
-                if output_type == "kde":
-                    sample.replace_grain_uncertainties(10)
+                if output_type == "similarity" or output_type == "likeness" or output_type == "cross_correlation":
+                    sample.replace_grain_uncertainties(float(kde_bandwidth))
                 adjusted_samples.append(sample)
-            if output_type == 'kde':
-                distros = [distributions.kde_function(sample, bandwidth=kde_bandwidth) for sample in adjusted_samples]
-            elif output_type == 'pdp':
-                distros = [distributions.pdp_function(sample) for sample in adjusted_samples]
-            elif output_type == 'cdf':
-                distros = [distributions.cdf_function(distributions.kde_function(sample)) for sample in
-                           adjusted_samples]
+            if output_type == 'similarity':
+                points, stress = mds.mds_function(
+                    samples=adjusted_samples,
+                    metric='similarity'
+                )
+            elif output_type == 'likeness':
+                points, stress = mds.mds_function(
+                    samples=adjusted_samples,
+                    metric='likeness'
+                )
+            elif output_type == 'cross_correlation':
+                points, stress = mds.mds_function(
+                    samples=adjusted_samples,
+                    metric='cross_correlation'
+                )
+            elif output_type == 'ks':
+                points, stress = mds.mds_function(
+                    samples=adjusted_samples,
+                    metric='ks'
+                )
+            elif output_type == 'kuiper':
+                points, stress = mds.mds_function(
+                    samples=adjusted_samples,
+                    metric='kuiper'
+                )
             else:
                 print("unknown output type")
                 return jsonify({"error": "Unsupported output type"}), 400
-            graph_fig = distributions.distribution_graph(
-                distributions=distros,
-                title=output_title,
-                stacked=stacked,
-                legend=legend,
+            graph_fig = mds.mds_graph(
+                points=points,
+                title=f"{output_title} (metric='{output_type}', stress={round(stress, 2)})",
                 font_path=f'static/global/fonts/{font_name}.ttf',
                 font_size=font_size,
-                color_map=color_map,
-                x_min=x_min,
-                x_max=x_max,
                 fig_width=fig_width,
-                fig_height=fig_height
+                fig_height=fig_height,
+                color_map=color_map
             )
             output_id = secrets.token_hex(15)
             img_io = io.BytesIO()
             graph_fig.savefig(img_io, format='svg')
             img_io.seek(0)
             return send_file(img_io, mimetype='image/svg+xml', as_attachment=True,
-                             download_name=f"distribution_{output_id}.svg")
+                             download_name=f"mds_{output_id}.svg")
         except Exception as e:
             print(e)
             return jsonify({"error": f"Error processing subset: {str(e)}"}), 500
+
+
+    @app.route('/api/outputs/matrix', methods=['POST'])
+    @token_required
+    def create_matrix_output(current_user):
+        try:
+            request_data = request.get_json()
+            if not request_data:
+                return jsonify({"error": "Invalid JSON data."}), 400
+
+            output_title = request_data.get("outputTitle", "Matrix Output")
+            output_type = request_data.get("outputType", "similarity")
+            sample_names = request_data.get("sampleNames", [])
+            samples_json = request_data.get("samples")
+
+            if not samples_json:
+                print("missing 'samples'")
+                return jsonify({"error": "Missing 'samples' in request data."}), 400
+            samples_data = json.loads(samples_json)
+            loaded_samples = []
+            for sample_data in samples_data:
+                grains = [Grain(grain["age"], grain["uncertainty"]) for grain in sample_data["grains"]]
+                loaded_samples.append(Sample(sample_data["name"], grains))
+            active_samples = [sample for sample in loaded_samples if sample.name in sample_names]
+
+            adjusted_samples = []
+            for sample in active_samples:
+                if output_type == "similarity" or output_type == "likeness" or output_type == "cross_correlation":
+                    sample.replace_grain_uncertainties(float(request_data.get("kdeBandwidth", 1.0)))
+                adjusted_samples.append(sample)
+            matrix_df = matrices.generate_data_frame(samples=adjusted_samples, metric=output_type)
+            output_id = secrets.token_hex(15)
+            buffer = matrices.to_xlsx(matrix_df)
+            buffer.seek(0)
+            return send_file(
+                buffer,
+                mimetype='application/vnd.ms-excel',
+                as_attachment=True,
+                download_name=f"{output_title}_{output_id}.xlsx"
+            )
+
+        except Exception as e:
+            print(e)
+            return jsonify({"error": f"Error processing matrix output: {str(e)}"}), 500
+

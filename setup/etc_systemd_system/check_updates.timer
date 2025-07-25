@@ -1,0 +1,10 @@
+[Unit]
+Description=Run check for updates every 24 hours
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=24h
+Unit=check-updates.service
+
+[Install]
+WantedBy=timers.target
