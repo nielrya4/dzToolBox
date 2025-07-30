@@ -1,0 +1,19 @@
+<svg width="150" height="200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background hexagon -->
+  <polygon points="75,20 135,50 135,150 75,180 15,150 15,50" fill="#E0E0E0"/>
+
+  <!-- Layer 1 hexagon -->
+  <polygon points="75,40 120,70 120,130 75,160 30,130 30,70" fill="#AFCBFF"/>
+
+  <!-- Layer 2 hexagon -->
+  <polygon points="75,60 105,80 105,120 75,140 45,120 45,80" fill="#5D9FFF"/>
+
+  <!-- Layer 3 hexagon -->
+  <polygon points="75,80 90,90 90,110 75,120 60,110 60,90" fill="#1C7FFF"/>
+
+  <!-- Layer 4 hexagon -->
+  <polygon points="75,90 80,95 80,105 75,110 70,105 70,95" fill="#00539C"/>
+
+  <!-- Layer 5 hexagon -->
+  <polygon points="75,95 77,97 77,102 75,105 73,102 73,97" fill="#002D5C"/>
+</svg>
