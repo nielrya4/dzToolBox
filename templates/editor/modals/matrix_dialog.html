@@ -75,6 +75,12 @@
         document.getElementById("send_it_matrix").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_matrix"));
         document.getElementById("send_it_matrix").click();
+        
+        // Hide the modal after submission
+        var matrixModal = bootstrap.Modal.getInstance(document.getElementById('matrix_modal'));
+        if (matrixModal) {
+            matrixModal.hide();
+        }
     }
 </script>
 <script>

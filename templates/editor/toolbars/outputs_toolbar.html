@@ -1,16 +1,43 @@
-<div class="topnav">
-    <a id="mda_link" data-bs-toggle="modal" href="#mda_modal">MDA</a>
-    <a id="distro_link" data-bs-toggle="modal" href="#distro_modal">Distributions</a>
-    <a id="matrix_link" data-bs-toggle="modal" href="#matrix_modal">Matrices</a>
-    <a id="mds_link" data-bs-toggle="modal" href="#mds_modal">MDS</a>
-    <a id="unmix_link" data-bs-toggle="modal" href="#unmix_modal">Unmix</a>
-    <a id="hafnium_link" data-bs-toggle="modal" href="#hafnium_modal">Hafnium Plotter</a>
-    <a id="clear_outputs" style="float: right !important;" data-hx-post="/projects/{{ project_id }}/outputs/clear" data-hx-target="#outputs_container" data-hx-swap="innerHTML">Clear Outputs</a>
-    <a id="project_settings" style="float: right !important;" data-bs-toggle="modal" href="#project_settings_modal">Project Settings</a>
-</div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-secondary">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#outputsNav" aria-controls="outputsNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="outputsNav">
+            <div class="navbar-nav me-auto">
+                <a class="nav-link toolbar-btn" id="mda_link" data-bs-toggle="modal" href="#mda_modal">
+                    <i class="fa fa-diamond"></i> MDA
+                </a>
+                <a class="nav-link toolbar-btn" id="distro_link" data-bs-toggle="modal" href="#distro_modal">
+                    <i class="fa fa-bar-chart"></i> Distributions
+                </a>
+                <a class="nav-link toolbar-btn" id="matrix_link" data-bs-toggle="modal" href="#matrix_modal">
+                    <i class="fa fa-table"></i> Matrices
+                </a>
+                <a class="nav-link toolbar-btn" id="mds_link" data-bs-toggle="modal" href="#mds_modal">
+                    <i class="fa fa-dot-circle-o"></i> MDS
+                </a>
+                <a class="nav-link toolbar-btn" id="unmix_link" data-bs-toggle="modal" href="#unmix_modal">
+                    <i class="fa fa-pie-chart"></i> Unmix
+                </a>
+                <a class="nav-link toolbar-btn" id="hafnium_link" data-bs-toggle="modal" href="#hafnium_modal">
+                    <i class="fa fa-cube"></i> Hafnium
+                </a>
+            </div>
+            <div class="navbar-nav">
+                <a class="nav-link toolbar-btn-secondary" id="project_settings" data-bs-toggle="modal" href="#project_settings_modal">
+                    <i class="fa fa-cog"></i> Settings
+                </a>
+                <a class="nav-link toolbar-btn-danger" id="clear_outputs" data-hx-post="/projects/{{ project_id }}/outputs/clear" data-hx-target="#outputs_container" data-hx-swap="innerHTML">
+                    <i class="fa fa-trash"></i> Clear
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
 <script>
-    const settings_btn = document.getElementById("project_settings")
-    settings_btn.addEventListener('click', function(){
+    function setupSettingsHandler() {
         const kde_bandwidth_textbox = document.getElementById('kde_bandwidth');
         const matrix_function_type_select = document.getElementById('matrix_function_type');
         const stack_graphs_select = document.getElementById('stack_graphs');
@@ -113,5 +140,12 @@
         .catch(error => {
             console.error('Error fetching settings:', error);
         });
-    });
+    }
+
+    // Attach event listener to settings button
+    const settings_btn = document.getElementById("project_settings");
+    
+    if (settings_btn) {
+        settings_btn.addEventListener('click', setupSettingsHandler);
+    }
 </script>

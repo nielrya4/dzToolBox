@@ -81,5 +81,11 @@
 		document.getElementById("send_it_unmix").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_unmix"));
         document.getElementById("send_it_unmix").click();
+        
+        // Hide the modal after submission
+        var unmixModal = bootstrap.Modal.getInstance(document.getElementById('unmix_modal'));
+        if (unmixModal) {
+            unmixModal.hide();
+        }
     }
 </script>

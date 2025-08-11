@@ -1,3 +1,249 @@
+/* Sleek Toolbar Styling - Matching App Theme */
+.sleek-toolbar {
+  background: #333;
+  border-bottom: 1px solid #555;
+  font-family: 'Ubuntu', sans-serif;
+  min-height: 50px;
+  overflow: hidden;
+}
+
+.toolbar-content {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  min-height: 50px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-item {
+  float: left;
+  color: #f2f2f2;
+  background-color: #3498db;
+  text-align: center;
+  padding: 12px 16px;
+  text-decoration: none;
+  border-left: 1px solid #333;
+  border-right: 1px solid #333;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.toolbar-item:hover {
+  background-color: #ddd;
+  color: #333 !important;
+  text-decoration: none;
+}
+
+.toolbar-item:focus {
+  outline: 2px solid #007bff;
+  outline-offset: -2px;
+}
+
+.toolbar-item i {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Special button variants */
+.toolbar-secondary {
+  background-color: #6c757d !important;
+}
+
+.toolbar-secondary:hover {
+  background-color: #5a6268 !important;
+  color: #f2f2f2 !important;
+}
+
+.toolbar-danger {
+  background-color: #dc3545 !important;
+}
+
+.toolbar-danger:hover {
+  background-color: #c82333 !important;
+  color: #f2f2f2 !important;
+}
+
+/* Mobile toggle button */
+.mobile-toggle {
+  background: #3498db;
+  color: #f2f2f2;
+  border: none;
+  padding: 10px 15px;
+  margin-right: 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-toggle:hover {
+  background: #2980b9;
+  color: #f2f2f2;
+}
+
+.mobile-toggle i {
+  font-size: 16px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 991.98px) {
+  .sleek-toolbar .collapse {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #333;
+    border-top: 1px solid #555;
+    border-bottom: 1px solid #555;
+    z-index: 1050;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+  }
+  
+  .sleek-toolbar .collapse.show {
+    display: block !important;
+  }
+  
+  .sleek-toolbar .collapse .toolbar-item {
+    float: none;
+    display: block;
+    width: 100%;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #555;
+    text-align: left;
+    padding: 15px 20px;
+  }
+  
+  .sleek-toolbar .collapse .toolbar-item:last-child {
+    border-bottom: none;
+  }
+  
+  .sleek-toolbar .collapse .toolbar-item:hover {
+    background-color: #3498db;
+    color: #f2f2f2 !important;
+  }
+  
+  .toolbar-right {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .sleek-toolbar {
+    min-height: 45px;
+  }
+  
+  .toolbar-content {
+    min-height: 45px;
+  }
+  
+  .toolbar-item {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .mobile-toggle {
+    padding: 8px 12px;
+  }
+}
+
+/* Ensure mobile menu appears above other content */
+.sleek-toolbar {
+  position: relative;
+  z-index: 1040;
+}
+
+/* Editor Toolbar Button Styling */
+/* Base styles for all toolbar buttons */
+.navbar-dark .nav-link.toolbar-btn,
+.navbar-dark .nav-link.toolbar-btn-danger,
+.navbar-dark .nav-link.toolbar-btn-secondary {
+  color: white !important;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 2px;
+  transition: all 0.2s ease;
+  border: 1px solid;
+  text-decoration: none;
+}
+
+/* Primary button styling */
+.navbar-dark .nav-link.toolbar-btn {
+  background-color: #3498db;
+  border-color: #2980b9;
+}
+
+.navbar-dark .nav-link.toolbar-btn:hover {
+  background-color: #2980b9;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+}
+
+/* Danger button styling */
+.navbar-dark .nav-link.toolbar-btn-danger {
+  background-color: #dc3545;
+  border-color: #c82333;
+}
+
+.navbar-dark .nav-link.toolbar-btn-danger:hover {
+  background-color: #c82333;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+}
+
+/* Secondary button styling */
+.navbar-dark .nav-link.toolbar-btn-secondary {
+  background-color: #6c757d;
+  border-color: #5a6268;
+}
+
+.navbar-dark .nav-link.toolbar-btn-secondary:hover {
+  background-color: #5a6268;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+}
+
+/* Mobile toolbar spacing improvements */
+@media (max-width: 991.98px) {
+  /* Increase spacing for hamburger menu button */
+  .navbar-toggler {
+    padding: 9px 14px !important; /* +5px to default 4px 9px */
+    margin: 7px !important; /* +5px to default 2px */
+  }
+  
+  /* Increase spacing for collapsed menu items */
+  .navbar-collapse .navbar-nav .nav-link {
+    padding: 13px 17px !important; /* +5px to default 8px 12px */
+    margin: 7px 2px !important; /* +5px to default 2px */
+  }
+  
+  /* Additional spacing between menu sections */
+  .navbar-collapse .navbar-nav {
+    padding: 5px 0 !important;
+  }
+}
+
+/* Legacy support for old topnav class */
 .topnav {
   background-color: #333;
   overflow: hidden;
@@ -5,7 +251,6 @@
   font-size: calc(0.5rem + 0.5vw);
 }
 
-/* Style the links inside the navigation bar */
 .topnav a {
   float: left;
   color: #f2f2f2;
@@ -19,7 +264,6 @@
   border-right: 1px solid #333;
 }
 
-/* Change the color of links on hover */
 .topnav a:hover {
   background-color: #ddd;
   color: black !important;

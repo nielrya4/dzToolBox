@@ -1,0 +1,75 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-secondary">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mapsNav" aria-controls="mapsNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="mapsNav">
+            <div class="navbar-nav me-auto">
+                <a class="nav-link toolbar-btn" id="addPointBtn" href="javascript:void(0)">
+                    <i class="fa fa-plus-circle"></i> Add Point
+                </a>
+                <a class="nav-link toolbar-btn" id="centerMapBtn" href="javascript:void(0)" title="Center Map View">
+                    <i class="fa fa-crosshairs"></i> Center Map
+                </a>
+            </div>
+            <div class="navbar-nav">
+                <a class="nav-link toolbar-btn-secondary" id="exportBtn" href="javascript:void(0)">
+                    <span class="btn-text">
+                        <i class="fa fa-download"></i> Export HTML
+                    </span>
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </a>
+                <a class="nav-link toolbar-btn-danger" id="clearMapBtn" href="javascript:void(0)" title="Clear All Points">
+                    <i class="fa fa-trash"></i> Clear All
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+    // Center map button
+    document.getElementById('centerMapBtn')?.addEventListener('click', function() {
+        if (map && markers.length > 0) {
+            // Create a group of all markers and fit the map to show all
+            const group = new L.featureGroup(markers);
+            map.fitBounds(group.getBounds());
+        } else if (map) {
+            // Reset to default view
+            map.setView([40.7128, -74.0060], 10);
+        }
+    });
+
+    // Clear all points button
+    document.getElementById('clearMapBtn')?.addEventListener('click', function() {
+        if (markers.length === 0) {
+            showAlert('No points to clear', 'info');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to clear all map points? This cannot be undone.')) {
+            // Clear all markers from map
+            markers.forEach(marker => {
+                if (map) {
+                    map.removeLayer(marker);
+                }
+            });
+            markers = [];
+            
+            // Clear points from server
+            fetch(`/projects/{{ project_id }}/maps/clear`, {
+                method: 'POST'
+            }).then(response => {
+                if (response.ok) {
+                    showAlert('All points cleared successfully!', 'success');
+                } else {
+                    showAlert('Failed to clear points from server', 'warning');
+                }
+            }).catch(error => {
+                console.error('Error clearing points:', error);
+                showAlert('Error clearing points from server', 'danger');
+            });
+        }
+    });
+</script>

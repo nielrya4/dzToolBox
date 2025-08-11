@@ -68,5 +68,11 @@
         document.getElementById("send_it_mds").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_mds"));
         document.getElementById("send_it_mds").click();
+        
+        // Hide the modal after submission
+        var mdsModal = bootstrap.Modal.getInstance(document.getElementById('mds_modal'));
+        if (mdsModal) {
+            mdsModal.hide();
+        }
     }
 </script>

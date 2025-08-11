@@ -68,5 +68,11 @@
         document.getElementById("send_it_hafnium").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_hafnium"));
         document.getElementById("send_it_hafnium").click();
+        
+        // Hide the modal after submission
+        var hafniumModal = bootstrap.Modal.getInstance(document.getElementById('hafnium_modal'));
+        if (hafniumModal) {
+            hafniumModal.hide();
+        }
     }
 </script>

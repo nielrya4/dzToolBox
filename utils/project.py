@@ -14,7 +14,8 @@ class Settings:
                  font_name: str="ubuntu",
                  figure_width: int=9,
                  figure_height: int=7,
-                 color_map: str="jet"):
+                 color_map: str="jet",
+                 map_points: list=None):
         self.min_age = min_age
         self.max_age = max_age
         self.kde_bandwidth = kde_bandwidth
@@ -27,6 +28,7 @@ class Settings:
         self.figure_width = figure_width
         self.figure_height = figure_height
         self.color_map = color_map
+        self.map_points = map_points if map_points is not None else []
 
     def from_json(self, json_string):
         self.min_age = float(json_string["min_age"])
@@ -41,6 +43,7 @@ class Settings:
         self.figure_width = int(json_string["figure_width"])
         self.figure_height = int(json_string["figure_height"])
         self.color_map = json_string["color_map"]
+        self.map_points = json_string.get("map_points", [])
 
     def to_json(self):
         json_string = {
@@ -55,7 +58,8 @@ class Settings:
             "font_name": self.font_name,
             "figure_width": self.figure_width,
             "figure_height": self.figure_height,
-            "color_map": self.color_map
+            "color_map": self.color_map,
+            "map_points": self.map_points
         }
         return json_string
 

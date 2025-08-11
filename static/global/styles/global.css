@@ -5,13 +5,88 @@ body {
     background: linear-gradient(to bottom, #000000, #001f3f);
     min-height: 100vh;
     font-family: 'Ubuntu', sans-serif;
-    margin: 10px;
-    display: flex;
-    flex-direction: column;
+    margin: 0;
+    padding: 0;
 }
+
+@media (min-width: 768px) {
+    body {
+        margin: 10px;
+    }
+}
+
 .hidden {
-    display: none;
+    display: none !important;
 }
+
 .visible {
-    display: flex;
+    display: flex !important;
+}
+
+.card {
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border: none;
+    border-radius: 10px;
+}
+
+.navbar-brand {
+    color: white !important;
+}
+
+.table_list {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+}
+
+/* Editor tab styling in navbar */
+.nav-pills .editor-tab {
+    background: none !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    padding: 0.5rem 1rem !important;
+    margin: 0 0.25rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    border: 2px solid transparent !important;
+}
+
+.nav-pills .editor-tab:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-pills .editor-tab.active {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    font-weight: 600;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .btn-lg {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+    }
+    
+    .editor-tab {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.85rem;
+        margin: 0 0.1rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    .navbar-brand img {
+        width: 28px;
+        height: 28px;
+    }
 }

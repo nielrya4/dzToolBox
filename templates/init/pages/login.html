@@ -6,32 +6,51 @@
     <title>Login</title>
     {% include "global/head.html" %}
 </head>
-<body style="padding: 1em; align-items: center;">
-    <h1>Login</h1>
-    <br />
-    <form id="login_form" method="post" action="{{ url_for('login') }}">
-        {% if login_message %}
-            <h6 style="color:red;">{{ login_message }}</h6>
-        {% endif %}
-        <div class="row text-nowrap">
-            <div class="col-md-5">
-                <label for="username">Username:</label>
-                <input id="username" type="text" name="username" class="form-control" required>
-            </div>
-            <div class="col-md-5">
-                <label for="password">Password:</label>
-                <input id="password" type="password" name="password" class="form-control" required>
-            </div>
-            <div class="mt-4 col-md-2">
-                <button id="login_btn" type="submit" class="btn btn-primary">Login</button>
+<body class="d-flex flex-column min-vh-100">
+    <div class="container-fluid flex-grow-1 d-flex align-items-center justify-content-center">
+        <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h1 class="card-title text-center mb-4">Login</h1>
+                    
+                    <form id="login_form" method="post" action="{{ url_for('login') }}">
+                        {% if login_message %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ login_message }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username:</label>
+                            <input id="username" type="text" name="username" class="form-control" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password:</label>
+                            <input id="password" type="password" name="password" class="form-control" required>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button id="login_btn" type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                    </form>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <p class="mb-2">Don't have an account? <a href="{{ url_for('signup') }}">Sign Up</a></p>
+                        <p><a href="/create_guest_account" class="btn btn-outline-secondary btn-sm">Login as a Guest</a></p>
+                    </div>
+                    
+                    {% if current_user.is_authenticated %}
+                        <div class="alert alert-info mt-3" role="alert">
+                            Logged in as {{ current_user.username }}. <a href="{{ url_for('projects') }}">Go to project browser.</a>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </form>
-    <br />
-    <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign Up</a> or <a href="/create_guest_account">Login as a Guest</a></p>
-    {% if current_user.is_authenticated %}
-        <p>Logged in as {{ current_user.username }}. <a href="{{ url_for('projects') }}">Go to project browser.</a></p>
-    {% endif %}
+    </div>
     {% include 'global/footer.html' %}
     {% include 'init/spinners/login_spinner.html' %}
 </body>

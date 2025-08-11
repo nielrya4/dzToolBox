@@ -69,5 +69,11 @@
         document.getElementById("send_it_distro").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_distro"));
         document.getElementById("send_it_distro").click();
+        
+        // Hide the modal after submission
+        var distroModal = bootstrap.Modal.getInstance(document.getElementById('distro_modal'));
+        if (distroModal) {
+            distroModal.hide();
+        }
     }
 </script>

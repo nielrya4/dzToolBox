@@ -6,24 +6,35 @@
     <title>dzToolBox</title>
     {% include "global/head.html" %}
 </head>
-<body style="padding: 1em; align-items: center;">
-    <h1>dzToolBox</h1>
-    <h4>Tools for visualization and interpretation of Detrital Zircon data</h4>
-    <br />
-    <div class="row text-nowrap">
-        <div class="col-md-4">
-            <a style="width: 100px" role="button" class="btn btn-primary" href="{{ url_for('login') }}">Login</a>
-        </div>
-        <div class="col-md-4">
-            <a style="width: 100px" role="button" class="btn btn-primary" href="{{ url_for('signup') }}">Sign Up</a>
-        </div>
-        <div class="col-md-4">
-            <a style="width: 100px" role="button" class="btn btn-primary" href="{{ url_for('create_guest_account') }}">Guest</a>
+<body class="d-flex flex-column min-vh-100">
+    <div class="container-fluid flex-grow-1 d-flex flex-column justify-content-center">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8 text-center">
+                <h1 class="display-4 mb-3">dzToolBox</h1>
+                <h4 class="lead mb-5">Tools for visualization and interpretation of Detrital Zircon data</h4>
+                
+                <div class="row g-3 justify-content-center mb-4">
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <a class="btn btn-primary btn-lg w-100" href="{{ url_for('login') }}">Login</a>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <a class="btn btn-primary btn-lg w-100" href="{{ url_for('signup') }}">Sign Up</a>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <a class="btn btn-primary btn-lg w-100" href="{{ url_for('create_guest_account') }}">Guest</a>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info" role="alert">
+                    <small>Note that guest accounts are deleted every midnight MST (UTC-7)</small>
+                </div>
+                
+                <div class="mt-4">
+                    <img class="img-fluid" style="max-height: 200px;" alt="Zircon" src="{{ url_for('static', filename='global/img/DZ.svg') }}">
+                </div>
+            </div>
         </div>
     </div>
-    <p>Note that guest accounts are deleted every midnight MST (UTC-7)</p>
-    <br />
-    <img alt="Zircon" src="{{ url_for('static', filename='global/img/DZ.svg') }}">
     {% include 'global/footer.html' %}
 </body>
 </html>
