@@ -21,45 +21,43 @@
                         <h1 class="display-6 text-muted">No projects yet? Click above to start a project!</h1>
                     </div>
                 {% else %}
-                    <div class="row g-3">
-                        {% for project in user_projects %}
-                            <div class="col-12 col-md-6 col-lg-4">
-                                <div class="card h-100">
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title">{{ project.title }}</h5>
-                                        <div class="mt-auto">
-                                            <form method="GET" action="/projects/{{ project.id }}" class="d-flex gap-2">
-                                                <button class="btn btn-primary flex-grow-1" type="submit" onclick="show_open_spinner()">Open</button>
-                                                <button class="btn btn-outline-danger delete-project-btn" hx-post="/delete_project/{{ project.id }}" type="button" hx-target="#project-list" hx-swap="outerHTML" onclick="show_del_spinner()">Delete</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
+                    <div class="table_list">
+                        <table class="table_list">
+                            {% for project in user_projects %}
+                                <tr class="table_list">
+                                    <td>{{ project.title }}</td>
+                                    <td>
+                                        <form method="GET" action="/projects/{{ project.id }}" class="d-inline">
+                                            <button class="btn btn-primary btn-sm" type="submit" onclick="show_open_spinner()">Open</button>
+                                        </form>
+                                        <button class="btn btn-outline-danger btn-sm delete-project-btn" hx-post="/delete_project/{{ project.id }}" type="button" hx-target="#project-list" hx-swap="outerHTML" onclick="show_del_spinner()">Delete</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
                     </div>
                 {% endif %}
             </div>
         {% endblock %}
-    <br />
-    <br />
-    <h3 style="color:red;">Notice:</h3>
-    <p>
-        If you have projects created before 20 March 2025, please
-        <a href="/update-projects" onclick="show_update_spinner()">convert them to the new format.</a>
-        If you do not convert them, they will be unreadable to the new version of dzToolBox, and
-        they will raise an internal server error when you try to open them.
-    </p>
+		<br />
+		<br />
+		<h3 style="color:red;">Notice:</h3>
+		<p>
+			If you have projects created before 20 March 2025, please
+			<a href="/update-projects" onclick="show_update_spinner()">convert them to the new format.</a>
+			If you do not convert them, they will be unreadable to the new version of dzToolBox, and
+			they will raise an internal server error when you try to open them.
+		</p>
+	</div>
+	{% from "global/spinner.html" import spinner with context %}
+	{% include "project_browser/modals/new_project_dialog.html" %}
+	{% include "project_browser/modals/account_settings_dialog.html" %}
+	{% include 'global/footer.html' %}
 
-    {% from "global/spinner.html" import spinner with context %}
-    {% include "project_browser/modals/new_project_dialog.html" %}
-    {% include "project_browser/modals/account_settings_dialog.html" %}
-    {% include 'global/footer.html' %}
-
-    {{ spinner(id="new_proj_spinner", message="Creating New Project...") }}
-    {{ spinner(id="del_proj_spinner", message="Deleting Project...") }}
-    {{ spinner(id="open_proj_spinner", message="Loading Project...") }}
-    {{ spinner(id="updating_proj_spinner", message="Updating Projects...") }}
+	{{ spinner(id="new_proj_spinner", message="Creating New Project...") }}
+	{{ spinner(id="del_proj_spinner", message="Deleting Project...") }}
+	{{ spinner(id="open_proj_spinner", message="Loading Project...") }}
+	{{ spinner(id="updating_proj_spinner", message="Updating Projects...") }}
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>

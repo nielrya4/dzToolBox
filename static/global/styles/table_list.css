@@ -12,7 +12,7 @@ td.table_list, th.table_list {
 }
 
 tr.table_list:nth-child(even) {
-    background-color: #dddddd;
+    background-color: #d6d6d6;
 }
 tr.table_list:nth-child(odd) {
     background-color: white;

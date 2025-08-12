@@ -56,11 +56,11 @@
         </div>
         <div class="h-100" id="outputs_page" style="display: none;">
             {% include "editor/pages/outputs.html" %}
-			<div style="overflow-y: auto; overflow-x: hidden; height: calc(100vh - 160px);" id="outputs_container">
+			<div style="overflow-y: auto; overflow-x: auto; height: calc(100vh - 140px); max-width: 100vw !important;" id="outputs_container">
 				<div class="p-3">
 					{% block outputs %}
 						{% for output in outputs_data %}
-							<div class="mb-3">
+							<div class="mb-3" style="max-width: 100%;">
 								{{ output.output_data | safe }}
 							</div>
 						{% endfor %}
