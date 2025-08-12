@@ -4,9 +4,10 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/home/dztoolbox/dztoolbox/check_updates.sh
-User=root
-Group=root
+ExecStart=DZTOOLBOX_PATH/check_updates.sh
+WorkingDirectory=DZTOOLBOX_PATH
+User=DZTOOLBOX_USER
+Group=DZTOOLBOX_GROUP
 
 [Install]
 WantedBy=multi-user.target
