@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin
+from flask_migrate import Migrate
 from sqlalchemy.exc import SQLAlchemyError
 from server import route, cleanup
 import os
@@ -19,7 +20,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (
     '?sslmode=require'
 )
 
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_size': 20,  # Base connection pool size
+    'max_overflow': 30,  # Additional connections during peak load
+    'pool_recycle': 3600,  # Recycle connections every hour
+    'pool_timeout': 30,  # Timeout when getting connection from pool
+}
 
 SECRET_KEY = secrets.token_hex(16)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -29,22 +36,27 @@ if not os.path.exists('temp'):
     os.makedirs('temp')
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    username = db.Column(db.String(20), unique=True, nullable=False)
+    username = db.Column(db.String(20), unique=True, nullable=False, index=True)
     password = db.Column(db.String(60), nullable=False)
     files = db.relationship('CodeFile', backref='author', lazy=True)
 
 
 class CodeFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(100), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), index=True)
+    
+    __table_args__ = (
+        db.Index('idx_user_title', 'user_id', 'title'),
+    )
 
 
 with app.app_context():

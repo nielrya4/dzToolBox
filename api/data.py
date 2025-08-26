@@ -28,9 +28,18 @@ def register(app):
             spreadsheet_data = np.transpose(spreadsheet_data)
         except Exception as e:
             return jsonify({"error": f"Error reading the Excel file: {str(e)}"}), 500
+        finally:
+            # Clean up temp file immediately
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
         loaded_samples = data.read_1d_samples(spreadsheet_data)
         loaded_samples_dict = [sample.to_dict() for sample in loaded_samples]
-        loaded_samples_json = json.dumps(loaded_samples_dict, indent=4)
+        # Use orjson for faster serialization, no indentation for smaller size
+        try:
+            import orjson
+            loaded_samples_json = orjson.dumps(loaded_samples_dict).decode('utf-8')
+        except ImportError:
+            loaded_samples_json = json.dumps(loaded_samples_dict)
         return jsonify({"samples": loaded_samples_json})
 
     @app.route('/api/data/subset-of-samples', methods=['POST'])

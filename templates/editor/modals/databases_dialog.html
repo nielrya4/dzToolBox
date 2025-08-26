@@ -171,11 +171,25 @@
 
         document.getElementById(tabName).classList.add("active");
         evt.currentTarget.classList.add("active");
+        
+        // Load database data only when tab is clicked (lazy loading)
+        if (!document.querySelector("#" + tabName + " .hot-table").handsontableInstance) {
+            createHandsontable(tabName, "/databases/" + tabName);
+        }
     }
 
-    window.onload = function() {
-        createHandsontable("belt-dz", "/databases/belt-dz");
-        createHandsontable("world-ig", "/databases/world-ig");
-        createHandsontable("world-dz", "/databases/world-dz");
-    };
+    // Initialize databases modal with lazy loading
+    document.addEventListener('DOMContentLoaded', function() {
+        const databasesModal = document.getElementById('databases_modal');
+        let databasesLoaded = false;
+        
+        // Load databases only when modal is opened for the first time
+        databasesModal.addEventListener('shown.bs.modal', function () {
+            if (!databasesLoaded) {
+                // Load only the active tab (world-dz) initially
+                createHandsontable("world-dz", "/databases/world-dz");
+                databasesLoaded = true;
+            }
+        });
+    });
 </script>

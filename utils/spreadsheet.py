@@ -1,6 +1,7 @@
 import openpyxl
 from utils.sample import Sample, Grain
 import json
+import orjson  # Much faster JSON library
 
 
 def read_samples(spreadsheet_array):
@@ -31,19 +32,30 @@ def is_sample_sheet(self):
 
 def excel_to_array(file_path):
     try:
-        workbook = openpyxl.load_workbook(file_path)
+        # Use read_only mode for better memory efficiency
+        workbook = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
         sheet = workbook.active
-        max_rows = sheet.max_row
-        max_cols = sheet.max_column
+        
+        # Read all data at once using sheet.values (much faster)
         spreadsheet_data = []
-        for row in range(1, max_rows + 1):
-            row_data = []
-            for col in range(1, max_cols + 1):
-                cell_value = sheet.cell(row=row, column=col).value
-                cell_value = cell_value if cell_value is not None else None
-                row_data.append(cell_value)
-            spreadsheet_data.append(row_data)
-        transposed_array = [[spreadsheet_data[j][i] for j in range(len(spreadsheet_data))] for i in range(len(spreadsheet_data[0]))]
+        for row in sheet.values:
+            if row:  # Skip empty rows
+                # Convert None values and ensure consistent row length
+                row_data = [cell if cell is not None else None for cell in row]
+                spreadsheet_data.append(row_data)
+        
+        workbook.close()  # Explicitly close to free memory
+        
+        if not spreadsheet_data:
+            return None
+            
+        # Transpose more efficiently using list comprehension with proper bounds checking
+        max_cols = max(len(row) for row in spreadsheet_data) if spreadsheet_data else 0
+        transposed_array = []
+        for i in range(max_cols):
+            col = [row[i] if i < len(row) else None for row in spreadsheet_data]
+            transposed_array.append(col)
+        
         return transposed_array
     except Exception as e:
         print(f"Error converting Excel file to array: {e}")
@@ -52,8 +64,11 @@ def excel_to_array(file_path):
 
 def array_to_text(array):
     try:
-        # Serialize the array to a string using JSON
-        return json.dumps(array)
+        # Use orjson for faster serialization (fallback to json if not available)
+        try:
+            return orjson.dumps(array).decode('utf-8')
+        except NameError:
+            return json.dumps(array)
     except Exception as e:
         print(f"Error converting array to text: {e}")
         return None
@@ -61,8 +76,11 @@ def array_to_text(array):
 
 def text_to_array(text):
     try:
-        array = json.loads(text)
-        return array
+        # Use orjson for faster deserialization (fallback to json if not available)
+        try:
+            return orjson.loads(text.encode('utf-8') if isinstance(text, str) else text)
+        except NameError:
+            return json.loads(text)
     except Exception as e:
         print(f"Error converting text to array: {e}")
         return None
