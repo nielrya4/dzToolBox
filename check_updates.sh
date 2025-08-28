@@ -26,7 +26,7 @@ if ! git fetch; then
 fi
 
 LOCAL_HASH=$(git rev-parse HEAD)
-REMOTE_HASH=$(git rev-parse origin/main)
+REMOTE_HASH=$(git rev-parse origin/master)
 
 log_message "Local hash: $LOCAL_HASH"
 log_message "Remote hash: $REMOTE_HASH"
