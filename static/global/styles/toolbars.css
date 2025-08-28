@@ -125,7 +125,7 @@
     border-right: none;
     border-bottom: 1px solid #555;
     text-align: left;
-    padding: 15px 20px;
+    padding: 10px 20px;
   }
   
   .sleek-toolbar .collapse .toolbar-item:last-child {
@@ -233,7 +233,7 @@
   
   /* Increase spacing for collapsed menu items */
   .navbar-collapse .navbar-nav .nav-link {
-    padding: 13px 17px !important; /* +5px to default 8px 12px */
+    padding: 8px 17px !important; /* Reduced from 13px to 8px */
     margin: 7px 2px !important; /* +5px to default 2px */
   }
   
