@@ -16,14 +16,33 @@ def start_cleanup():
 
 def cleanup_job():
     with APP.app.app_context():
-        for user in APP.User.query.all():
-            print(user.username)
-            if user.username.endswith("_guest"):
-                APP.CodeFile.query.filter_by(user_id=user.id).delete()
-                APP.db.session.delete(user)
-                APP.db.session.commit()
-                print(f"Deleted Account: {user.username}")
-    print("Cleaned Up Guest Accounts")
+        try:
+            guest_users = APP.User.query.filter(APP.User.username.endswith("_guest")).all()
+            
+            if not guest_users:
+                print("No guest accounts to clean up")
+                return
+                
+            guest_user_ids = [user.id for user in guest_users]
+            print(f"Found {len(guest_users)} guest accounts to clean up")
+            
+            deleted_files = APP.CodeFile.query.filter(
+                APP.CodeFile.user_id.in_(guest_user_ids)
+            ).delete(synchronize_session=False)
+            print(f"Deleted {deleted_files} files from guest accounts")
+            
+            deleted_users = APP.User.query.filter(
+                APP.User.username.endswith("_guest")
+            ).delete(synchronize_session=False)
+            print(f"Deleted {deleted_users} guest accounts")
+            
+            APP.db.session.commit()
+            print("Cleaned Up Guest Accounts Successfully")
+            
+        except Exception as e:
+            APP.db.session.rollback()
+            print(f"Error during cleanup: {e}")
+            raise
 
 
 def run_scheduler():

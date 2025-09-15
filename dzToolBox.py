@@ -52,10 +52,14 @@ class CodeFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), index=True)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), index=True)
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     
     __table_args__ = (
         db.Index('idx_user_title', 'user_id', 'title'),
+        db.Index('idx_user_created', 'user_id', 'created_at'),
+        db.Index('idx_user_updated', 'user_id', 'updated_at'),
     )
 
 
