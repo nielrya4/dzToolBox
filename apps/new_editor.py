@@ -14,7 +14,7 @@ from dz_lib import univariate, bivariate
 from dz_lib.bivariate.distributions import *
 from dz_lib.univariate import mds, unmix, distributions, mda
 from dz_lib.utils import data, matrices
-from utils import embedding
+from utils import embedding, monte_carlo_optimized
 from flask import send_file
 from pathvalidate import sanitize_filename
 import pandas as pd
@@ -471,7 +471,7 @@ def register(app):
                     sink_y_values = univariate.distributions.cdf_function(sample_pdps[0]).y_values
                     sources_y_values = [univariate.distributions.cdf_function(sample_pdp).y_values for sample_pdp in sample_pdps[1:]]
                 contributions, stdevs, top_lines = (
-                    univariate.unmix.monte_carlo_model(
+                    monte_carlo_optimized.monte_carlo_model_optimized(
                         sink_y_values=sink_y_values,
                         sources_y_values=sources_y_values,
                         n_trials=int(project.settings.n_unmix_trials),
