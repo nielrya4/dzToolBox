@@ -7,6 +7,7 @@ ExecStart=/home/dztoolbox/dztoolbox/venv/bin/uwsgi --ini /home/dztoolbox/dztoolb
 WorkingDirectory=/home/dztoolbox/dztoolbox
 Restart=always
 RestartSec=5
+
 User=dztoolbox
 Group=dztoolbox
 StandardOutput=append:/var/log/uwsgi-dztoolbox.log
