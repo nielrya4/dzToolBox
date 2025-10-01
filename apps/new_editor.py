@@ -461,19 +461,19 @@ def register(app):
                     if project.settings.matrix_function_type == "kde":
                         sample.replace_grain_uncertainties(project.settings.kde_bandwidth)
                     adjusted_samples.append(sample)
-                x_min = data.get_x_min(active_samples)
-                x_max = data.get_x_max(active_samples)
+                x_min = project.settings.min_age
+                x_max = project.settings.max_age
                 sample_pdps = [univariate.distributions.pdp_function(sample, x_min, x_max) for sample in adjusted_samples]
                 if metric == 'cross_correlation':
-                    sink_y_values = sample_pdps[0].y_values
-                    sources_y_values = [sample_pdp.y_values for sample_pdp in sample_pdps[1:]]
+                    sink_distribution = sample_pdps[0]
+                    source_distributions = sample_pdps[1:]
                 else:
-                    sink_y_values = univariate.distributions.cdf_function(sample_pdps[0]).y_values
-                    sources_y_values = [univariate.distributions.cdf_function(sample_pdp).y_values for sample_pdp in sample_pdps[1:]]
-                contributions, stdevs, top_lines = (
+                    sink_distribution = univariate.distributions.cdf_function(sample_pdps[0])
+                    source_distributions = [univariate.distributions.cdf_function(sample_pdp) for sample_pdp in sample_pdps[1:]]
+                contributions, stdevs, top_distributions = (
                     monte_carlo_optimized.monte_carlo_model_optimized(
-                        sink_y_values=sink_y_values,
-                        sources_y_values=sources_y_values,
+                        sink_distribution=sink_distribution,
+                        source_distributions=source_distributions,
                         n_trials=int(project.settings.n_unmix_trials),
                         metric=metric
                     )
@@ -533,9 +533,10 @@ def register(app):
                     )
                 if "trials_graph" in output_types:
                     graph_fig = univariate.unmix.top_trials_graph(
-                        sink_line=sink_y_values,
-                        model_lines=top_lines,
-                        x_range=[x_min, x_max],
+                        sink_distribution=sink_distribution,
+                        model_distributions=top_distributions,
+                        x_min=x_min,
+                        x_max=x_max,
                         title=f"{output_title} (metric='{metric}')",
                         font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
                         font_size=project.settings.font_size,

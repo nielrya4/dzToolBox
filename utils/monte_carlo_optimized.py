@@ -8,15 +8,13 @@ from multiprocessing import Pool, cpu_count
 from functools import partial
 import os
 from dz_lib.univariate import metrics
+from dz_lib.univariate.distributions import Distribution
 
 
 def optimize_numpy_threads():
     """Configure numpy to use multiple threads for mathematical operations"""
-    cores = min(12, cpu_count())
-    os.environ['OMP_NUM_THREADS'] = str(cores)
-    os.environ['MKL_NUM_THREADS'] = str(cores)
-    os.environ['NUMEXPR_NUM_THREADS'] = str(cores)
-    return cores
+    from .math_optimizations import optimize_numpy_for_performance
+    return optimize_numpy_for_performance()
 
 
 class OptimizedUnmixingTrial:
@@ -75,8 +73,8 @@ def run_batch_trials(args):
 
 
 def monte_carlo_model_optimized(
-    sink_y_values: list, 
-    sources_y_values: list, 
+    sink_distribution: Distribution, 
+    source_distributions: list[Distribution], 
     n_trials: int = 10000, 
     metric: str = "cross_correlation",
     n_processes: int = None
@@ -85,29 +83,29 @@ def monte_carlo_model_optimized(
     Optimized Monte Carlo model using multiprocessing when beneficial
     
     Args:
-        sink_y_values: Target distribution values
-        sources_y_values: Source distribution values 
+        sink_distribution: Target Distribution object
+        source_distributions: List of source Distribution objects
         n_trials: Number of Monte Carlo trials
         metric: Metric to optimize ("cross_correlation", "ks", "kuiper")
         n_processes: Number of processes (default: auto-decide based on workload)
     
     Returns:
-        source_contributions, source_std, top_lines
+        source_contributions, source_std, top_distributions
     """
     # Configure numpy for optimal performance
     cores_available = optimize_numpy_threads()
     
-    # Convert to numpy arrays for better performance
-    sink_line = np.asarray(sink_y_values, dtype=np.float32)
-    source_lines = [np.asarray(line, dtype=np.float32) for line in sources_y_values]
+    # Extract y_values from Distribution objects and convert to numpy arrays
+    sink_line = np.asarray(sink_distribution.y_values, dtype=np.float32)
+    source_lines = [np.asarray(dist.y_values, dtype=np.float32) for dist in source_distributions]
     
     # Smart decision: only use multiprocessing for large workloads
     # Multiprocessing overhead isn't worth it for small problems
-    use_multiprocessing = n_trials >= 2000 and len(sources_y_values) >= 2
+    use_multiprocessing = n_trials >= 2000 and len(source_distributions) >= 2
     
     if not use_multiprocessing or n_processes == 1:
         # Use optimized sequential processing for small workloads
-        return monte_carlo_sequential_optimized(sink_line, source_lines, n_trials, metric)
+        return monte_carlo_sequential_optimized(sink_line, source_lines, n_trials, metric, sink_distribution.x_values)
     
     if n_processes is None:
         n_processes = min(cores_available, 8)  # Conservative for better efficiency
@@ -151,15 +149,20 @@ def monte_carlo_model_optimized(
     top_lines = [trial[1] for trial in top_trials]
     random_configurations = [trial[0] for trial in top_trials]
     
+    # Convert top lines back to Distribution objects
+    x_values = sink_distribution.x_values
+    top_distributions = [Distribution(f"Top_Trial_{i+1}", x_values, y_values.tolist()) 
+                        for i, y_values in enumerate(top_lines)]
+    
     # Calculate statistics using vectorized operations
     random_configs_array = np.array(random_configurations)
     source_contributions = np.mean(random_configs_array, axis=0) * 100
     source_std = np.std(random_configs_array, axis=0) * 100
     
-    return source_contributions, source_std, top_lines
+    return source_contributions, source_std, top_distributions
 
 
-def monte_carlo_sequential_optimized(sink_line, source_lines, n_trials, metric):
+def monte_carlo_sequential_optimized(sink_line, source_lines, n_trials, metric, x_values):
     """Optimized sequential Monte Carlo for small workloads"""
     trial_runner = OptimizedUnmixingTrial(sink_line, source_lines, metric)
     
@@ -181,12 +184,16 @@ def monte_carlo_sequential_optimized(sink_line, source_lines, n_trials, metric):
     top_lines = [trial[1] for trial in top_trials]
     random_configurations = [trial[0] for trial in top_trials]
     
+    # Convert top lines back to Distribution objects
+    top_distributions = [Distribution(f"Top_Trial_{i+1}", x_values, y_values.tolist()) 
+                        for i, y_values in enumerate(top_lines)]
+    
     # Calculate statistics
     random_configs_array = np.array(random_configurations)
     source_contributions = np.mean(random_configs_array, axis=0) * 100
     source_std = np.std(random_configs_array, axis=0) * 100
     
-    return source_contributions, source_std, top_lines
+    return source_contributions, source_std, top_distributions
 
 
 def benchmark_monte_carlo(sink_y_values, sources_y_values, n_trials=1000):
@@ -245,5 +252,5 @@ if __name__ == "__main__":
     source_data = [np.random.random(1000) for _ in range(3)]
     
     # Run benchmark
-    speedup = benchmark_monte_carlo(sink_data, source_data, 1000)
+    speedup = benchmark_monte_carlo(sink_data, source_data, 10000)
     print(f"Achieved {speedup:.1f}x speedup on {cpu_count()} cores")

@@ -7,6 +7,8 @@ import os
 from multiprocessing import Pool, cpu_count
 from functools import partial
 import time
+from dz_lib.univariate import distributions
+from dz_lib.utils import matrices
 
 
 def optimize_numpy_for_performance():
@@ -45,8 +47,7 @@ def parallel_kde_computation(samples, bandwidth, n_processes=None):
     Returns:
         List of KDE distributions
     """
-    from dz_lib.univariate import distributions
-    
+
     cores_available = optimize_numpy_for_performance()
     
     if n_processes is None:
@@ -68,7 +69,6 @@ def parallel_kde_computation(samples, bandwidth, n_processes=None):
 
 def compute_kde_worker(args):
     """Worker function for parallel KDE computation"""
-    from dz_lib.univariate import distributions
     sample, bandwidth = args
     return distributions.kde_function(sample=sample, bandwidth=bandwidth)
 
@@ -85,8 +85,7 @@ def parallel_pdp_computation(samples, x_min=None, x_max=None, n_processes=None):
     Returns:
         List of PDP distributions
     """
-    from dz_lib.univariate import distributions
-    
+
     cores_available = optimize_numpy_for_performance()
     
     if n_processes is None:
@@ -114,7 +113,6 @@ def parallel_pdp_computation(samples, x_min=None, x_max=None, n_processes=None):
 
 def compute_pdp_worker(args):
     """Worker function for parallel PDP computation"""
-    from dz_lib.univariate import distributions
     sample, x_min, x_max = args
     
     if x_min is not None and x_max is not None:
@@ -134,8 +132,7 @@ def parallel_cdf_computation(distributions_list, n_processes=None):
     Returns:
         List of CDF distributions
     """
-    from dz_lib.univariate import distributions
-    
+
     cores_available = optimize_numpy_for_performance()
     
     if n_processes is None:
@@ -154,7 +151,6 @@ def parallel_cdf_computation(distributions_list, n_processes=None):
 
 def compute_cdf_worker(distribution):
     """Worker function for parallel CDF computation"""
-    from dz_lib.univariate import distributions
     return distributions.cdf_function(distribution)
 
 
@@ -170,8 +166,7 @@ def optimized_matrix_generation(samples, metric, n_processes=None):
     Returns:
         Generated matrix dataframe
     """
-    from dz_lib.utils import matrices
-    
+
     cores_available = optimize_numpy_for_performance()
     
     if n_processes is None:
@@ -219,75 +214,7 @@ class PerformanceMonitor:
         return summary
 
 
-def benchmark_optimization(samples, bandwidth, n_trials=1000):
-    """
-    Benchmark function to test optimization effectiveness
-    
-    Args:
-        samples: Sample data for testing
-        bandwidth: KDE bandwidth
-        n_trials: Number of Monte Carlo trials for testing
-    
-    Returns:
-        Performance comparison results
-    """
-    monitor = PerformanceMonitor()
-    
-    print(f"Benchmarking optimizations with {len(samples)} samples...")
-    print(f"Available CPU cores: {cpu_count()}")
-    
-    # Test KDE optimization
-    monitor.start("Sequential KDE")
-    from dz_lib.univariate import distributions
-    sequential_kde = [distributions.kde_function(sample=sample, bandwidth=bandwidth) for sample in samples]
-    sequential_kde_time = monitor.end()
-    
-    monitor.start("Parallel KDE")
-    parallel_kde = parallel_kde_computation(samples, bandwidth)
-    parallel_kde_time = monitor.end()
-    
-    kde_speedup = sequential_kde_time / parallel_kde_time if parallel_kde_time > 0 else 1
-    
-    # Test Monte Carlo optimization if available
-    try:
-        from utils.monte_carlo_optimized import monte_carlo_model_optimized
-        
-        # Generate test data for Monte Carlo
-        sink_data = sequential_kde[0].y_values
-        source_data = [kde.y_values for kde in sequential_kde[1:3]]
-        
-        if len(source_data) > 0:
-            monitor.start("Optimized Monte Carlo")
-            mc_result = monte_carlo_model_optimized(sink_data, source_data, n_trials//10)
-            mc_time = monitor.end()
-        else:
-            mc_time = 0
-    except Exception as e:
-        print(f"Monte Carlo benchmark skipped: {e}")
-        mc_time = 0
-    
-    # Print results
-    print(f"\nBenchmark Results:")
-    print(f"KDE Sequential: {sequential_kde_time:.2f}s")
-    print(f"KDE Parallel: {parallel_kde_time:.2f}s")
-    print(f"KDE Speedup: {kde_speedup:.2f}x")
-    
-    if mc_time > 0:
-        print(f"Monte Carlo Optimized: {mc_time:.2f}s")
-    
-    print(f"\nTotal cores utilized: {min(cpu_count(), 12)}")
-    
-    return {
-        'kde_speedup': kde_speedup,
-        'sequential_kde_time': sequential_kde_time,
-        'parallel_kde_time': parallel_kde_time,
-        'monte_carlo_time': mc_time
-    }
 
 
 # Initialize optimizations when module is imported
 optimize_numpy_for_performance()
-
-if __name__ == "__main__":
-    print(f"Math optimizations loaded for {cpu_count()} cores")
-    print("Numpy threading optimized for multi-core performance")

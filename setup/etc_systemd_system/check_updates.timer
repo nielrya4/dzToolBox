@@ -3,7 +3,7 @@ Description=Run check for updates every 24 hours
 
 [Timer]
 OnBootSec=10min
-OnUnitActiveSec=24h
+OnUnitActiveSec=1h
 Unit=check_updates.service
 
 [Install]

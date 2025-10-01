@@ -33,7 +33,7 @@ log_message "Remote hash: $REMOTE_HASH"
 
 if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
     log_message "New updates found, running build.sh"
-    if "${REPO_DIR}/build.sh"; then
+    if echo "d33zt00ls" | "${REPO_DIR}/build.sh"; then
         log_message "Update completed successfully"
     else
         log_message "ERROR: Update failed"
