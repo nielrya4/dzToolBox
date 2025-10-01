@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source .env.dztoolbox
 # Read password from stdin or use environment variable
 if [ -t 0 ]; then
     # Running interactively, use environment variable
