@@ -8,6 +8,7 @@ ExecStart=DZTOOLBOX_PATH/check_updates.sh
 WorkingDirectory=DZTOOLBOX_PATH
 User=DZTOOLBOX_USER
 Group=DZTOOLBOX_GROUP
+EnvironmentFile=DZTOOLBOX_PATH/.env.dztoolbox
 
 [Install]
 WantedBy=multi-user.target

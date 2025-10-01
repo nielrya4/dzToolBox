@@ -1,7 +1,17 @@
 #!/bin/bash
 
-# Read password from stdin
-read -r PASSWORD
+# Read password from stdin or use environment variable
+if [ -t 0 ]; then
+    # Running interactively, use environment variable
+    if [ -z "$DZTOOLBOX_PASSWORD" ]; then
+        echo "ERROR: DZTOOLBOX_PASSWORD environment variable not set"
+        exit 1
+    fi
+    PASSWORD="$DZTOOLBOX_PASSWORD"
+else
+    # Password provided via stdin
+    read -r PASSWORD
+fi
 
 echo "Updating dztoolbox code..."
 git pull

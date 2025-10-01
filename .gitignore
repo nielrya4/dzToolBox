@@ -7,4 +7,5 @@ dztoolbox.sock
 __pycache__
 */__pycache__
 .env
+.env.dztoolbox
 todo.txt
