@@ -6,5 +6,6 @@ OnBootSec=10min
 OnUnitActiveSec=1h
 Unit=check_updates.service
 
+
 [Install]
 WantedBy=timers.target
