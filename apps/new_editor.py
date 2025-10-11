@@ -341,6 +341,7 @@ def register(app):
                         samples=adjusted_samples,
                         metric='similarity'
                     )
+                    stress = round(stress, 2)
                     graph_fig = mds.mds_graph(
                         points=points,
                         title=f"{output_title} (metric='similarity', stress={stress})",
