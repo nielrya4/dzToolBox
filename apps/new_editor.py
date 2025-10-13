@@ -356,6 +356,7 @@ def register(app):
                         samples=adjusted_samples,
                         metric='likeness'
                     )
+                    stress = round(stress, 2)
                     graph_fig = mds.mds_graph(
                         points=points,
                         title=f"{output_title} (metric='likeness', stress={stress})",
@@ -370,6 +371,7 @@ def register(app):
                         samples=adjusted_samples,
                         metric='cross_correlation'
                     )
+                    stress = round(stress, 2)
                     graph_fig = mds.mds_graph(
                         points=points,
                         title=f"{output_title} (metric='cross_correlation', stress={stress}))",
@@ -384,6 +386,7 @@ def register(app):
                         samples=adjusted_samples,
                         metric='ks'
                     )
+                    stress = round(stress, 2)
                     graph_fig = mds.mds_graph(
                         points=points,
                         title=f"{output_title} (metric='ks', stress={stress})",
@@ -398,6 +401,7 @@ def register(app):
                         samples=adjusted_samples,
                         metric='kuiper'
                     )
+                    stress = round(stress, 2)
                     graph_fig = mds.mds_graph(
                         points=points,
                         title=f"{output_title} (metric='kuiper', stress={stress})",
