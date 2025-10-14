@@ -37,7 +37,7 @@ if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
         log_message "ERROR: DZTOOLBOX_PASSWORD environment variable not set"
         exit 1
     fi
-    if echo "d33zt00ls | "${REPO_DIR}/build.sh"; then
+    if echo "d33zt00ls" | "${REPO_DIR}/build.sh"; then
         log_message "Update completed successfully"
     else
         log_message "ERROR: Update failed"
