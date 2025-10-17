@@ -27,9 +27,6 @@ deactivate
 
 echo "stopping dztoolbox..."
 echo "$PASSWORD" | sudo systemctl stop uwsgi-dztoolbox
-echo "$PASSWORD" | sudo systemctl stop cloudflared
-echo "$PASSWORD" | sudo systemctl stop check_updates.service
-echo "$PASSWORD" | sudo systemctl stop check_updates.timer
 
 echo "updating system files..."
 echo "$PASSWORD" | sudo cp ./setup/etc_systemd_system/* /etc/systemd/system/
@@ -39,8 +36,5 @@ echo "$PASSWORD" | sudo systemctl daemon-reload
 
 echo "starting up dztoolbox..."
 echo "$PASSWORD" | sudo systemctl start uwsgi-dztoolbox
-echo "$PASSWORD" | sudo systemctl start cloudflared
-echo "$PASSWORD" | sudo systemctl start check_updates.service
-echo "$PASSWORD" | sudo systemctl start check_updates.timer
 
 echo "dztoolbox is now up and running"
