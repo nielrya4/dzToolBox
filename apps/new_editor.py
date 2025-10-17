@@ -223,7 +223,7 @@ def register(app):
                             univariate.distributions.kde_function(
                                 sample=sample,
                                 bandwidth=float(project.settings.kde_bandwidth)
-                            )
+                            ).subset(project.settings.min_age, project.settings.max_age)
                         )
                     graph_fig = univariate.distributions.distribution_graph(
                         distributions=distros,
