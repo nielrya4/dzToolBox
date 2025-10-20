@@ -43,6 +43,7 @@
         const stack_graphs_select = document.getElementById('stack_graphs');
         const n_trials_textbox = document.getElementById('n_trials');
         const graph_color_map_select = document.getElementById('graph_color_map')
+		const custom_colormap = document.getElementById('custom_colormap');
         const font_select = document.getElementById('graph_font')
         const font_size = document.getElementById('font_size')
         const figure_width = document.getElementById('figure_width')
@@ -103,6 +104,29 @@
             }
             else if (project_settings["color_map"] === "cividis") {
                 graph_color_map_select.selectedIndex = 5;
+            }
+            else if (project_settings["color_map"] === "ocean") {
+                graph_color_map_select.selectedIndex = 6;
+            }
+            else if (project_settings["color_map"] === "terrain") {
+                graph_color_map_select.selectedIndex = 7;
+            }
+            else if (project_settings["color_map"] === "gnuplot") {
+                graph_color_map_select.selectedIndex = 8;
+            }
+            else if (project_settings["color_map"] === "gist_ncar") {
+                graph_color_map_select.selectedIndex = 9;
+            }
+            else if (project_settings["color_map"] === "winter") {
+                graph_color_map_select.selectedIndex = 10;
+            }
+            else if (project_settings["color_map"] === "cool") {
+                graph_color_map_select.selectedIndex = 11;
+            }
+            else {
+                graph_color_map_select.selectedIndex = 12;
+                custom_colormap.value = project_settings["color_map"]
+				custom_colormap.style.display = 'block';
             }
 
             if (project_settings["font_name"] === "ubuntu") {

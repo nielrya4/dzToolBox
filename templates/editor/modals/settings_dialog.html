@@ -47,6 +47,7 @@
 								<option value="true">Yes</option>
 								<option value="false">No</option>
 							</select>
+
 							<label for="graph_color_map">Graph Colormap</label>
 							<select id="graph_color_map" name="graph_color_map" class="form-select" aria-label="Default select example">
 								<option value="jet">Jet</option>
@@ -55,7 +56,16 @@
 								<option value="inferno">Inferno</option>
 								<option value="magma">Magma</option>
 								<option value="cividis">Cividis</option>
+								<option value="ocean">Ocean</option>
+								<option value="terrain">Terrain</option>
+								<option value="gnuplot">GNU Plot</option>
+								<option value="gist_ncar">Gist NCAR</option>
+								<option value="winter">Winter</option>
+								<option value="cool">Cool</option>
+    							<option name="custom" value="custom">Custom</option>
 							</select>
+							<input type="text" id="custom_colormap" name="custom_colormap" class="form-control mt-2" placeholder="Enter a valid matplotlib colormap name" style="display: none">
+
 							<label for="graph_font">Graph Font</label>
 							<select id="graph_font" name="graph_font" class="form-select" aria-label="Default select example">
 								<option value="ubuntu" style="font-family: 'ubuntu', sans-serif">Ubuntu</option>
@@ -111,7 +121,10 @@
             alert('Please fill in all required fields.');
             return;
         }
-        
+		let colorMapValue = graph_color_map.value;
+		if (graph_color_map.value === 'custom') {
+			colorMapValue = custom_colormap.value;
+		}
         // Close modal immediately after validation
         const modal = bootstrap.Modal.getInstance(document.getElementById('project_settings_modal'));
         if (modal) {
@@ -129,7 +142,7 @@
             "font_name": font_select.value,
             "figure_width": parseInt(figure_width.value),
             "figure_height": parseInt(figure_height.value),
-            "color_map": graph_color_map.value,
+            "color_map": colorMapValue,
             "show_legend": showLegendSelect.value,
         };
         fetch('/projects/{{ project_id }}/settings', {
@@ -148,4 +161,14 @@
             console.error('Error updating settings', error);
         });
     });
+</script>
+<script>
+	document.getElementById('graph_color_map').addEventListener('change', function() {
+		const customInput = document.getElementById('custom_colormap');
+		if (this.value === 'custom') {
+			customInput.style.display = 'block';
+		} else {
+			customInput.style.display = 'none';
+		}
+	});
 </script>
