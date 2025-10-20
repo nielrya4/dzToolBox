@@ -1,10 +1,10 @@
 {% include "editor/toolbars/maps_toolbar.html" %}
 
 <!-- Image Modal for enlarging images in map popups -->
-<div id="imageModal" class="image-modal" onclick="closeImageModal(event)">
+<div id="image_modal" class="image-modal" onclick="closeImageModal(event)">
     <div class="modal-content">
         <button class="close-button" onclick="closeImageModal()">&times;</button>
-        <img id="enlargedImage" class="enlarged-image" src="" alt="">
+        <img id="enlarged_image" class="enlarged-image" src="" alt="">
     </div>
 </div>
 
@@ -16,30 +16,30 @@
 </div>
 
 <!-- Export Modal -->
-<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+<div class="modal fade" id="export_modal" tabindex="-1" aria-labelledby="export_modal_label" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exportModalLabel">Export Map Settings</h5>
+                <h5 class="modal-title" id="export_modal_label">Export Map Settings</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="exportForm">
                     <div class="mb-3">
-                        <label for="mapTitle" class="form-label">Map Title *</label>
-                        <input type="text" class="form-control" id="mapTitle" value="Interactive Map Export" required>
+                        <label for="map_title" class="form-label">Map Title *</label>
+                        <input type="text" class="form-control" id="map_title" value="Interactive Map Export" required>
                         <div class="form-text">Main title displayed at the top of the exported map</div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="mapSubtitle" class="form-label">Subtitle</label>
-                        <input type="text" class="form-control" id="mapSubtitle" placeholder="Optional subtitle">
+                        <label for="map_subtitle" class="form-label">Subtitle</label>
+                        <input type="text" class="form-control" id="map_subtitle" placeholder="Optional subtitle">
                         <div class="form-text">Optional subtitle text below the main title</div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="mapFooter" class="form-label">Footer Text</label>
-                        <textarea class="form-control" id="mapFooter" rows="2" placeholder="This is a static export of your interactive map. All markers are clickable to view details.">This is a static export of your interactive map. All markers are clickable to view details.</textarea>
+                        <label for="map_footer" class="form-label">Footer Text</label>
+                        <textarea class="form-control" id="map_footer" rows="2" placeholder="This is a static export of your interactive map. All markers are clickable to view details.">This is a static export of your interactive map. All markers are clickable to view details.</textarea>
                         <div class="form-text">Text displayed at the bottom of the exported map</div>
                     </div>
 
@@ -48,7 +48,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Map Statistics</label>
                                 <div class="form-text">
-                                    <strong id="pointCount">0</strong> point(s) will be included in the export
+                                    <strong id="point_count">0</strong> point(s) will be included in the export
                                 </div>
                             </div>
                         </div>
@@ -56,7 +56,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Current View</label>
                                 <div class="form-text">
-                                    Zoom level: <strong id="currentZoom">10</strong><br>
+                                    Zoom level: <strong id="current_zoom">10</strong><br>
                                     Center will be preserved in export
                                 </div>
                             </div>
@@ -66,7 +66,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" id="confirmExportBtn">
+                <button type="button" class="btn btn-success" id="confirm_export_btn">
                     <span class="btn-text">
                         <i class="fa fa-download"></i> Export HTML Map
                     </span>
@@ -78,15 +78,15 @@
 </div>
 
 <!-- Add Point Modal -->
-<div class="modal fade" id="addPointModal" tabindex="-1" aria-labelledby="addPointModalLabel" aria-hidden="true">
+<div class="modal fade" id="add_point_modal" tabindex="-1" aria-labelledby="add_point_modal_label" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addPointModalLabel">Add New Point</h5>
+                <h5 class="modal-title" id="add_point_modal_label">Add New Point</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="pointForm">
+                <form id="point_form">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -113,32 +113,32 @@
                     <div class="mb-3">
                         <label class="form-label">Image</label>
                         <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="imageSource" id="projectOutput" autocomplete="off" checked>
-                            <label class="btn btn-outline-primary" for="projectOutput">From Project</label>
+                            <input type="radio" class="btn-check" name="image_source" id="project_output" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="project_output">From Project</label>
                             
-                            <input type="radio" class="btn-check" name="imageSource" id="uploadNew" autocomplete="off">
-                            <label class="btn btn-outline-primary" for="uploadNew">Upload New</label>
+                            <input type="radio" class="btn-check" name="image_source" id="upload_new" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="upload_new">Upload New</label>
                         </div>
                         
-                        <div id="projectOutputSection" class="mt-3">
-                            <select class="form-select" id="outputSelect">
+                        <div id="project_output_section" class="mt-3">
+                            <select class="form-select" id="output_select">
                                 <option value="">Select an output image...</option>
                             </select>
                             <div class="form-text">Choose an image from your project outputs</div>
                         </div>
                         
-                        <div id="uploadSection" class="mt-3 d-none">
-                            <input type="file" class="form-control" id="imageFile" accept="image/*,.svg">
+                        <div id="upload_section" class="mt-3 d-none">
+                            <input type="file" class="form-control" id="image_file" accept="image/*,.svg">
                             <div class="form-text">Upload a new image or SVG for this point</div>
                         </div>
                         
-                        <div id="imagePreview" class="mt-2"></div>
+                        <div id="image_preview" class="mt-2"></div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="savePointBtn">
+                <button type="button" class="btn btn-primary" id="save_point_btn">
                     <span class="btn-text">Save Point</span>
                     <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                 </button>
@@ -148,20 +148,20 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+<div class="modal fade" id="delete_confirm_modal" tabindex="-1" aria-labelledby="delete_confirm_modal_label" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+                <h5 class="modal-title" id="delete_confirm_modal_label">Confirm Delete</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete the point "<strong id="deletePointTitle"></strong>"?</p>
+                <p>Are you sure you want to delete the point "<strong id="delete_point_title"></strong>"?</p>
                 <p class="text-muted mb-0">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                <button type="button" class="btn btn-danger" id="confirm_delete_btn">
                     <span class="btn-text">Delete Point</span>
                     <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                 </button>
@@ -355,9 +355,9 @@
         }).addTo(map);
 
         // Initialize modals
-        addPointModal = new bootstrap.Modal(document.getElementById('addPointModal'));
-        exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
-        deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        addPointModal = new bootstrap.Modal(document.getElementById('add_point_modal'));
+        exportModal = new bootstrap.Modal(document.getElementById('export_modal'));
+        deleteConfirmModal = new bootstrap.Modal(document.getElementById('delete_confirm_modal'));
         
         mapInitialized = true;
         loadPoints();
@@ -383,36 +383,36 @@
     }
 
     // Add point button
-    document.getElementById('addPointBtn').addEventListener('click', function() {
+    document.getElementById('add_point_btn').addEventListener('click', function() {
         // Clear form and show modal
-        document.getElementById('pointForm').reset();
-        document.getElementById('imagePreview').innerHTML = '';
+        document.getElementById('point_form').reset();
+        document.getElementById('image_preview').innerHTML = '';
         loadProjectOutputs();
         addPointModal.show();
     });
 
     // Image source toggle
-    document.querySelectorAll('input[name="imageSource"]').forEach(radio => {
+    document.querySelectorAll('input[name="image_source"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            const projectSection = document.getElementById('projectOutputSection');
-            const uploadSection = document.getElementById('uploadSection');
+            const projectSection = document.getElementById('project_output_section');
+            const uploadSection = document.getElementById('upload_section');
             
-            if (this.id === 'projectOutput') {
+            if (this.id === 'project_output') {
                 projectSection.classList.remove('d-none');
                 uploadSection.classList.add('d-none');
-                document.getElementById('imagePreview').innerHTML = '';
+                document.getElementById('image_preview').innerHTML = '';
             } else {
                 projectSection.classList.add('d-none');
                 uploadSection.classList.remove('d-none');
-                document.getElementById('imagePreview').innerHTML = '';
+                document.getElementById('image_preview').innerHTML = '';
             }
         });
     });
 
     // Output select change handler
-    document.getElementById('outputSelect').addEventListener('change', function() {
+    document.getElementById('output_select').addEventListener('change', function() {
         const selectedValue = this.value;
-        const preview = document.getElementById('imagePreview');
+        const preview = document.getElementById('image_preview');
         
         if (selectedValue) {
             // Show preview of selected output
@@ -423,9 +423,9 @@
     });
 
     // Image preview
-    document.getElementById('imageFile').addEventListener('change', function(e) {
+    document.getElementById('image_file').addEventListener('change', function(e) {
         const file = e.target.files[0];
-        const preview = document.getElementById('imagePreview');
+        const preview = document.getElementById('image_preview');
 
         if (file) {
             const reader = new FileReader();
@@ -439,8 +439,8 @@
     });
 
     // Save point
-    document.getElementById('savePointBtn').addEventListener('click', async function() {
-        const form = document.getElementById('pointForm');
+    document.getElementById('save_point_btn').addEventListener('click', async function() {
+        const form = document.getElementById('point_form');
 
         if (!form.checkValidity()) {
             form.reportValidity();
@@ -453,14 +453,14 @@
 
         try {
             let imageUrl = '';
-            const imageSource = document.querySelector('input[name="imageSource"]:checked').id;
+            const imageSource = document.querySelector('input[name="image_source"]:checked').id;
             
-            if (imageSource === 'projectOutput') {
+            if (imageSource === 'project_output') {
                 // Use selected project output
-                imageUrl = document.getElementById('outputSelect').value;
+                imageUrl = document.getElementById('output_select').value;
             } else {
                 // Upload new image
-                const imageFile = document.getElementById('imageFile').files[0];
+                const imageFile = document.getElementById('image_file').files[0];
                 if (imageFile) {
                     const formData = new FormData();
                     formData.append('file', imageFile);
@@ -502,7 +502,7 @@
                 addMarkerToMap(point);
                 addPointModal.hide();
                 form.reset();
-                document.getElementById('imagePreview').innerHTML = '';
+                document.getElementById('image_preview').innerHTML = '';
 
                 // Show success message
                 showAlert('Point added successfully!', 'success');
@@ -555,12 +555,12 @@
     // Show delete confirmation modal
     function showDeleteConfirm(pointId, pointTitle) {
         pointToDelete = pointId;
-        document.getElementById('deletePointTitle').textContent = pointTitle;
+        document.getElementById('delete_point_title').textContent = pointTitle;
         deleteConfirmModal.show();
     }
 
     // Confirm delete button
-    document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+    document.getElementById('confirm_delete_btn').addEventListener('click', async function() {
         if (!pointToDelete) return;
 
         const deleteBtn = this;
@@ -596,22 +596,22 @@
     });
 
     // Export map - show modal first
-    document.getElementById('exportBtn').addEventListener('click', async function() {
+    document.getElementById('export_btn').addEventListener('click', async function() {
         // Update export modal with current map stats
         try {
             const response = await fetch(`/projects/{{ project_id }}/maps/points`);
             if (response.ok) {
                 const points = await response.json();
-                document.getElementById('pointCount').textContent = points.length;
+                document.getElementById('point_count').textContent = points.length;
             }
         } catch (error) {
             console.error('Error fetching points for export modal:', error);
-            document.getElementById('pointCount').textContent = '0';
+            document.getElementById('point_count').textContent = '0';
         }
 
         // Update current zoom level
         if (map) {
-            document.getElementById('currentZoom').textContent = map.getZoom();
+            document.getElementById('current_zoom').textContent = map.getZoom();
         }
 
         // Show export modal
@@ -619,7 +619,7 @@
     });
 
     // Confirm export with custom settings
-    document.getElementById('confirmExportBtn').addEventListener('click', function() {
+    document.getElementById('confirm_export_btn').addEventListener('click', function() {
         const exportForm = document.getElementById('exportForm');
 
         if (!exportForm.checkValidity()) {
@@ -632,9 +632,9 @@
 
         // Get custom export settings
         const exportSettings = {
-            title: document.getElementById('mapTitle').value,
-            subtitle: document.getElementById('mapSubtitle').value,
-            footer: document.getElementById('mapFooter').value
+            title: document.getElementById('map_title').value,
+            subtitle: document.getElementById('map_subtitle').value,
+            footer: document.getElementById('map_footer').value
         };
 
         // Collect all map data
@@ -726,7 +726,7 @@
             }
             
             const outputs = await response.json();
-            const outputSelect = document.getElementById('outputSelect');
+            const outputSelect = document.getElementById('output_select');
             
             // Clear existing options except the first one
             outputSelect.innerHTML = '<option value="">Select an output image...</option>';
@@ -770,8 +770,8 @@
 
     // Image enlargement functionality
     function enlargeImage(img) {
-        const modal = document.getElementById('imageModal');
-        const enlargedImg = document.getElementById('enlargedImage');
+        const modal = document.getElementById('image_modal');
+        const enlargedImg = document.getElementById('enlarged_image');
 
         enlargedImg.src = img.src;
         enlargedImg.alt = img.alt;
@@ -782,7 +782,7 @@
     }
 
     function closeImageModal(event) {
-        const modal = document.getElementById('imageModal');
+        const modal = document.getElementById('image_modal');
 
         // Close unless clicking directly on the enlarged image
         if (!event || !event.target.classList.contains('enlarged-image')) {
@@ -798,7 +798,7 @@
     });
 
     // Prevent modal from closing when clicking on the image itself
-    document.getElementById('enlargedImage').addEventListener('click', function(event) {
+    document.getElementById('enlarged_image').addEventListener('click', function(event) {
         event.stopPropagation();
     });
 </script>

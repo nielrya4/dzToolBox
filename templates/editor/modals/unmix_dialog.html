@@ -9,8 +9,8 @@
                 <br />
                 <div class="container-sm">
                     <form id="unmix_form" data-hx-trigger="click">
-                        <label for="unmix_output_name">Output Title</label>
-                        <input type="text" id="unmix_output_name" name="unmix_output_name" required>
+                        <label for="unmix_output_title">Output Title</label>
+                        <input type="text" id="unmix_output_title" name="unmix_output_title" required>
                         <br />
                         <br />
                         {{ sample_select(id="unmix_sample_select", sender="unmix_link", event='click', multi_select=True) }}
@@ -25,8 +25,8 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        <label for="unmix_select">Select a metric...</label>
-                                        <select name="unmix_select" id="unmix_select">
+                                        <label for="unmix_metric">Select a metric...</label>
+                                        <select name="unmix_metric" id="unmix_metric">
                                             <option value="cross_correlation">Cross Correlation of KDEs</option>
                                             <option value="ks">KS Test of CDFs</option>
                                             <option value="kuiper">Kuiper Test of CDFs</option>
@@ -58,25 +58,25 @@
     const unmixSampleList = document.getElementById("unmix_sample_select")
     function unmix_send_args() {
         var selectedSamples = [];
-        var unmix_checkboxes = unmixSampleList.querySelectorAll(".sample-checkbox");
-        for (var i = 0; i < unmix_checkboxes.length; i++) {
-            if (unmix_checkboxes[i].checked) {
-                selectedSamples.push(unmix_checkboxes[i].value);
+        var unmixCheckboxes = unmixSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < unmixCheckboxes.length; i++) {
+            if (unmixCheckboxes[i].checked) {
+                selectedSamples.push(unmixCheckboxes[i].value);
             }
         }
-		const unmix_type = document.getElementById("unmix_select").value;
-		const unmix_outputName = document.getElementById("unmix_output_name").value;
-		const unmix_outputs_select = Array.from(
+		const unmixMetric = document.getElementById("unmix_metric").value;
+		const unmixOutputTitle = document.getElementById("unmix_output_title").value;
+		const unmixOutputsSelect = Array.from(
             document.querySelectorAll(`#unmix_outputs_select input[type="hidden"]`)
         ).map(input => input.value);
         var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
         var queryString = "/projects/{{ project_id }}/outputs/new/unmix?sampleNames="
             + encodedSamples.join("&sampleNames=")
-            + "&unmixMetric=" + unmix_type
-            + "&outputType=" + unmix_outputs_select.join("&outputType=");
+            + "&metric=" + unmixMetric
+            + "&outputType=" + unmixOutputsSelect.join("&outputType=");
 
-        if (unmix_outputName !== "") {
-            queryString += "&outputTitle=" + unmix_outputName;
+        if (unmixOutputTitle !== "") {
+            queryString += "&outputTitle=" + unmixOutputTitle;
         }
 		document.getElementById("send_it_unmix").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_unmix"));

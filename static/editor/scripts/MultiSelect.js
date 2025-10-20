@@ -307,3 +307,20 @@ new MultiSelect(document.getElementById('mda_outputs_select'), {
     search: false,
     selectAll: false
 });
+
+new MultiSelect(document.getElementById('mds_outputs_select'), {
+    data: [
+        {
+            value: 'mds_plot',
+            text: 'MDS Plot',
+            selected: true
+        },
+        {
+            value: 'shepard_plot',
+            text: 'Shepard Plot',
+            selected: true
+        }
+    ],
+    search: false,
+    selectAll: false
+});

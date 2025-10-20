@@ -10,7 +10,7 @@
                 <div class="container-sm">
                     <input type="file" class="form-control btn-primary" id="import_file" accept=".xlsx,.csv,.ods" />
                     <br />
-                    <div id="import-table"></div>
+                    <div id="import_table"></div>
                     <br />
                     <h6>Copy and paste data from this table into the main project spreadsheet</h6>
                 </div>
@@ -41,7 +41,7 @@
     ];
 
     // Initialize Tabulator
-    var importTable = new Tabulator("#import-table", {
+    var importTable = new Tabulator("#import_table", {
         height: "450px",
         spreadsheet: true,
         spreadsheetData: sheets,

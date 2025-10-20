@@ -1,26 +1,26 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-secondary">
     <div class="container-fluid">
-        <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#mapsNav" aria-controls="mapsNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#maps_nav" aria-controls="maps_nav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         
-        <div class="collapse navbar-collapse" id="mapsNav">
+        <div class="collapse navbar-collapse" id="maps_nav">
             <div class="navbar-nav me-auto">
-                <a class="nav-link toolbar-btn" id="addPointBtn" href="javascript:void(0)">
+                <a class="nav-link toolbar-btn" id="add_point_btn" href="javascript:void(0)">
                     <i class="fa fa-plus-circle"></i> Add Point
                 </a>
-                <a class="nav-link toolbar-btn" id="centerMapBtn" href="javascript:void(0)" title="Center Map View">
+                <a class="nav-link toolbar-btn" id="center_map_btn" href="javascript:void(0)" title="Center Map View">
                     <i class="fa fa-crosshairs"></i> Center Map
                 </a>
             </div>
             <div class="navbar-nav">
-                <a class="nav-link toolbar-btn-secondary" id="exportBtn" href="javascript:void(0)">
+                <a class="nav-link toolbar-btn-secondary" id="export_btn" href="javascript:void(0)">
                     <span class="btn-text">
                         <i class="fa fa-download"></i> Export HTML
                     </span>
                     <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                 </a>
-                <a class="nav-link toolbar-btn-danger" id="clearMapBtn" href="javascript:void(0)" title="Clear All Points">
+                <a class="nav-link toolbar-btn-danger" id="clear_map_btn" href="javascript:void(0)" title="Clear All Points">
                     <i class="fa fa-trash"></i> Clear All
                 </a>
             </div>
@@ -30,7 +30,7 @@
 
 <script>
     // Center map button
-    document.getElementById('centerMapBtn')?.addEventListener('click', function() {
+    document.getElementById('center_map_btn')?.addEventListener('click', function() {
         if (map && markers.length > 0) {
             // Create a group of all markers and fit the map to show all
             const group = new L.featureGroup(markers);
@@ -42,7 +42,7 @@
     });
 
     // Clear all points button
-    document.getElementById('clearMapBtn')?.addEventListener('click', function() {
+    document.getElementById('clear_map_btn')?.addEventListener('click', function() {
         if (markers.length === 0) {
             showAlert('No points to clear', 'info');
             return;

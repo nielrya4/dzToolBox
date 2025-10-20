@@ -7,7 +7,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="container-sm">
-                    <form id="new_project_form" enctype="multipart/form-data" hx-post="/new_project" hx-target="#project-list" hx-swap="outerHTML">
+                    <form id="new_project_form" enctype="multipart/form-data" hx-post="/new_project" hx-target="#project_list" hx-swap="outerHTML">
                         <br />
                         <div class="row" style="margin: 0;">
                             <label for="project_name">Project Name</label>
@@ -36,8 +36,28 @@
     const create_proj_btn = document.getElementById("create_new_project")
     const modal_hide_btn = document.getElementById("modal_hide_button")
     const new_proj_form = document.getElementById("new_project_form")
-    new_proj_form.addEventListener('submit', function (){
-        modal_hide_btn.click();
+    
+    // Close modal immediately after form validation and submission
+    new_proj_form.addEventListener('submit', function(event) {
+        const projectName = document.getElementById('project_name').value.trim();
+        
+        // Basic validation
+        if (!projectName) {
+            alert('Please enter a project name.');
+            event.preventDefault();
+            return false;
+        }
+        
+        // Close modal immediately after validation
+        const modal = bootstrap.Modal.getInstance(document.getElementById('new_project_modal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Reset form for next use
+        setTimeout(() => {
+            new_proj_form.reset();
+        }, 500);
     });
 
 </script>

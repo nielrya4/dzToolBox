@@ -12,7 +12,7 @@ import secrets
 import base64
 from dz_lib import univariate, bivariate
 from dz_lib.bivariate.distributions import *
-from dz_lib.univariate import mds, unmix, distributions, mda
+from dz_lib.univariate import mds, unmix, distributions, mda, metrics
 from dz_lib.utils import data, matrices
 from utils import embedding, monte_carlo_optimized
 from flask import send_file
@@ -211,8 +211,8 @@ def register(app):
                             active_samples.append(sample)
                 adjusted_samples = []
                 for sample in active_samples:
-                    if project.settings.matrix_function_type == "kde" and output_type != "pdp":
-                        sample.replace_grain_uncertainties(project.settings.kde_bandwidth)
+                    if project.settings.statistical_settings.matrix_function_type == "kde" and output_type != "pdp":
+                        sample.replace_grain_uncertainties(project.settings.statistical_settings.kde_bandwidth)
                     adjusted_samples.append(sample)
                 adjusted_samples.reverse()
 
@@ -222,21 +222,21 @@ def register(app):
                         distros.append(
                             univariate.distributions.kde_function(
                                 sample=sample,
-                                bandwidth=float(project.settings.kde_bandwidth)
-                            ).subset(project.settings.min_age, project.settings.max_age)
+                                bandwidth=float(project.settings.statistical_settings.kde_bandwidth)
+                            ).subset(project.settings.age_settings.min_age, project.settings.age_settings.max_age)
                         )
                     graph_fig = univariate.distributions.distribution_graph(
                         distributions=distros,
-                        stacked=project.settings.stack_graphs == "true",
-                        legend=project.settings.legend == "true",
+                        stacked=project.settings.graph_settings.stack_graphs == "true",
+                        legend=project.settings.graph_settings.legend == "true",
                         title=output_title,
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map,
-                        x_min=project.settings.min_age,
-                        x_max=project.settings.max_age
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height,
+                        color_map=project.settings.graph_settings.color_map,
+                        x_min=project.settings.age_settings.min_age,
+                        x_max=project.settings.age_settings.max_age
                     )
                 elif output_type == 'pdp':
                     distros = []
@@ -246,16 +246,16 @@ def register(app):
                         )
                     graph_fig = univariate.distributions.distribution_graph(
                         distributions=distros,
-                        stacked=project.settings.stack_graphs == "true",
-                        legend=project.settings.legend == "true",
+                        stacked=project.settings.graph_settings.stack_graphs == "true",
+                        legend=project.settings.graph_settings.legend == "true",
                         title=output_title,
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map,
-                        x_min=project.settings.min_age,
-                        x_max=project.settings.max_age
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height,
+                        color_map=project.settings.graph_settings.color_map,
+                        x_min=project.settings.age_settings.min_age,
+                        x_max=project.settings.age_settings.max_age
                     )
                 elif output_type == 'cdf':
                     distros = []
@@ -264,22 +264,22 @@ def register(app):
                             univariate.distributions.cdf_function(
                                 univariate.distributions.kde_function(
                                     sample=sample,
-                                    bandwidth=float(project.settings.kde_bandwidth)
+                                    bandwidth=float(project.settings.statistical_settings.kde_bandwidth)
                                 )
                             )
                         )
                     graph_fig = univariate.distributions.distribution_graph(
                         distributions=distros,
-                        stacked=project.settings.stack_graphs == "true",
-                        legend=project.settings.legend == "true",
+                        stacked=project.settings.graph_settings.stack_graphs == "true",
+                        legend=project.settings.graph_settings.legend == "true",
                         title=output_title,
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map,
-                        x_min=project.settings.min_age,
-                        x_max=project.settings.max_age
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height,
+                        color_map=project.settings.graph_settings.color_map,
+                        x_min=project.settings.age_settings.min_age,
+                        x_max=project.settings.age_settings.max_age
                     )
                 else:
                     raise ValueError("output_type is not supported")
@@ -320,7 +320,8 @@ def register(app):
             project = __get_project(project_id)
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", None)
-                output_type = request.args.get("outputType", "kde")
+                metric = request.args.get("metric", "similarity")
+                output_types = request.args.getlist("outputType")
                 sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
                 loaded_samples = data.read_1d_samples(spreadsheet_data)
@@ -332,102 +333,68 @@ def register(app):
                             active_samples.append(sample)
                 adjusted_samples = []
                 for sample in active_samples:
-                    if project.settings.matrix_function_type == "kde" and output_type != "pdp_graph":
-                        sample.replace_grain_uncertainties(project.settings.kde_bandwidth)
+                    if project.settings.statistical_settings.matrix_function_type == "kde" and metric != "pdp_graph":
+                        sample.replace_grain_uncertainties(project.settings.statistical_settings.kde_bandwidth)
                     adjusted_samples.append(sample)
                 adjusted_samples.reverse()
-                if output_type == 'mds_similarity':
-                    points, stress = mds.mds_function(
-                        samples=adjusted_samples,
-                        metric='similarity'
-                    )
-                    stress = round(stress, 2)
-                    graph_fig = mds.mds_graph(
-                        points=points,
-                        title=f"{output_title} (metric='similarity', stress={stress})",
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map
-                    )
-                elif output_type == 'mds_likeness':
-                    points, stress = mds.mds_function(
-                        samples=adjusted_samples,
-                        metric='likeness'
-                    )
-                    stress = round(stress, 2)
-                    graph_fig = mds.mds_graph(
-                        points=points,
-                        title=f"{output_title} (metric='likeness', stress={stress})",
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map
-                    )
-                elif output_type == 'mds_cross_correlation':
-                    points, stress = mds.mds_function(
-                        samples=adjusted_samples,
-                        metric='cross_correlation'
-                    )
-                    stress = round(stress, 2)
-                    graph_fig = mds.mds_graph(
-                        points=points,
-                        title=f"{output_title} (metric='cross_correlation', stress={stress}))",
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map
-                    )
-                elif output_type == 'mds_ks':
-                    points, stress = mds.mds_function(
-                        samples=adjusted_samples,
-                        metric='ks'
-                    )
-                    stress = round(stress, 2)
-                    graph_fig = mds.mds_graph(
-                        points=points,
-                        title=f"{output_title} (metric='ks', stress={stress})",
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map
-                    )
-                elif output_type == 'mds_kuiper':
-                    points, stress = mds.mds_function(
-                        samples=adjusted_samples,
-                        metric='kuiper'
-                    )
-                    stress = round(stress, 2)
-                    graph_fig = mds.mds_graph(
-                        points=points,
-                        title=f"{output_title} (metric='kuiper', stress={stress})",
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height,
-                        color_map=project.settings.color_map
-                    )
-                else:
-                    raise ValueError(f"output_type '{output_type}' is not supported")
-                output_id = secrets.token_hex(15)
-                output_data = embedding.embed_graph(
-                    fig=graph_fig,
-                    output_id=output_id,
-                    project_id=project_id,
-                    fig_type="matplotlib",
-                    img_format='svg',
-                    download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+
+                points, stress, dissimilarity_matrix, scaled_mds_result, mds_result = mds.mds_function(
+                    samples=adjusted_samples,
+                    metric='similarity',
+                    non_metric=True
                 )
-                new_output = Output(
-                    output_id=output_id,
-                    output_type='graph',
-                    output_data=output_data
-                )
-                project.outputs.append(new_output)
+                if "mds_plot" in output_types:
+                    graph_fig = mds.mds_graph(
+                        points=points,
+                        title=f"{output_title} (metric='similarity', stress={round(stress, 2)})",
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height,
+                        color_map=project.settings.graph_settings.color_map
+                    )
+                    output_id = secrets.token_hex(15)
+                    output_data = embedding.embed_graph(
+                        fig=graph_fig,
+                        output_id=output_id,
+                        project_id=project_id,
+                        fig_type="matplotlib",
+                        img_format='svg',
+                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                    )
+                    new_output = Output(
+                        output_id=output_id,
+                        output_type='graph',
+                        output_data=output_data
+                    )
+                    project.outputs.append(new_output)
+                if "shepard_plot" in output_types:
+                    graph_fig = mds.shepard_plot(
+                        dissimilarity_matrix=dissimilarity_matrix,
+                        scaled_mds_result=scaled_mds_result,
+                        mds_result=mds_result,
+                        title=f"{output_title} (metric='similarity', stress={round(stress, 2)})",
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height
+                    )
+                    output_id = secrets.token_hex(15)
+                    output_data = embedding.embed_graph(
+                        fig=graph_fig,
+                        output_id=output_id,
+                        project_id=project_id,
+                        fig_type="matplotlib",
+                        img_format='svg',
+                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                    )
+                    new_output = Output(
+                        output_id=output_id,
+                        output_type='graph',
+                        output_data=output_data
+                    )
+                    project.outputs.append(new_output)
+
                 updated_project_content = project.to_json()
                 compressed_proj_content = compression.compress(updated_project_content)
                 database.write_file(project_id, compressed_proj_content)
@@ -450,7 +417,7 @@ def register(app):
             project = __get_project(project_id)
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", "")
-                metric = request.args.get("unmixMetric", "cross_correlation")
+                metric = request.args.get("metric", "cross_correlation")
                 output_types = request.args.getlist("outputType")
                 sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
@@ -463,11 +430,11 @@ def register(app):
                             active_samples.append(sample)
                 adjusted_samples = []
                 for sample in active_samples:
-                    if project.settings.matrix_function_type == "kde":
-                        sample.replace_grain_uncertainties(project.settings.kde_bandwidth)
+                    if project.settings.statistical_settings.matrix_function_type == "kde":
+                        sample.replace_grain_uncertainties(project.settings.statistical_settings.kde_bandwidth)
                     adjusted_samples.append(sample)
-                x_min = project.settings.min_age
-                x_max = project.settings.max_age
+                x_min = project.settings.age_settings.min_age
+                x_max = project.settings.age_settings.max_age
                 sample_pdps = [univariate.distributions.pdp_function(sample, x_min, x_max) for sample in adjusted_samples]
                 if metric == 'cross_correlation':
                     sink_distribution = sample_pdps[0]
@@ -479,7 +446,7 @@ def register(app):
                     monte_carlo_optimized.monte_carlo_model_optimized(
                         sink_distribution=sink_distribution,
                         source_distributions=source_distributions,
-                        n_trials=int(project.settings.n_unmix_trials),
+                        n_trials=int(project.settings.statistical_settings.n_unmix_trials),
                         metric=metric
                     )
                 )
@@ -515,10 +482,10 @@ def register(app):
                     graph_fig = univariate.unmix.relative_contribution_graph(
                         contributions=contribution_pairs,
                         title=f"{output_title} (metric='{metric}')",
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height
                     )
                     output_id = secrets.token_hex(15)
                     output_data = embedding.embed_graph(
@@ -537,16 +504,19 @@ def register(app):
                         )
                     )
                 if "trials_graph" in output_types:
+                    r2_vals = [metrics.r2(top_distro.y_values, sink_distribution.y_values) for top_distro in top_distributions]
+                    avg_r2 = np.average(r2_vals)
+                    output_title += f" (r^2={round(avg_r2, 3)}) (metric='{metric}')"
                     graph_fig = univariate.unmix.top_trials_graph(
                         sink_distribution=sink_distribution,
                         model_distributions=top_distributions,
                         x_min=x_min,
                         x_max=x_max,
-                        title=f"{output_title} (metric='{metric}')",
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height
+                        title=output_title,
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height
                     )
                     output_id = secrets.token_hex(15)
                     output_data = embedding.embed_graph(
@@ -599,8 +569,8 @@ def register(app):
                             active_samples.append(sample)
                 adjusted_samples = []
                 for sample in active_samples:
-                    if project.settings.matrix_function_type == "kde":
-                        sample.replace_grain_uncertainties(project.settings.kde_bandwidth)
+                    if project.settings.statistical_settings.matrix_function_type == "kde":
+                        sample.replace_grain_uncertainties(project.settings.statistical_settings.kde_bandwidth)
                     adjusted_samples.append(sample)
                 adjusted_samples.reverse()
                 matrix_df = matrices.generate_data_frame(
@@ -659,10 +629,10 @@ def register(app):
                     graph_fig = kde_graph_2d(
                         bivariate_distro=bivariate_distro,
                         title=output_title,
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height
                     )
                     img_format='png'
                 elif output_type == 'kde_2d_heatmap':
@@ -671,11 +641,11 @@ def register(app):
                         bivariate_distro=bivariate_distro,
                         show_points=True,
                         title=output_title,
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        color_map=project.settings.color_map,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        color_map=project.settings.graph_settings.color_map,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height
                     )
                     img_format='png'
                 else:
@@ -748,10 +718,10 @@ def register(app):
                     graph_fig = univariate.mda.comparison_graph(
                         grains=sample.grains,
                         title=output_title,
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height
                     )
                     output_id = secrets.token_hex(15)
                     output_data = embedding.embed_graph(
@@ -773,12 +743,12 @@ def register(app):
                     graph_fig = univariate.mda.ranked_ages_plot(
                         grains=sample.grains,
                         title=output_title,
-                        x_min=project.settings.min_age,
-                        x_max=project.settings.max_age,
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height
+                        x_min=project.settings.age_settings.min_age,
+                        x_max=project.settings.age_settings.max_age,
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height
                     )
                     output_id = secrets.token_hex(15)
                     output_data = embedding.embed_graph(
@@ -802,13 +772,13 @@ def register(app):
                     graph_fig = distributions.distribution_graph(
                         distributions=[distro, fitted_distro],
                         color_map="rainbow",
-                        x_min=project.settings.min_age,
-                        x_max=project.settings.max_age,
+                        x_min=project.settings.age_settings.min_age,
+                        x_max=project.settings.age_settings.max_age,
                         title=output_title,
-                        font_path=f'static/global/fonts/{project.settings.font_name}.ttf',
-                        font_size=project.settings.font_size,
-                        fig_width=project.settings.figure_width,
-                        fig_height=project.settings.figure_height
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height
                     )
                     output_id = secrets.token_hex(15)
                     output_data = embedding.embed_graph(
@@ -921,7 +891,7 @@ def register(app):
                 # Get existing map points or initialize empty list
                 map_points = getattr(project.settings, 'map_points', [])
                 map_points.append(point)
-                project.settings.map_points = map_points
+                project.settings.mapping_settings.map_points = map_points
 
                 # Save project
                 updated_project_content = project.to_json()
@@ -952,7 +922,7 @@ def register(app):
                 if len(map_points) == original_length:
                     return jsonify({'error': 'Point not found'}), 404
 
-                project.settings.map_points = map_points
+                project.settings.mapping_settings.map_points = map_points
 
                 # Save project
                 updated_project_content = project.to_json()
@@ -1005,7 +975,7 @@ def register(app):
         if session.get("open_project", 0) == project_id:
             try:
                 project = __get_project(project_id)
-                project.settings.map_points = []
+                project.settings.mapping_settings.map_points = []
 
                 # Save project
                 updated_project_content = project.to_json()

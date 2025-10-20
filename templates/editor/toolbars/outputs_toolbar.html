@@ -1,10 +1,10 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-secondary">
     <div class="container-fluid">
-        <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#outputsNav" aria-controls="outputsNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#outputs_nav" aria-controls="outputs_nav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         
-        <div class="collapse navbar-collapse" id="outputsNav">
+        <div class="collapse navbar-collapse" id="outputs_nav">
             <div class="navbar-nav me-auto">
                 <a class="nav-link toolbar-btn" id="mda_link" data-bs-toggle="modal" href="#mda_modal">
                     <i class="fa fa-diamond"></i> MDA
@@ -29,7 +29,7 @@
                 <a class="nav-link toolbar-btn-secondary" id="project_settings" data-bs-toggle="modal" href="#project_settings_modal">
                     <i class="fa fa-cog"></i> Settings
                 </a>
-                <a class="nav-link toolbar-btn-danger" id="clear_outputs" data-hx-post="/projects/{{ project_id }}/outputs/clear" data-hx-target="#outputs_container" data-hx-swap="innerHTML">
+                <a class="nav-link toolbar-btn-danger" id="clear_outputs" data-hx-post="/projects/{{ project_id }}/outputs/clear" data-hx-target="#outputs_container" data-hx-swap="innerHTML" style="cursor: pointer;">
                     <i class="fa fa-trash"></i> Clear
                 </a>
             </div>
@@ -49,7 +49,7 @@
         const figure_height = document.getElementById('figure_height')
         const min_age = document.getElementById('min_age')
         const max_age = document.getElementById('max_age')
-        const showLegendSelect = document.getElementById('showLegendSelect')
+        const showLegendSelect = document.getElementById('show_legend_select')
         fetch('/projects/{{ project_id }}/settings', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },

@@ -9,8 +9,8 @@
                 <br />
                 <div class="container-sm">
                     <form id="mda_form" data-hx-trigger="click">
-                        <label for="mda_output_name">Output Title</label>
-                        <input type="text" id="mda_output_name" name="mda_output_name" required>
+                        <label for="mda_output_title">Output Title</label>
+                        <input type="text" id="mda_output_title" name="mda_output_title" required>
                         <br />
                         <br />
                         {{ sample_select(id="mda_sample_select", sender="mda_link", event='click', multi_select=False) }}
@@ -50,22 +50,22 @@
     const mdaSampleList = document.getElementById("mda_sample_select")
     function mda_send_args() {
         var selectedSamples = [];
-        var mda_checkboxes = mdaSampleList.querySelectorAll(".sample-checkbox");
-        for (var i = 0; i < mda_checkboxes.length; i++) {
-            if (mda_checkboxes[i].checked) {
-                selectedSamples.push(mda_checkboxes[i].value);
+        var mdaCheckboxes = mdaSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < mdaCheckboxes.length; i++) {
+            if (mdaCheckboxes[i].checked) {
+                selectedSamples.push(mdaCheckboxes[i].value);
             }
         }
-        const mda_outputName = document.getElementById("mda_output_name").value;
-        const mda_outputs_select = Array.from(
+        const mdaOutputTitle = document.getElementById("mda_output_title").value;
+        const mdaOutputsSelect = Array.from(
             document.querySelectorAll(`#mda_outputs_select input[type="hidden"]`)
         ).map(input => input.value);
         var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
         var queryString = "/projects/{{ project_id }}/outputs/new/mda?sampleNames="
             + encodedSamples.join("&sampleNames=")
-            + "&outputType=" + mda_outputs_select.join("&outputType=");
-        if (mda_outputName !== "") {
-            queryString += "&outputTitle=" + mda_outputName;
+            + "&outputType=" + mdaOutputsSelect.join("&outputType=");
+        if (mdaOutputTitle !== "") {
+            queryString += "&outputTitle=" + mdaOutputTitle;
         }
         document.getElementById("send_it_mda").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_mda"));

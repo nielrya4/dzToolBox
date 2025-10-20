@@ -15,7 +15,7 @@
     
     <div class="container-fluid flex-grow-1 py-4">
         {% block project_list %}
-            <div id="project-list">
+            <div id="project_list">
                 {% if user_projects == [] %}
                     <div class="text-center py-5">
                         <h1 class="display-6 text-muted">No projects yet? Click above to start a project!</h1>
@@ -30,7 +30,7 @@
                                         <form method="GET" action="/projects/{{ project.id }}" class="d-inline">
                                             <button class="btn btn-primary btn-sm" type="submit" onclick="show_open_spinner()">Open</button>
                                         </form>
-                                        <button class="btn btn-outline-danger btn-sm delete-project-btn" hx-post="/delete_project/{{ project.id }}" type="button" hx-target="#project-list" hx-swap="outerHTML" onclick="show_del_spinner()">Delete</button>
+                                        <button class="btn btn-outline-danger btn-sm delete-project-btn" hx-post="/delete_project/{{ project.id }}" type="button" hx-target="#project_list" hx-swap="outerHTML" onclick="show_del_spinner()">Delete</button>
                                     </td>
                                 </tr>
                             {% endfor %}

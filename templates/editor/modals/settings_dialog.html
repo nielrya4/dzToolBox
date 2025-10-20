@@ -3,17 +3,25 @@
         <div class="modal-content">
             <div class="frame" id="content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Output</h5>
+                    <h5 class="modal-title">Project Settings</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <br />
                 <div class="container-sm">
                     <form id="settings_form">
-                        <h6 style="text-align: center; color:white; background: #001f3f;">Data Settings:</h6>
-                        <label for="min_age">Minimum Age</label>
-                        <input type="number" class="form-control" id="min_age" name="min_age" value="0" required>
-                        <label for="max_age">Maximum Age</label>
-                        <input type="number" class="form-control" id="max_age" name="max_age" value="4500" required>
+						<button type="button" class="collapsible active_collapsible">Age Settings</button>
+						<div class="content" style="max-height: 200px;">
+							<br />
+							<label for="min_age">Minimum Age</label>
+							<input type="number" class="form-control" id="min_age" name="min_age" value="0" required>
+							<label for="max_age">Maximum Age</label>
+							<input type="number" class="form-control" id="max_age" name="max_age" value="4500" required>
+							<br />
+						</div>
+						<br />
+						<button type="button" class="collapsible active_collapsible">Data Settings</button>
+						<div class="content" style="max-height: 300px;">
+							<br />
                         <label for="kde_bandwidth">Default KDE Bandwidth</label>
                         <input type="number" class="form-control" id="kde_bandwidth" name="kde_bandwidth" value="10" required>
                         <label for="n_trials">Default Unmixing Trials</label>
@@ -24,49 +32,53 @@
                             <option value="pdp">PDP</option>
                         </select>
                         <br />
-                        <h6 style="text-align: center; color:white; background: #001f3f">Graph Settings:</h6>
-                        <label for="stack_graphs">Stack Graph Subplots?</label>
-                        <select id="stack_graphs" name="stack_graphs" class="form-select" aria-label="Default select example">
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                        </select>
-                        <label for="showLegendSelect">Show Graph Legend?</label>
-                        <select id="showLegendSelect" name="showLegendSelect" class="form-select" aria-label="Default select example">
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                        </select>
-                        <label for="graph_color_map">Graph Colormap</label>
-                        <select id="graph_color_map" name="graph_color_map" class="form-select" aria-label="Default select example">
-                            <option value="jet">Jet</option>
-                            <option value="plasma">Plasma</option>
-                            <option value="viridis">Viridis</option>
-                            <option value="inferno">Inferno</option>
-                            <option value="magma">Magma</option>
-                            <option value="cividis">Cividis</option>
-                        </select>
-                        <label for="graph_font">Graph Font</label>
-                        <select id="graph_font" name="graph_font" class="form-select" aria-label="Default select example">
-                            <option value="ubuntu" style="font-family: 'ubuntu', sans-serif">Ubuntu</option>
-                            <option value="ibm_plex_mono" style="font-family: 'ibm_plex_mono', sans-serif">IBM Plex Mono</option>
-                            <option value="geologica" style="font-family: 'geologica', sans-serif">Geologica</option>
-                            <option value="proza_libre" style="font-family: 'proza_libre', sans-serif">Proza Libre</option>
-                            <option value="open_sans" style="font-family: 'open_sans', sans-serif">Open Sans</option>
-                            <option value="public_sans" style="font-family: 'public_sans', sans-serif">Public Sans</option>
-                            <option value="source_sans" style="font-family: 'source_sans', sans-serif">Source Sans</option>
-                            <option value="halant" style="font-family: 'halant', sans-serif">Halant</option>
-                        </select>
-                        <label for="font_size">Font Size</label>
-                        <input type="number" class="form-control" id="font_size" name="font_size" value="12" required>
-                        <label for="figure_width">Figure Width</label>
-                        <input type="number" class="form-control" id="figure_width" name="figure_width" value="9" required>
-                        <label for="figure_height">Figure Height</label>
-                        <input type="number" class="form-control" id="figure_height" name="figure_height" value="7" required>
-                        <br />
+						</div>
+						<br />
+						<button type="button" class="collapsible active_collapsible">Graph Settings</button>
+						<div class="content" style="max-height: 600px;">
+							<br />
+							<label for="stack_graphs">Stack Graph Subplots?</label>
+							<select id="stack_graphs" name="stack_graphs" class="form-select" aria-label="Default select example">
+								<option value="true">Yes</option>
+								<option value="false">No</option>
+							</select>
+							<label for="show_legend_select">Show Graph Legend?</label>
+							<select id="show_legend_select" name="show_legend_select" class="form-select" aria-label="Default select example">
+								<option value="true">Yes</option>
+								<option value="false">No</option>
+							</select>
+							<label for="graph_color_map">Graph Colormap</label>
+							<select id="graph_color_map" name="graph_color_map" class="form-select" aria-label="Default select example">
+								<option value="jet">Jet</option>
+								<option value="plasma">Plasma</option>
+								<option value="viridis">Viridis</option>
+								<option value="inferno">Inferno</option>
+								<option value="magma">Magma</option>
+								<option value="cividis">Cividis</option>
+							</select>
+							<label for="graph_font">Graph Font</label>
+							<select id="graph_font" name="graph_font" class="form-select" aria-label="Default select example">
+								<option value="ubuntu" style="font-family: 'ubuntu', sans-serif">Ubuntu</option>
+								<option value="ibm_plex_mono" style="font-family: 'ibm_plex_mono', sans-serif">IBM Plex Mono</option>
+								<option value="geologica" style="font-family: 'geologica', sans-serif">Geologica</option>
+								<option value="proza_libre" style="font-family: 'proza_libre', sans-serif">Proza Libre</option>
+								<option value="open_sans" style="font-family: 'open_sans', sans-serif">Open Sans</option>
+								<option value="public_sans" style="font-family: 'public_sans', sans-serif">Public Sans</option>
+								<option value="source_sans" style="font-family: 'source_sans', sans-serif">Source Sans</option>
+								<option value="halant" style="font-family: 'halant', sans-serif">Halant</option>
+							</select>
+							<label for="font_size">Font Size</label>
+							<input type="number" class="form-control" id="font_size" name="font_size" value="12" required>
+							<label for="figure_width">Figure Width</label>
+							<input type="number" class="form-control" id="figure_width" name="figure_width" value="9" required>
+							<label for="figure_height">Figure Height</label>
+							<input type="number" class="form-control" id="figure_height" name="figure_height" value="7" required>
+							<br />
+						</div>
+						<br />
                         <button
                                 type="button"
                                 class = "btn btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#project_settings_modal"
                                 name="update_settings"
                                 id="update_settings"
                         >Update Settings</button>
@@ -92,7 +104,19 @@
         const figure_height = document.getElementById('figure_height')
         const min_age = document.getElementById('min_age')
         const max_age = document.getElementById('max_age')
-        const showLegendSelect = document.getElementById('showLegendSelect')
+        const showLegendSelect = document.getElementById('show_legend_select')
+        
+        // Basic validation
+        if (!kde_bandwidth_textbox.value || !n_trials_textbox.value || !min_age.value || !max_age.value || !font_size.value || !figure_width.value || !figure_height.value) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+        
+        // Close modal immediately after validation
+        const modal = bootstrap.Modal.getInstance(document.getElementById('project_settings_modal'));
+        if (modal) {
+            modal.hide();
+        }
 
         var settingsData = {
             "min_age": parseFloat(min_age.value),

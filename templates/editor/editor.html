@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/table_list.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='global/styles/toolbars.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/frame.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/collapsible.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='editor/styles/MultiSelect.css') }}">
     <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
@@ -30,7 +31,7 @@
                 dzToolBox
             </a>
             
-            <ul class="nav nav-pills" id="myTab" role="tablist">
+            <ul class="nav nav-pills" id="my_tab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link editor-tab active" id="spreadsheet_tab" onclick="showTab('spreadsheet')" type="button">
                         Spreadsheet
@@ -50,7 +51,7 @@
         </div>
     </nav>
 
-    <div class="flex-grow-1" id="myTabContent">
+    <div class="flex-grow-1" id="my_tab_content">
         <div class="h-100" id="spreadsheet_page" style="display: block;">
             {% include "editor/pages/data_table.html" %}
         </div>
@@ -88,7 +89,7 @@
     {% include "editor/spinners/delete_output_spinner.html" %}
     {% include "editor/spinners/get_settings_spinner.html" %}
     {% include "editor/spinners/update_settings_spinner.html" %}
-
+	<script src="{{ url_for('static', filename='editor/scripts/collapsible.js')}}"></script>
     <script src="{{ url_for('static', filename='editor/scripts/MultiSelect.js')}}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
     

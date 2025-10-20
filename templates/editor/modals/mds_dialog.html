@@ -9,23 +9,29 @@
                 <br />
                 <div class="container-sm">
                     <form id="mds_form" data-hx-trigger="click">
-                        <label for="mds_output_name">Output Title</label>
-                        <input type="text" id="mds_output_name" name="mds_output_name" required>
+                        <label for="mds_output_title">Output Title</label>
+                        <input type="text" id="mds_output_title" name="mds_output_title" required>
                         <br />
                         <br />
                         {{ sample_select(id="mds_sample_select", sender="mds_link", event='click', multi_select=True) }}
                         <br />
                         <div class="table_list">
                             <table>
+								<tr>
+                                    <td>
+                                        <h6>Select Output Types:</h6>
+                                        <div id="mds_outputs_select"></div>
+                                    </td>
+                                </tr>
                                 <tr>
                                     <td>
-                                        <label for="mds_select">Select a metric...</label>
-                                        <select name="mds_select" id="mds_select">
-                                            <option value="mds_similarity">Similarity</option>
-                                            <option value="mds_likeness">Likeness</option>
-                                            <option value="mds_cross_correlation">Cross-Correlation</option>
-                                            <option value="mds_ks">KS</option>
-                                            <option value="mds_kuiper">Kuiper</option>
+                                        <label for="mds_metric">Select a metric...</label>
+                                        <select name="mds_metric" id="mds_metric">
+                                            <option value="similarity">Similarity</option>
+                                            <option value="likeness">Likeness</option>
+                                            <option value="cross_correlation">Cross-Correlation</option>
+                                            <option value="ks">KS</option>
+                                            <option value="kuiper">Kuiper</option>
                                         </select>
                                     </td>
                                     <td>
@@ -60,11 +66,16 @@
                 selectedSamples.push(mds_checkboxes[i].value);
             }
         }
-        var mds_type = document.getElementById("mds_select").value;
-        var mds_outputName = document.getElementById("mds_output_name").value;
+		const mdsOutputsSelect = Array.from(
+            document.querySelectorAll(`#mds_outputs_select input[type="hidden"]`)
+        ).map(input => input.value);
+        var mdsMetric = document.getElementById("mds_metric").value;
+        var mdsOutputTitle = document.getElementById("mds_output_title").value;
         var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
-        var queryString = "/projects/{{ project_id }}/outputs/new/mds?sampleNames=" + encodedSamples.join("&sampleNames=") + "&outputType=" + mds_type;
-        queryString += "&outputTitle=" + mds_outputName;
+        var queryString = "/projects/{{ project_id }}/outputs/new/mds?sampleNames=" + encodedSamples.join("&sampleNames=") + "&metric=" + mdsMetric;
+        queryString += "&outputTitle=" + mdsOutputTitle
+		+ "&outputType=" + mdsOutputsSelect.join("&outputType=");
+
         document.getElementById("send_it_mds").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_mds"));
         document.getElementById("send_it_mds").click();

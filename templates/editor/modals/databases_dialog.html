@@ -95,20 +95,20 @@
                     <h6>After the databases load, copy and paste data from these tables into the main project spreadsheet</h6>
                     <br />
                     <div class="tab">
-                        <button class="tablinks active" onclick="openTab(event, 'world-dz')">World DZ</button>
-                        <button class="tablinks" onclick="openTab(event, 'world-ig')">World IG</button>
-                        <button class="tablinks" onclick="openTab(event, 'belt-dz')">Belt DZ</button>
+                        <button class="tablinks active" onclick="openTab(event, 'world_dz')">World DZ</button>
+                        <button class="tablinks" onclick="openTab(event, 'world_ig')">World IG</button>
+                        <button class="tablinks" onclick="openTab(event, 'belt_dz')">Belt DZ</button>
                     </div>
                     <br />
-                    <div id="world-dz" class="tabcontent active">
+                    <div id="world_dz" class="tabcontent active">
                         <div class="loader"></div>
                         <div class="hot-table" style="display: none;"></div>
                     </div>
-                    <div id="world-ig" class="tabcontent">
+                    <div id="world_ig" class="tabcontent">
                         <div class="loader"></div>
                         <div class="hot-table" style="display: none;"></div>
                     </div>
-                    <div id="belt-dz" class="tabcontent">
+                    <div id="belt_dz" class="tabcontent">
                         <div class="loader"></div>
                         <div class="hot-table" style="display: none;"></div>
                     </div>
@@ -174,7 +174,7 @@
         
         // Load database data only when tab is clicked (lazy loading)
         if (!document.querySelector("#" + tabName + " .hot-table").handsontableInstance) {
-            createHandsontable(tabName, "/databases/" + tabName);
+            createHandsontable(tabName, "/databases/" + tabName.replace('_', '-'));
         }
     }
 
@@ -187,7 +187,7 @@
         databasesModal.addEventListener('shown.bs.modal', function () {
             if (!databasesLoaded) {
                 // Load only the active tab (world-dz) initially
-                createHandsontable("world-dz", "/databases/world-dz");
+                createHandsontable("world_dz", "/databases/world-dz");
                 databasesLoaded = true;
             }
         });
