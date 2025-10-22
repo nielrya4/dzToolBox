@@ -22,10 +22,8 @@
                                         <h6>Select Output Types:</h6>
                                         <div id="mds_outputs_select"></div>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <label for="mds_metric">Select a metric...</label>
+									<td style="text-align: right;">
+                                        <label for="mds_metric">Select a comparison metric...</label>
                                         <select name="mds_metric" id="mds_metric">
                                             <option value="similarity">Similarity</option>
                                             <option value="likeness">Likeness</option>
@@ -34,8 +32,17 @@
                                             <option value="kuiper">Kuiper</option>
                                         </select>
                                     </td>
-                                    <td>
-                                        <button class="btn btn-primary" type="button" onclick="mds_send_args()">Create mds</button>
+                                </tr>
+                                <tr>
+									<td>
+                                        <label for="mds_type">Select a distribution type...</label>
+                                        <select name="mds_type" id="mds_type">
+                                            <option value="non_metric" selected>Non-Metric</option>
+                                            <option value="metric">Metric</option>
+                                        </select>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-primary" type="button" onclick="mds_send_args()">Plot</button>
                                     </td>
                                 </tr>
                             </table>
@@ -70,9 +77,10 @@
             document.querySelectorAll(`#mds_outputs_select input[type="hidden"]`)
         ).map(input => input.value);
         var mdsMetric = document.getElementById("mds_metric").value;
+        var mdsType = document.getElementById("mds_type").value;
         var mdsOutputTitle = document.getElementById("mds_output_title").value;
         var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
-        var queryString = "/projects/{{ project_id }}/outputs/new/mds?sampleNames=" + encodedSamples.join("&sampleNames=") + "&metric=" + mdsMetric;
+        var queryString = "/projects/{{ project_id }}/outputs/new/mds?sampleNames=" + encodedSamples.join("&sampleNames=") + "&metric=" + mdsMetric + "&mds_type=" + mdsType;
         queryString += "&outputTitle=" + mdsOutputTitle
 		+ "&outputType=" + mdsOutputsSelect.join("&outputType=");
 
@@ -86,4 +94,10 @@
             mdsModal.hide();
         }
     }
+</script>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('mds_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('mds_output_title').focus();
+    });
 </script>

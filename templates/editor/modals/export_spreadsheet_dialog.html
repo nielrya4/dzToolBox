@@ -1,4 +1,4 @@
-<div id="export_modal" class="modal">
+<div id="export_spreadsheet_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="frame" id="content">
@@ -22,7 +22,7 @@
                         </select>
                         <br />
                         <br />
-                        <button data-bs-toggle="modal" data-bs-target="#export_modal" class="btn btn-primary" type="button" onclick="export_send_args()">Download</button>
+                        <button data-bs-toggle="modal" data-bs-target="#export_spreadsheet_modal" class="btn btn-primary" type="button" onclick="export_send_args()">Download</button>
                     </form>
                     <br />
                 </div>
@@ -66,4 +66,10 @@
             alert("Failed to download the file. Please try again.");
         }
     }
+</script>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('export_spreadsheet_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('export_filename').focus();
+    });
 </script>

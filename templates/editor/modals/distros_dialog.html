@@ -26,8 +26,8 @@
                                             <option value="cdf">Cumulative Distribution Function</option>
                                         </select>
                                     </td>
-                                    <td>
-                                        <button class="btn btn-primary" type="button" onclick="distro_send_args()">Create distro</button>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-primary" type="button" onclick="distro_send_args()">Plot</button>
                                     </td>
                                 </tr>
                             </table>
@@ -76,4 +76,10 @@
             distroModal.hide();
         }
     }
+</script>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('distro_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('distro_output_name').focus();
+    });
 </script>

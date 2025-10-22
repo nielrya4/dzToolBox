@@ -321,6 +321,8 @@ def register(app):
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", None)
                 metric = request.args.get("metric", "similarity")
+                non_metric = request.args.get("mds_type") == "non_metric"
+                print(non_metric)
                 output_types = request.args.getlist("outputType")
                 sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
@@ -341,7 +343,7 @@ def register(app):
                 points, stress, dissimilarity_matrix, scaled_mds_result, mds_result = mds.mds_function(
                     samples=adjusted_samples,
                     metric='similarity',
-                    non_metric=True
+                    non_metric=non_metric
                 )
                 if "mds_plot" in output_types:
                     graph_fig = mds.mds_graph(
@@ -373,6 +375,7 @@ def register(app):
                         dissimilarity_matrix=dissimilarity_matrix,
                         scaled_mds_result=scaled_mds_result,
                         mds_result=mds_result,
+                        non_metric=non_metric,
                         title=f"{output_title} (metric='similarity', stress={round(stress, 2)})",
                         font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
                         font_size=project.settings.graph_settings.font_size,

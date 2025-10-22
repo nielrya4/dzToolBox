@@ -61,3 +61,9 @@
     });
 
 </script>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('new_project_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('project_name').focus();
+    });
+</script>

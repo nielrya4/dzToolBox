@@ -25,8 +25,8 @@
                                             <option value="kde_2d_heatmap">Heatmap</option>
                                         </select>
                                     </td>
-                                    <td>
-                                        <button class="btn btn-primary" type="button" onclick="hafnium_send_args()">Create graph</button>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-primary" type="button" onclick="hafnium_send_args()">Plot</button>
                                     </td>
                                 </tr>
                             </table>
@@ -75,4 +75,10 @@
             hafniumModal.hide();
         }
     }
+</script>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('hafnium_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('hafnium_output_name').focus();
+    });
 </script>

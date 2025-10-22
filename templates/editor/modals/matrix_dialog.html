@@ -87,7 +87,12 @@
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Enter' && $('.modal.show').length) { // Check if a modal is open
       event.preventDefault();
-      event.stopPropagation();
     }
   });
+</script>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('matrix_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('matrix_output_name').focus();
+    });
 </script>

@@ -89,3 +89,9 @@
         }
     }
 </script>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('unmix_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('unmix_output_title').focus();
+    });
+</script>

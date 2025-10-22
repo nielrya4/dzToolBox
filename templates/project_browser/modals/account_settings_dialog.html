@@ -21,3 +21,9 @@
         </div>
     </div>
 </div>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('account_settings_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('delete_account').focus();
+    });
+</script>

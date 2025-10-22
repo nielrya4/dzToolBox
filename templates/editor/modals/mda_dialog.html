@@ -78,3 +78,9 @@
         }
     }
 </script>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('mda_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('mda_output_title').focus();
+    });
+</script>
