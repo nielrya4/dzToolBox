@@ -1,3 +1,5 @@
+{% from "global/sample_select.html" import sample_select with context %}
+
 <div id="mda_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -46,6 +48,7 @@
         </div>
     </div>
 </div>
+
 <script>
     const mdaSampleList = document.getElementById("mda_sample_select")
     function mda_send_args() {
@@ -70,7 +73,7 @@
         document.getElementById("send_it_mda").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_mda"));
         document.getElementById("send_it_mda").click();
-        
+
         // Hide the modal after submission
         var mdaModal = bootstrap.Modal.getInstance(document.getElementById('mda_modal'));
         if (mdaModal) {
@@ -78,6 +81,7 @@
         }
     }
 </script>
+
 <script>
     // Focus on input when modal opens
     document.getElementById('mda_modal').addEventListener('shown.bs.modal', function() {

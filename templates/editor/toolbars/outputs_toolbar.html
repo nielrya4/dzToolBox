@@ -24,6 +24,9 @@
                 <a class="nav-link toolbar-btn" id="hafnium_link" data-bs-toggle="modal" href="#hafnium_modal">
                     <i class="fa fa-cube"></i> Hafnium
                 </a>
+				<!--<a class="nav-link toolbar-btn" id="tensor_link" data-bs-toggle="modal" href="#tensor_modal">
+                    <i class="fa fa-book"></i> Tensor Factorization
+                </a>-->
             </div>
             <div class="navbar-nav">
                 <a class="nav-link toolbar-btn-secondary" id="project_settings" data-bs-toggle="modal" href="#project_settings_modal">
@@ -51,6 +54,8 @@
         const min_age = document.getElementById('min_age')
         const max_age = document.getElementById('max_age')
         const showLegendSelect = document.getElementById('show_legend_select')
+        const fillLinesSelect = document.getElementById('fill_lines_select')
+        const modesLabeled = document.getElementById('modes_labeled')
         fetch('/projects/{{ project_id }}/settings', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
@@ -74,6 +79,7 @@
             figure_height.value = project_settings["figure_height"]
             min_age.value = project_settings["min_age"]
             max_age.value = project_settings["max_age"]
+            modesLabeled.value = project_settings["modes_labeled"] || 0
 
             if (project_settings["show_legend"] === "true") {
                 showLegendSelect.selectedIndex = 0;
@@ -159,6 +165,13 @@
             }
             else if (project_settings["stack_graphs"] === "false") {
                 stack_graphs_select.selectedIndex = 1;
+            }
+
+            if (project_settings["fill"] === "true") {
+                fillLinesSelect.selectedIndex = 0;
+            }
+            else if (project_settings["fill"] === "false") {
+                fillLinesSelect.selectedIndex = 1;
             }
         })
         .catch(error => {

@@ -236,7 +236,9 @@ def register(app):
                         fig_height=project.settings.graph_settings.figure_height,
                         color_map=project.settings.graph_settings.color_map,
                         x_min=project.settings.age_settings.min_age,
-                        x_max=project.settings.age_settings.max_age
+                        x_max=project.settings.age_settings.max_age,
+                        modes_labeled=project.settings.graph_settings.modes_labeled,
+                        fill=project.settings.graph_settings.fill
                     )
                 elif output_type == 'pdp':
                     distros = []
@@ -255,7 +257,9 @@ def register(app):
                         fig_height=project.settings.graph_settings.figure_height,
                         color_map=project.settings.graph_settings.color_map,
                         x_min=project.settings.age_settings.min_age,
-                        x_max=project.settings.age_settings.max_age
+                        x_max=project.settings.age_settings.max_age,
+                        modes_labeled=project.settings.graph_settings.modes_labeled,
+                        fill=project.settings.graph_settings.fill
                     )
                 elif output_type == 'cdf':
                     distros = []
@@ -279,7 +283,9 @@ def register(app):
                         fig_height=project.settings.graph_settings.figure_height,
                         color_map=project.settings.graph_settings.color_map,
                         x_min=project.settings.age_settings.min_age,
-                        x_max=project.settings.age_settings.max_age
+                        x_max=project.settings.age_settings.max_age,
+                        modes_labeled=project.settings.graph_settings.modes_labeled,
+                        fill=project.settings.graph_settings.fill
                     )
                 else:
                     raise ValueError("output_type is not supported")

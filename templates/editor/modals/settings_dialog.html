@@ -39,14 +39,21 @@
 							<br />
 							<label for="stack_graphs">Stack Graph Subplots?</label>
 							<select id="stack_graphs" name="stack_graphs" class="form-select" aria-label="Default select example">
-								<option value="true">Yes</option>
+								<option selected value="true">Yes</option>
 								<option value="false">No</option>
 							</select>
 							<label for="show_legend_select">Show Graph Legend?</label>
 							<select id="show_legend_select" name="show_legend_select" class="form-select" aria-label="Default select example">
-								<option value="true">Yes</option>
+								<option selected value="true">Yes</option>
 								<option value="false">No</option>
 							</select>
+							<label for="fill_lines_select">Fill Area Underneath Lines?</label>
+							<select id="fill_lines_select" name="fill_lines_select" class="form-select" aria-label="Default select example">
+								<option value="true">Yes</option>
+								<option selected value="false">No</option>
+							</select>
+							<label for="modes_labeled">Number of Modes to Label</label>
+							<input type="number" class="form-control" id="modes_labeled" name="modes_labeled" value="0" required>
 
 							<label for="graph_color_map">Graph Colormap</label>
 							<select id="graph_color_map" name="graph_color_map" class="form-select" aria-label="Default select example">
@@ -115,6 +122,8 @@
         const min_age = document.getElementById('min_age')
         const max_age = document.getElementById('max_age')
         const showLegendSelect = document.getElementById('show_legend_select')
+		const modesLabeled = document.getElementById('modes_labeled')
+		const fillLinesSelect=document.getElementById('fill_lines_select')
         
         // Basic validation
         if (!kde_bandwidth_textbox.value || !n_trials_textbox.value || !min_age.value || !max_age.value || !font_size.value || !figure_width.value || !figure_height.value) {
@@ -144,6 +153,8 @@
             "figure_height": parseInt(figure_height.value),
             "color_map": colorMapValue,
             "show_legend": showLegendSelect.value,
+			"modes_labeled": parseInt(modesLabeled.value),
+			"fill": fillLinesSelect.value
         };
         fetch('/projects/{{ project_id }}/settings', {
             method: 'POST',

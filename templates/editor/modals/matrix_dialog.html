@@ -1,3 +1,5 @@
+{% from "global/sample_select.html" import sample_select with context %}
+
 <div id="matrix_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -21,7 +23,7 @@
                                     <td>
                                         <label for="matrix_select">Select a metric...</label>
                                         <select name="matrix_select" id="matrix_select">
-                                            <option value="similarity">Similarity</option>
+                                            <option value="similarity" selected>Similarity</option>
                                             <option value="likeness">Likeness</option>
                                             <option value="ks">KS</option>
                                             <option value="kuiper">Kuiper</option>
@@ -33,6 +35,8 @@
                                             <option value="dis_cross_correlation">Dis-Cross-Correlation</option>
                                         </select>
                                     </td>
+                                </tr>
+                                <tr>
                                     <td>
                                         <button class="btn btn-primary" type="button" onclick="matrix_send_args()">Create matrix</button>
                                     </td>
@@ -55,6 +59,7 @@
         </div>
     </div>
 </div>
+
 <script>
     const matrixSampleList = document.getElementById("matrix_sample_select")
     function matrix_send_args() {
@@ -75,7 +80,7 @@
         document.getElementById("send_it_matrix").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_matrix"));
         document.getElementById("send_it_matrix").click();
-        
+
         // Hide the modal after submission
         var matrixModal = bootstrap.Modal.getInstance(document.getElementById('matrix_modal'));
         if (matrixModal) {
@@ -83,13 +88,15 @@
         }
     }
 </script>
+
 <script>
-  document.addEventListener('keydown', function (event) {
-    if (event.key === 'Enter' && $('.modal.show').length) { // Check if a modal is open
-      event.preventDefault();
-    }
-  });
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && $('.modal.show').length) { // Check if a modal is open
+            event.preventDefault();
+        }
+    });
 </script>
+
 <script>
     // Focus on input when modal opens
     document.getElementById('matrix_modal').addEventListener('shown.bs.modal', function() {

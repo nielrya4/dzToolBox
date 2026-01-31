@@ -1,3 +1,5 @@
+{% from "global/sample_select.html" import sample_select with context %}
+
 <div id="hafnium_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -21,10 +23,12 @@
                                     <td>
                                         <label for="hafnium_select">Graph type:</label>
                                         <select name="hafnium_select" id="hafnium_select">
-                                            <option value="kde_2d_surface">Bivariate KDE</option>
+                                            <option value="kde_2d_surface" selected>Bivariate KDE</option>
                                             <option value="kde_2d_heatmap">Heatmap</option>
                                         </select>
                                     </td>
+                                </tr>
+                                <tr>
                                     <td style="text-align: right;">
                                         <button class="btn btn-primary" type="button" onclick="hafnium_send_args()">Plot</button>
                                     </td>
@@ -47,6 +51,7 @@
         </div>
     </div>
 </div>
+
 <script>
     const hafniumSampleList = document.getElementById("hafnium_sample_select")
     function hafnium_send_args() {
@@ -58,7 +63,6 @@
             }
         }
         var hafnium_type = document.getElementById("hafnium_select").value;
-
         var hafnium_outputName = document.getElementById("hafnium_output_name").value;
         var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
         var queryString = "/projects/{{ project_id }}/outputs/new/2d-distribution?sampleNames=" + encodedSamples.join("&sampleNames=") + "&outputType=" + hafnium_type;
@@ -68,7 +72,7 @@
         document.getElementById("send_it_hafnium").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_hafnium"));
         document.getElementById("send_it_hafnium").click();
-        
+
         // Hide the modal after submission
         var hafniumModal = bootstrap.Modal.getInstance(document.getElementById('hafnium_modal'));
         if (hafniumModal) {
@@ -76,6 +80,7 @@
         }
     }
 </script>
+
 <script>
     // Focus on input when modal opens
     document.getElementById('hafnium_modal').addEventListener('shown.bs.modal', function() {

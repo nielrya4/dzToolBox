@@ -8,7 +8,7 @@
                 </div>
                 <br />
                 <div class="container-sm">
-                    <form id="export_form" data-hx-trigger="click">
+                    <form id="export_spreadsheet_form" data-hx-trigger="click">
                         <label for="export_filename">Filename</label>
                         <input type="text" class="form-control" id="export_filename" name="export_filename" required value="{{ project_name }}">
                         <br />
@@ -22,7 +22,7 @@
                         </select>
                         <br />
                         <br />
-                        <button data-bs-toggle="modal" data-bs-target="#export_spreadsheet_modal" class="btn btn-primary" type="button" onclick="export_send_args()">Download</button>
+                        <button data-bs-toggle="modal" data-bs-target="#export_spreadsheet_modal" class="btn btn-primary" type="button" onclick="export_spreadsheet_send_args()">Download</button>
                     </form>
                     <br />
                 </div>
@@ -32,7 +32,7 @@
 </div>
 
 <script>
-    async function export_send_args() {
+    async function export_spreadsheet_send_args() {
         var filename = document.getElementById("export_filename").value;
         var fileFormat = document.getElementById("export_file_format").value;
 
@@ -41,21 +41,20 @@
             return;
         }
 
-        // Build the query string with the chosen format and filename
         var queryString = `/projects/{{ project_id }}/data/export?filename=${filename}&format=${fileFormat}`;
 
         try {
             const response = await fetch(queryString, {
-                method: 'GET',
+                method: "GET",
             });
 
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error("Network response was not ok");
             }
 
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
+            const link = document.createElement("a");
             link.href = url;
             link.download = `${filename}.${fileFormat}`;
             document.body.appendChild(link);
@@ -67,9 +66,9 @@
         }
     }
 </script>
+
 <script>
-    // Focus on input when modal opens
-    document.getElementById('export_spreadsheet_modal').addEventListener('shown.bs.modal', function() {
-        document.getElementById('export_filename').focus();
+    document.getElementById("export_spreadsheet_modal").addEventListener("shown.bs.modal", function() {
+        document.getElementById("export_filename").focus();
     });
 </script>

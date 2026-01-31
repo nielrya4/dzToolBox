@@ -1,3 +1,5 @@
+{% from "global/sample_select.html" import sample_select with context %}
+
 <div id="distro_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -21,11 +23,13 @@
                                     <td>
                                         <label for="distro_select">Select a distribution type...</label>
                                         <select name="distro_select" id="distro_select">
-                                            <option value="kde">Kernel Density Estimate</option>
+                                            <option value="kde" selected>Kernel Density Estimate</option>
                                             <option value="pdp">Probability Density Plot</option>
                                             <option value="cdf">Cumulative Distribution Function</option>
                                         </select>
                                     </td>
+                                </tr>
+                                <tr>
                                     <td style="text-align: right;">
                                         <button class="btn btn-primary" type="button" onclick="distro_send_args()">Plot</button>
                                     </td>
@@ -48,6 +52,7 @@
         </div>
     </div>
 </div>
+
 <script>
     const distroSampleList = document.getElementById("distro_sample_select")
     function distro_send_args() {
@@ -59,17 +64,16 @@
             }
         }
         var distro_type = document.getElementById("distro_select").value;
-
         var distro_outputName = document.getElementById("distro_output_name").value;
-		var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
-		var queryString = "/projects/{{ project_id }}/outputs/new/distribution?sampleNames=" + encodedSamples.join("&sampleNames=") + "&outputType=" + distro_type;
-		if (distro_outputName !== "") {
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+        var queryString = "/projects/{{ project_id }}/outputs/new/distribution?sampleNames=" + encodedSamples.join("&sampleNames=") + "&outputType=" + distro_type;
+        if (distro_outputName !== "") {
             queryString += "&outputTitle=" + distro_outputName;
         }
         document.getElementById("send_it_distro").setAttribute("data-hx-get", queryString);
         htmx.process(document.getElementById("send_it_distro"));
         document.getElementById("send_it_distro").click();
-        
+
         // Hide the modal after submission
         var distroModal = bootstrap.Modal.getInstance(document.getElementById('distro_modal'));
         if (distroModal) {
@@ -77,6 +81,7 @@
         }
     }
 </script>
+
 <script>
     // Focus on input when modal opens
     document.getElementById('distro_modal').addEventListener('shown.bs.modal', function() {

@@ -1,0 +1,86 @@
+<div id="tensor_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tensor Factorization Analysis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="tensor_form" data-hx-trigger="click">
+                        <label for="tensor_output_title">Output Title</label>
+                        <input type="text" id="tensor_output_title" name="tensor_output_title" required>
+                        <br />
+                        <br />
+                        {{ sample_select(id="tensor_sample_select", sender="tensor_link", event='click', multi_select=True) }}
+                        <br />
+                        <div class="table_list">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <h6>Select Output Types</h6>
+                                        <div id="tensor_outputs_select"></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <button class="btn btn-primary" type="button" onclick="tensor_send_args();">Create model</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <button data-bs-toggle="modal"
+                                data-bs-target="#tensor_modal"
+                                name="send_it_tensor"
+                                id="send_it_tensor"
+                                style="display: none"
+                                type="button"
+                                data-hx-target="#outputs_container"
+                                data-hx-swap="innerHTML">
+                        </button>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const tensorSampleList = document.getElementById("tensor_sample_select")
+    function tensor_send_args() {
+        var selectedSamples = [];
+        var tensorCheckboxes = tensorSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < tensorCheckboxes.length; i++) {
+            if (tensorCheckboxes[i].checked) {
+                selectedSamples.push(tensorCheckboxes[i].value);
+            }
+        }
+        const tensorOutputTitle = document.getElementById("tensor_output_title").value;
+        const tensorOutputsSelect = Array.from(
+            document.querySelectorAll(`#tensor_outputs_select input[type="hidden"]`)
+        ).map(input => input.value);
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+        var queryString = "/projects/{{ project_id }}/outputs/new/tensor-factorization?sampleNames="
+            + encodedSamples.join("&sampleNames=")
+            + "&outputType=" + tensorOutputsSelect.join("&outputType=");
+        if (tensorOutputTitle !== "") {
+            queryString += "&outputTitle=" + tensorOutputTitle;
+        }
+        document.getElementById("send_it_tensor").setAttribute("data-hx-get", queryString);
+        htmx.process(document.getElementById("send_it_tensor"));
+        document.getElementById("send_it_tensor").click();
+        
+        // Hide the modal after submission
+        var tensorModal = bootstrap.Modal.getInstance(document.getElementById('tensor_modal'));
+        if (tensorModal) {
+            tensorModal.hide();
+        }
+    }
+</script>
+<script>
+    // Focus on input when modal opens
+    document.getElementById('tensor_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('tensor_output_title').focus();
+    });
+</script>
