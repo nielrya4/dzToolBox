@@ -298,22 +298,11 @@ def register(app):
                     img_format='svg',
                     download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                 )
-                new_output = Output(
-                    output_id=output_id,
-                    output_type="graph",
-                    output_data=output_data
-                )
-                project.outputs.append(new_output)
-                updated_project_content = project.to_json()
-                compressed_proj_content = compression.compress(updated_project_content)
-                database.write_file(project_id, compressed_proj_content)
-                return render_block(
-                    environment=environment,
-                    template_name="editor/editor.html",
-                    block_name="outputs",
-                    outputs_data=project.outputs,
-                    project_id=project_id
-                )
+                return jsonify({"outputs": [{
+                    "output_id": output_id,
+                    "output_type": "graph",
+                    "output_data": output_data
+                }]})
             else:
                 return jsonify({"outputs": "method not allowed"})
         else:
@@ -351,6 +340,7 @@ def register(app):
                     metric='similarity',
                     non_metric=non_metric
                 )
+                pending_outputs = []
                 if "mds_plot" in output_types:
                     graph_fig = mds.mds_graph(
                         points=points,
@@ -370,12 +360,11 @@ def register(app):
                         img_format='svg',
                         download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                     )
-                    new_output = Output(
-                        output_id=output_id,
-                        output_type='graph',
-                        output_data=output_data
-                    )
-                    project.outputs.append(new_output)
+                    pending_outputs.append({
+                        "output_id": output_id,
+                        "output_type": "graph",
+                        "output_data": output_data
+                    })
                 if "shepard_plot" in output_types:
                     graph_fig = mds.shepard_plot(
                         dissimilarity_matrix=dissimilarity_matrix,
@@ -397,23 +386,13 @@ def register(app):
                         img_format='svg',
                         download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                     )
-                    new_output = Output(
-                        output_id=output_id,
-                        output_type='graph',
-                        output_data=output_data
-                    )
-                    project.outputs.append(new_output)
+                    pending_outputs.append({
+                        "output_id": output_id,
+                        "output_type": "graph",
+                        "output_data": output_data
+                    })
 
-                updated_project_content = project.to_json()
-                compressed_proj_content = compression.compress(updated_project_content)
-                database.write_file(project_id, compressed_proj_content)
-                return render_block(
-                    environment=environment,
-                    template_name="editor/editor.html",
-                    block_name="outputs",
-                    outputs_data=project.outputs,
-                    project_id=project_id
-                )
+                return jsonify({"outputs": pending_outputs})
             else:
                 return jsonify({"outputs": "method not allowed"})
         else:
@@ -468,6 +447,7 @@ def register(app):
                             standard_deviation=stdevs[i]
                         )
                     )
+                pending_outputs = []
                 if "contribution_table" in output_types:
                     matrix_df = univariate.unmix.relative_contribution_table(
                         contributions=contribution_pairs,
@@ -480,13 +460,11 @@ def register(app):
                         project_id=project_id,
                         download_formats=['xlsx', 'xls', 'csv']
                     )
-                    project.outputs.append(
-                        Output(
-                            output_id=output_id,
-                            output_type='matrix',
-                            output_data=output_data
-                        )
-                    )
+                    pending_outputs.append({
+                        "output_id": output_id,
+                        "output_type": "matrix",
+                        "output_data": output_data
+                    })
                 if "contribution_graph" in output_types:
                     graph_fig = univariate.unmix.relative_contribution_graph(
                         contributions=contribution_pairs,
@@ -505,13 +483,11 @@ def register(app):
                         img_format='svg',
                         download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                     )
-                    project.outputs.append(
-                        Output(
-                            output_id=output_id,
-                            output_type='graph',
-                            output_data=output_data
-                        )
-                    )
+                    pending_outputs.append({
+                        "output_id": output_id,
+                        "output_type": "graph",
+                        "output_data": output_data
+                    })
                 if "trials_graph" in output_types:
                     r2_vals = [metrics.r2(top_distro.y_values, sink_distribution.y_values) for top_distro in top_distributions]
                     avg_r2 = np.average(r2_vals)
@@ -536,23 +512,12 @@ def register(app):
                         img_format='svg',
                         download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                     )
-                    project.outputs.append(
-                        Output(
-                            output_id=output_id,
-                            output_type='graph',
-                            output_data=output_data
-                        )
-                    )
-                updated_project_content = project.to_json()
-                compressed_proj_content = compression.compress(updated_project_content)
-                database.write_file(project_id, compressed_proj_content)
-                return render_block(
-                    environment=environment,
-                    template_name="editor/editor.html",
-                    block_name="outputs",
-                    outputs_data=project.outputs,
-                    project_id=project_id
-                )
+                    pending_outputs.append({
+                        "output_id": output_id,
+                        "output_type": "graph",
+                        "output_data": output_data
+                    })
+                return jsonify({"outputs": pending_outputs})
             else:
                 return jsonify({"outputs": "method not allowed"})
         else:
@@ -594,22 +559,11 @@ def register(app):
                     project_id=project_id,
                     download_formats=['xlsx', 'xls', 'csv'],
                 )
-                new_output = Output(
-                    output_id=output_id,
-                    output_type='matrix',
-                    output_data=output_data
-                )
-                project.outputs.append(new_output)
-                updated_project_content = project.to_json()
-                compressed_proj_content = compression.compress(updated_project_content)
-                database.write_file(project_id, compressed_proj_content)
-                return render_block(
-                    environment=environment,
-                    template_name="editor/editor.html",
-                    block_name="outputs",
-                    outputs_data=project.outputs,
-                    project_id=project_id
-                )
+                return jsonify({"outputs": [{
+                    "output_id": output_id,
+                    "output_type": "matrix",
+                    "output_data": output_data
+                }]})
             else:
                 return jsonify({"outputs": "method not allowed"})
         else:
@@ -668,22 +622,11 @@ def register(app):
                     img_format=img_format,
                     download_formats=['svg', 'png', 'jpg', 'pdf']
                 )
-                new_output = Output(
-                    output_id=output_id,
-                    output_type='graph',
-                    output_data=output_data
-                )
-                project.outputs.append(new_output)
-                updated_project_content = project.to_json()
-                compressed_proj_content = compression.compress(updated_project_content)
-                database.write_file(project_id, compressed_proj_content)
-                return render_block(
-                    environment=environment,
-                    template_name="editor/editor.html",
-                    block_name="outputs",
-                    outputs_data=project.outputs,
-                    project_id=project_id
-                )
+                return jsonify({"outputs": [{
+                    "output_id": output_id,
+                    "output_type": "graph",
+                    "output_data": output_data
+                }]})
             else:
                 return jsonify({"outputs": "method not allowed"})
         else:
@@ -707,6 +650,7 @@ def register(app):
                         if sample.name == sample_name:
                             active_samples.append(sample)
                 sample = active_samples[0]
+                pending_outputs = []
                 if "mda_table" in output_types:
                     matrix_df = univariate.mda.comparison_table(sample.grains)
                     output_id = secrets.token_hex(15)
@@ -716,13 +660,11 @@ def register(app):
                         project_id=project_id,
                         download_formats=['xlsx', 'xls', 'csv']
                     )
-                    project.outputs.append(
-                        Output(
-                            output_id=output_id,
-                            output_type='matrix',
-                            output_data=output_data
-                        )
-                    )
+                    pending_outputs.append({
+                        "output_id": output_id,
+                        "output_type": "matrix",
+                        "output_data": output_data
+                    })
                 if "mda_graph" in output_types:
                     graph_fig = univariate.mda.comparison_graph(
                         grains=sample.grains,
@@ -741,13 +683,11 @@ def register(app):
                         img_format='svg',
                         download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                     )
-                    project.outputs.append(
-                        Output(
-                            output_id=output_id,
-                            output_type='graph',
-                            output_data=output_data
-                        )
-                    )
+                    pending_outputs.append({
+                        "output_id": output_id,
+                        "output_type": "graph",
+                        "output_data": output_data
+                    })
                 if "rank_plot" in output_types:
                     graph_fig = univariate.mda.ranked_ages_plot(
                         grains=sample.grains,
@@ -768,13 +708,11 @@ def register(app):
                         img_format='svg',
                         download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                     )
-                    project.outputs.append(
-                        Output(
-                            output_id=output_id,
-                            output_type='graph',
-                            output_data=output_data
-                        )
-                    )
+                    pending_outputs.append({
+                        "output_id": output_id,
+                        "output_type": "graph",
+                        "output_data": output_data
+                    })
                 if "ygf_graph" in output_types:
                     distro = distributions.pdp_function(sample)
                     fitted_grain, fitted_distro = mda.youngest_gaussian_fit(sample.grains)
@@ -798,28 +736,42 @@ def register(app):
                         img_format='svg',
                         download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
                     )
-                    project.outputs.append(
-                        Output(
-                            output_id=output_id,
-                            output_type='graph',
-                            output_data=output_data
-                        )
-                    )
+                    pending_outputs.append({
+                        "output_id": output_id,
+                        "output_type": "graph",
+                        "output_data": output_data
+                    })
 
-                updated_project_content = project.to_json()
-                compressed_proj_content = compression.compress(updated_project_content)
-                database.write_file(project_id, compressed_proj_content)
-                return render_block(
-                    environment=environment,
-                    template_name="editor/editor.html",
-                    block_name="outputs",
-                    outputs_data=project.outputs,
-                    project_id=project_id
-                )
+                return jsonify({"outputs": pending_outputs})
             else:
                 return jsonify({"outputs": "method not allowed"})
         else:
             return jsonify({"outputs": "access_denied"})
+
+    @app.route('/projects/<int:project_id>/outputs/save', methods=['POST'])
+    @login_required
+    def save_output(project_id):
+        if session.get("open_project", 0) == project_id:
+            project = __get_project(project_id)
+            outputs_data = request.get_json().get('outputs', [])
+            for output_item in outputs_data:
+                project.outputs.append(Output(
+                    output_id=output_item['output_id'],
+                    output_type=output_item['output_type'],
+                    output_data=output_item['output_data']
+                ))
+            updated_project_content = project.to_json()
+            compressed_proj_content = compression.compress(updated_project_content)
+            database.write_file(project_id, compressed_proj_content)
+            return render_block(
+                environment=environment,
+                template_name="editor/editor.html",
+                block_name="outputs",
+                outputs_data=project.outputs,
+                project_id=project_id
+            )
+        else:
+            return jsonify({"error": "access_denied"}), 403
 
     @app.route('/projects/<int:project_id>/outputs/clear', methods=['POST'])
     @login_required

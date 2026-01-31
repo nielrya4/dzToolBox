@@ -4,33 +4,14 @@
 
 
 <script>
-    document.getElementById("send_it_matrix").addEventListener("click", function (){
-        show_output_spinner();
-    });
-    document.getElementById("send_it_distro").addEventListener("click", function (){
-        show_output_spinner();
-    });
-    document.getElementById("send_it_hafnium").addEventListener("click", function (){
-        show_output_spinner();
-    });
-    document.getElementById("send_it_mds").addEventListener("click", function (){
-        show_output_spinner();
-    });
-    document.getElementById("send_it_mda").addEventListener("click", function (){
-        show_output_spinner();
-    });
-    document.getElementById("send_it_unmix").addEventListener("click", function (){
-        show_output_spinner();
-    });
-
     function show_output_spinner() {
         document.getElementById("new_output_spinner").classList.remove("hidden");
         document.getElementById("new_output_spinner").classList.add("visible");
     }
 
-    document.addEventListener("htmx:afterRequest", function() {
+    function hide_output_spinner() {
         document.getElementById("new_output_spinner").classList.remove("visible");
         document.getElementById("new_output_spinner").classList.add("hidden");
-    });
+    }
 </script>
 

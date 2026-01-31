@@ -36,15 +36,6 @@
                                 </tr>
                             </table>
                         </div>
-                        <button data-bs-toggle="modal"
-                                data-bs-target="#distro_modal"
-                                name="send_it_distro"
-                                id="send_it_distro"
-                                style="display: none"
-                                type="button"
-                                data-hx-target="#outputs_container"
-                                data-hx-swap="innerHTML">
-                        </button>
                     </form>
                     <br />
                 </div>
@@ -70,15 +61,11 @@
         if (distro_outputName !== "") {
             queryString += "&outputTitle=" + distro_outputName;
         }
-        document.getElementById("send_it_distro").setAttribute("data-hx-get", queryString);
-        htmx.process(document.getElementById("send_it_distro"));
-        document.getElementById("send_it_distro").click();
-
-        // Hide the modal after submission
         var distroModal = bootstrap.Modal.getInstance(document.getElementById('distro_modal'));
         if (distroModal) {
             distroModal.hide();
         }
+        generateOutput(queryString);
     }
 </script>
 

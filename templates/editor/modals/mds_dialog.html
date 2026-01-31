@@ -49,15 +49,6 @@
                                 </tr>
                             </table>
                         </div>
-                        <button data-bs-toggle="modal"
-                                data-bs-target="#mds_modal"
-                                name="send_it_mds"
-                                id="send_it_mds"
-                                style="display: none"
-                                type="button"
-                                data-hx-target="#outputs_container"
-                                data-hx-swap="innerHTML">
-                        </button>
                     </form>
                     <br />
                 </div>
@@ -86,15 +77,11 @@
         var queryString = "/projects/{{ project_id }}/outputs/new/mds?sampleNames=" + encodedSamples.join("&sampleNames=") + "&metric=" + mdsMetric + "&mds_type=" + mdsType;
         queryString += "&outputTitle=" + mdsOutputTitle + "&outputType=" + mdsOutputsSelect.join("&outputType=");
 
-        document.getElementById("send_it_mds").setAttribute("data-hx-get", queryString);
-        htmx.process(document.getElementById("send_it_mds"));
-        document.getElementById("send_it_mds").click();
-
-        // Hide the modal after submission
         var mdsModal = bootstrap.Modal.getInstance(document.getElementById('mds_modal'));
         if (mdsModal) {
             mdsModal.hide();
         }
+        generateOutput(queryString);
     }
 </script>
 

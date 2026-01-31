@@ -1,0 +1,116 @@
+<div id="preview_output_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="frame">
+                <div class="modal-header">
+                    <h5 class="modal-title">Preview Output</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="preview_modal_body" style="overflow: auto; max-height: 70vh;">
+                    <div id="preview_zoom_container"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
+                    <button type="button" class="btn btn-primary" id="save_preview_btn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #preview_modal_body img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+    }
+</style>
+
+<script>
+    let pendingOutputs = [];
+    const ZOOM_LEVELS = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 2, 3, 4];
+    let currentZoomIndex = ZOOM_LEVELS.indexOf(1);
+
+    function generateOutput(url) {
+        show_output_spinner();
+        fetch(url)
+            .then(function(response) {
+                if (!response.ok) throw new Error('Failed to generate output');
+                return response.json();
+            })
+            .then(function(data) {
+                pendingOutputs = data.outputs;
+                var container = document.getElementById('preview_zoom_container');
+                container.innerHTML = pendingOutputs.map(function(o) {
+                    return '<div class="mb-3">' + o.output_data + '</div>';
+                }).join('');
+                container.querySelectorAll('form').forEach(function(form) {
+                    form.remove();
+                });
+                resetZoom();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('preview_output_modal')).show();
+            })
+            .catch(function(error) {
+                console.error('Error generating output:', error);
+            })
+            .finally(function() {
+                hide_output_spinner();
+            });
+    }
+
+    function applyZoom() {
+        var zoom = ZOOM_LEVELS[currentZoomIndex];
+        document.getElementById('preview_zoom_container').style.zoom = zoom;
+    }
+
+    function resetZoom() {
+        currentZoomIndex = ZOOM_LEVELS.indexOf(1);
+        applyZoom();
+    }
+
+    document.addEventListener('keydown', function(e) {
+        var modal = document.getElementById('preview_output_modal');
+        if (!modal.classList.contains('show')) return;
+
+        if (e.ctrlKey && (e.key === '=' || e.key === '+')) {
+            e.preventDefault();
+            if (currentZoomIndex < ZOOM_LEVELS.length - 1) {
+                currentZoomIndex++;
+                applyZoom();
+            }
+        } else if (e.ctrlKey && e.key === '-') {
+            e.preventDefault();
+            if (currentZoomIndex > 0) {
+                currentZoomIndex--;
+                applyZoom();
+            }
+        } else if (e.ctrlKey && e.key === '0') {
+            e.preventDefault();
+            resetZoom();
+        }
+    });
+
+    document.getElementById('save_preview_btn').addEventListener('click', function() {
+        show_save_spinner();
+        fetch('/projects/{{ project_id }}/outputs/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ outputs: pendingOutputs })
+        })
+        .then(function(response) {
+            if (!response.ok) throw new Error('Failed to save output');
+            return response.text();
+        })
+        .then(function(html) {
+            document.getElementById('outputs_container').innerHTML = html;
+            pendingOutputs = [];
+            bootstrap.Modal.getInstance(document.getElementById('preview_output_modal')).hide();
+        })
+        .catch(function(error) {
+            console.error('Error saving output:', error);
+        })
+        .finally(function() {
+            hide_save_spinner();
+        });
+    });
+</script>

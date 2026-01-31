@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dzToolBox</title>
+    <title>dzToolBox - {{ project_name }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.css" rel="stylesheet" />
@@ -30,7 +30,7 @@
                 <img width="40" height="40" alt="Home" src="{{ url_for('static', filename='global/img/DZ.svg') }}" class="me-2">
                 dzToolBox
             </a>
-            
+            <h5 class="mt-2">Project: {{ project_name }}</h5>
             <ul class="nav nav-pills" id="my_tab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link editor-tab active" id="spreadsheet_tab" onclick="showTab('spreadsheet')" type="button">
@@ -90,6 +90,8 @@
     {% include "editor/spinners/delete_output_spinner.html" %}
     {% include "editor/spinners/get_settings_spinner.html" %}
     {% include "editor/spinners/update_settings_spinner.html" %}
+    {% include "editor/modals/preview_output_dialog.html" %}
+	{% include "editor/spinners/save_output_spinner.html" %}
 	<script src="{{ url_for('static', filename='editor/scripts/collapsible.js')}}"></script>
     <script src="{{ url_for('static', filename='editor/scripts/MultiSelect.js')}}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>

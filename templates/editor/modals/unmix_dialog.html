@@ -40,15 +40,6 @@
                                 </tr>
                             </table>
                         </div>
-                        <button data-bs-toggle="modal"
-                                data-bs-target="#unmix_modal"
-                                name="send_it_unmix"
-                                id="send_it_unmix"
-                                style="display: none"
-                                type="button"
-                                data-hx-target="#outputs_container"
-                                data-hx-swap="innerHTML">
-                        </button>
                     </form>
                     <br />
                 </div>
@@ -81,15 +72,11 @@
         if (unmixOutputTitle !== "") {
             queryString += "&outputTitle=" + unmixOutputTitle;
         }
-        document.getElementById("send_it_unmix").setAttribute("data-hx-get", queryString);
-        htmx.process(document.getElementById("send_it_unmix"));
-        document.getElementById("send_it_unmix").click();
-
-        // Hide the modal after submission
         var unmixModal = bootstrap.Modal.getInstance(document.getElementById('unmix_modal'));
         if (unmixModal) {
             unmixModal.hide();
         }
+        generateOutput(queryString);
     }
 </script>
 

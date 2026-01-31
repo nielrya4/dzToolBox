@@ -1,0 +1,17 @@
+{% from "global/spinner.html" import spinner with context %}
+
+{{ spinner(id="save_output_spinner", message="Saving Output...") }}
+
+
+<script>
+    function show_save_spinner() {
+        document.getElementById("save_output_spinner").classList.remove("hidden");
+        document.getElementById("save_output_spinner").classList.add("visible");
+    }
+
+    function hide_save_spinner() {
+        document.getElementById("save_output_spinner").classList.remove("visible");
+        document.getElementById("save_output_spinner").classList.add("hidden");
+    }
+</script>
+

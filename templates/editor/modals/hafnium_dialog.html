@@ -35,15 +35,6 @@
                                 </tr>
                             </table>
                         </div>
-                        <button data-bs-toggle="modal"
-                                data-bs-target="#hafnium_modal"
-                                name="send_it_hafnium"
-                                id="send_it_hafnium"
-                                style="display: none"
-                                type="button"
-                                data-hx-target="#outputs_container"
-                                data-hx-swap="innerHTML">
-                        </button>
                     </form>
                     <br />
                 </div>
@@ -69,15 +60,11 @@
         if (hafnium_outputName !== "") {
             queryString += "&outputTitle=" + hafnium_outputName;
         }
-        document.getElementById("send_it_hafnium").setAttribute("data-hx-get", queryString);
-        htmx.process(document.getElementById("send_it_hafnium"));
-        document.getElementById("send_it_hafnium").click();
-
-        // Hide the modal after submission
         var hafniumModal = bootstrap.Modal.getInstance(document.getElementById('hafnium_modal'));
         if (hafniumModal) {
             hafniumModal.hide();
         }
+        generateOutput(queryString);
     }
 </script>
 

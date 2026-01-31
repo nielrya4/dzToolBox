@@ -44,6 +44,7 @@
                         thSampleName.textContent = "Sample Name:";
                         var thActive = document.createElement("th");
                         thActive.textContent = "Active:";
+                        thActive.style.textAlign = "left";
                         trHeader.appendChild(thSampleName);
                         trHeader.appendChild(thActive);
                         tbody.appendChild(trHeader);
@@ -88,6 +89,23 @@
                 });
                 table.appendChild(tbody);
                 container.appendChild(table);
+                {% if multi_select %}
+                var toggleAllBtn = document.createElement("button");
+                toggleAllBtn.type = "button";
+                toggleAllBtn.classList.add("btn", "btn-sm", "btn-outline-secondary");
+                toggleAllBtn.textContent = "Toggle All";
+                toggleAllBtn.addEventListener("click", function() {
+                    var checkboxes = container.querySelectorAll(".sample-checkbox");
+                    var allChecked = true;
+                    checkboxes.forEach(function(cb) {
+                        if (!cb.checked) allChecked = false;
+                    });
+                    checkboxes.forEach(function(cb) {
+                        cb.checked = !allChecked;
+                    });
+                });
+                container.appendChild(toggleAllBtn);
+                {% endif %}
             }
             const sampleList{{ id }} = document.getElementById("{{ id }}")
             sampleList{{ id }}.innerHTML = "";

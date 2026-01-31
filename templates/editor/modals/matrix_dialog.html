@@ -43,15 +43,6 @@
                                 </tr>
                             </table>
                         </div>
-                        <button data-bs-toggle="modal"
-                                data-bs-target="#matrix_modal"
-                                name="send_it_matrix"
-                                id="send_it_matrix"
-                                style="display: none"
-                                type="button"
-                                data-hx-target="#outputs_container"
-                                data-hx-swap="innerHTML">
-                        </button>
                     </form>
                     <br />
                 </div>
@@ -77,15 +68,11 @@
         if (matrix_outputName !== "") {
             queryString += "&outputTitle=" + matrix_outputName;
         }
-        document.getElementById("send_it_matrix").setAttribute("data-hx-get", queryString);
-        htmx.process(document.getElementById("send_it_matrix"));
-        document.getElementById("send_it_matrix").click();
-
-        // Hide the modal after submission
         var matrixModal = bootstrap.Modal.getInstance(document.getElementById('matrix_modal'));
         if (matrixModal) {
             matrixModal.hide();
         }
+        generateOutput(queryString);
     }
 </script>
 

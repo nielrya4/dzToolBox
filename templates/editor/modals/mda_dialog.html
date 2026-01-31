@@ -32,15 +32,6 @@
                                 </tr>
                             </table>
                         </div>
-                        <button data-bs-toggle="modal"
-                                data-bs-target="#mda_modal"
-                                name="send_it_mda"
-                                id="send_it_mda"
-                                style="display: none"
-                                type="button"
-                                data-hx-target="#outputs_container"
-                                data-hx-swap="innerHTML">
-                        </button>
                     </form>
                     <br />
                 </div>
@@ -70,15 +61,11 @@
         if (mdaOutputTitle !== "") {
             queryString += "&outputTitle=" + mdaOutputTitle;
         }
-        document.getElementById("send_it_mda").setAttribute("data-hx-get", queryString);
-        htmx.process(document.getElementById("send_it_mda"));
-        document.getElementById("send_it_mda").click();
-
-        // Hide the modal after submission
         var mdaModal = bootstrap.Modal.getInstance(document.getElementById('mda_modal'));
         if (mdaModal) {
             mdaModal.hide();
         }
+        generateOutput(queryString);
     }
 </script>
 
