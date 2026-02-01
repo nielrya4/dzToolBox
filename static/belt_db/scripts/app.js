@@ -517,12 +517,12 @@ function updateStatistics() {
 }
 
 function exportVisibleData() {
-    var csvContent = 'Sample Name,Formation,Belt Group,Region,Reference,Latitude,Longitude,MDA Age,MDA Uncertainty\\n';
-    
+    var csvContent = 'Sample Name,Formation,Belt Group,Region,Reference,Latitude,Longitude,MDA Age,MDA Uncertainty\n';
+
     visibleMarkers.forEach(function(marker) {
         var sampleName = marker.options.title.replace('Sample: ', '');
         var sample = sampleData[sampleName];
-        
+
         csvContent += [
             sample.name,
             sample.formation,
@@ -533,15 +533,15 @@ function exportVisibleData() {
             sample.lng,
             sample.mda_age,
             sample.mda_uncertainty
-        ].join(',') + '\\n';
+        ].join(',') + '\n';
     });
-    
+
     downloadCSV(csvContent, 'visible_samples.csv');
 }
 
 function exportAllData() {
-    var csvContent = 'Sample Name,Formation,Belt Group,Region,Reference,Latitude,Longitude,MDA Age,MDA Uncertainty\\n';
-    
+    var csvContent = 'Sample Name,Formation,Belt Group,Region,Reference,Latitude,Longitude,MDA Age,MDA Uncertainty\n';
+
     Object.values(sampleData).forEach(function(sample) {
         csvContent += [
             sample.name,
@@ -553,9 +553,9 @@ function exportAllData() {
             sample.lng,
             sample.mda_age,
             sample.mda_uncertainty
-        ].join(',') + '\\n';
+        ].join(',') + '\n';
     });
-    
+
     downloadCSV(csvContent, 'all_samples.csv');
 }
 
@@ -580,10 +580,10 @@ function exportSampleData() {
         return;
     }
     
-    var csvContent = 'Age (Ma),Uncertainty (±1σ)\\n';
-    
+    var csvContent = currentSampleData.name + ',Uncertainty (±1σ)\n';
+
     currentSampleData.zircon_data.forEach(function(grain) {
-        csvContent += grain.age + ',' + grain.uncertainty + '\\n';
+        csvContent += grain.age + ',' + grain.uncertainty + '\n';
     });
     
     var filename = currentSampleData.name + '_zircon_data.csv';

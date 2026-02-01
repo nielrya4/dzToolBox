@@ -70,6 +70,8 @@
             if (labels.length > 0) {
                 queryString += "&binLabels=" + encodeURIComponent(histogram_binLabels);
             }
+            var histogram_nCols = document.getElementById("histogram_bin_edges_n_cols").value;
+            queryString += "&nCols=" + histogram_nCols;
         }
         if (histogram_outputName !== "") {
             queryString += "&outputTitle=" + histogram_outputName;

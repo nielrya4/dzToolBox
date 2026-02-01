@@ -352,6 +352,7 @@ def register(app):
                         fill=project.settings.graph_settings.fill == "true"
                     )
                 elif output_type == 'pie_chart':
+                    n_cols = int(request.args.get("nCols", 2))
                     graph_fig = histograms.histogram_pie_chart(
                         samples=active_samples,
                         bin_list=bin_list,
@@ -359,6 +360,7 @@ def register(app):
                         font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
                         font_size=project.settings.graph_settings.font_size,
                         fig_width=project.settings.graph_settings.figure_width,
+                        n_cols=n_cols,
                     )
                 else:
                     raise ValueError("output_type is not supported")
