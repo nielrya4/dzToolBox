@@ -11,25 +11,23 @@
                 <br />
                 <div class="container-sm">
                     <form id="hafnium_form" data-hx-trigger="click">
-                        <label for="hafnium_output_name">Output Title</label>
-                        <input type="text" id="hafnium_output_name" name="hafnium_output_name" required>
+                        <label for="hafnium_output_name" class="form-label">Output Title</label>
+                        <input type="text" id="hafnium_output_name" name="hafnium_output_name" class="form-control" required>
                         <br />
                         <br />
                         {{ sample_select(id="hafnium_sample_select", sender="hafnium_link", event='click', multi_select=False) }}
                         <br />
                         <div class="table_list">
-                            <table>
+                            <table style="width: 100%;">
                                 <tr>
                                     <td>
-                                        <label for="hafnium_select">Graph type:</label>
-                                        <select name="hafnium_select" id="hafnium_select">
+                                        <label for="hafnium_select" class="form-label">Graph type:</label>
+                                        <select name="hafnium_select" id="hafnium_select" class="form-select">
                                             <option value="kde_2d_surface" selected>Bivariate KDE</option>
                                             <option value="kde_2d_heatmap">Heatmap</option>
                                         </select>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td style="text-align: right;">
+                                    <td style="text-align: right; vertical-align: bottom;">
                                         <button class="btn btn-primary" type="button" onclick="hafnium_send_args()">Plot</button>
                                     </td>
                                 </tr>

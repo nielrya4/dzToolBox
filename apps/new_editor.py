@@ -12,7 +12,7 @@ import secrets
 import base64
 from dz_lib import univariate, bivariate
 from dz_lib.bivariate.distributions import *
-from dz_lib.univariate import mds, unmix, distributions, mda, metrics
+from dz_lib.univariate import mds, unmix, distributions, mda, metrics, histograms
 from dz_lib.utils import data, matrices
 from utils import embedding, monte_carlo_optimized
 from flask import send_file
@@ -289,6 +289,80 @@ def register(app):
                     )
                 else:
                     raise ValueError("output_type is not supported")
+                output_id = secrets.token_hex(15)
+                output_data = embedding.embed_graph(
+                    fig=graph_fig,
+                    output_id=output_id,
+                    project_id=project_id,
+                    fig_type="matplotlib",
+                    img_format='svg',
+                    download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                )
+                return jsonify({"outputs": [{
+                    "output_id": output_id,
+                    "output_type": "graph",
+                    "output_data": output_data
+                }]})
+            else:
+                return jsonify({"outputs": "method not allowed"})
+        else:
+            return jsonify({"outputs": "access_denied"})
+
+    @app.route('/projects/<int:project_id>/outputs/new/histogram', methods=['GET'])
+    @login_required
+    def new_histogram(project_id):
+        if session.get("open_project", 0) == project_id:
+            project = __get_project(project_id)
+            if request.method == "GET":
+                output_title = request.args.get("outputTitle", None)
+                output_type = request.args.get("outputType", "histogram")
+                sample_names = request.args.getlist("sampleNames")
+                bin_edges_str = request.args.get("binEdges", "")
+                bin_edges = [float(x.strip()) for x in bin_edges_str.split(",") if x.strip()]
+                bin_labels_str = request.args.get("binLabels", "")
+                bin_labels = [x.strip() for x in bin_labels_str.split(",") if x.strip()] if bin_labels_str else None
+
+                spreadsheet_data = spreadsheet.text_to_array(project.data)
+                loaded_samples = data.read_1d_samples(spreadsheet_data)
+                active_samples = []
+                for sample in loaded_samples:
+                    sample.name = clean_sample_name(sample.name)
+                    for sample_name in sample_names:
+                        if sample.name == sample_name:
+                            active_samples.append(sample)
+                active_samples.reverse()
+
+                bin_list = histograms.BinList(
+                    edges=bin_edges,
+                    labels=bin_labels,
+                    color_map=project.settings.graph_settings.color_map
+                )
+
+                if output_type == 'histogram':
+                    graph_fig = histograms.histogram_graph(
+                        samples=active_samples,
+                        bin_list=bin_list,
+                        legend=project.settings.graph_settings.legend == "true",
+                        title=output_title,
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height,
+                        color_map=project.settings.graph_settings.color_map,
+                        fill=project.settings.graph_settings.fill == "true"
+                    )
+                elif output_type == 'pie_chart':
+                    graph_fig = histograms.histogram_pie_chart(
+                        samples=active_samples,
+                        bin_list=bin_list,
+                        title=output_title,
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                    )
+                else:
+                    raise ValueError("output_type is not supported")
+
                 output_id = secrets.token_hex(15)
                 output_data = embedding.embed_graph(
                     fig=graph_fig,

@@ -11,22 +11,20 @@
                 <br />
                 <div class="container-sm">
                     <form id="mda_form" data-hx-trigger="click">
-                        <label for="mda_output_title">Output Title</label>
-                        <input type="text" id="mda_output_title" name="mda_output_title" required>
+                        <label for="mda_output_title" class="form-label">Output Title</label>
+                        <input type="text" id="mda_output_title" name="mda_output_title" class="form-control" required>
                         <br />
                         <br />
                         {{ sample_select(id="mda_sample_select", sender="mda_link", event='click', multi_select=False) }}
                         <br />
                         <div class="table_list">
-                            <table>
+                            <table style="width: 100%;">
                                 <tr>
                                     <td>
                                         <h6>Select Output Types</h6>
                                         <div id="mda_outputs_select"></div>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td>
+                                    <td style="text-align: right; vertical-align: bottom;">
                                         <button class="btn btn-primary" type="button" onclick="mda_send_args();">Create model</button>
                                     </td>
                                 </tr>

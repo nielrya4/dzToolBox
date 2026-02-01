@@ -11,18 +11,18 @@
                 <br />
                 <div class="container-sm">
                     <form id="matrix_form" data-hx-trigger="click">
-                        <label for="matrix_output_name">Output Title</label>
-                        <input type="text" id="matrix_output_name" name="matrix_output_name" required>
+                        <label for="matrix_output_name" class="form-label">Output Title</label>
+                        <input type="text" id="matrix_output_name" name="matrix_output_name" class="form-control" required>
                         <br />
                         <br />
                         {{ sample_select(id="matrix_sample_select", sender="matrix_link", event='click', multi_select=True) }}
                         <br />
                         <div class="table_list">
-                            <table>
+                            <table style="width: 100%;">
                                 <tr>
                                     <td>
-                                        <label for="matrix_select">Select a metric...</label>
-                                        <select name="matrix_select" id="matrix_select">
+                                        <label for="matrix_select" class="form-label">Select a metric...</label>
+                                        <select name="matrix_select" id="matrix_select" class="form-select">
                                             <option value="similarity" selected>Similarity</option>
                                             <option value="likeness">Likeness</option>
                                             <option value="ks">KS</option>
@@ -35,9 +35,7 @@
                                             <option value="dis_cross_correlation">Dis-Cross-Correlation</option>
                                         </select>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td>
+                                    <td style="text-align: right; vertical-align: bottom;">
                                         <button class="btn btn-primary" type="button" onclick="matrix_send_args()">Create matrix</button>
                                     </td>
                                 </tr>

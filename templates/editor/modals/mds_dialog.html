@@ -11,22 +11,22 @@
                 <br />
                 <div class="container-sm">
                     <form id="mds_form" data-hx-trigger="click">
-                        <label for="mds_output_title">Output Title</label>
-                        <input type="text" id="mds_output_title" name="mds_output_title" required>
+                        <label for="mds_output_title" class="form-label">Output Title</label>
+                        <input type="text" id="mds_output_title" name="mds_output_title" class="form-control" required>
                         <br />
                         <br />
                         {{ sample_select(id="mds_sample_select", sender="mds_link", event='click', multi_select=True) }}
                         <br />
                         <div class="table_list">
-                            <table>
+                            <table style="width: 100%;">
                                 <tr>
                                     <td>
                                         <h6>Select Output Types:</h6>
                                         <div id="mds_outputs_select"></div>
                                     </td>
                                     <td style="text-align: right;">
-                                        <label for="mds_metric">Select a comparison metric...</label>
-                                        <select name="mds_metric" id="mds_metric">
+                                        <label for="mds_metric" class="form-label">Select a comparison metric...</label>
+                                        <select name="mds_metric" id="mds_metric" class="form-select">
                                             <option value="similarity">Similarity</option>
                                             <option value="likeness">Likeness</option>
                                             <option value="cross_correlation">Cross-Correlation</option>
@@ -37,13 +37,13 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        <label for="mds_type">Select an MDS type...</label>
-                                        <select name="mds_type" id="mds_type">
+                                        <label for="mds_type" class="form-label">Select an MDS type...</label>
+                                        <select name="mds_type" id="mds_type" class="form-select">
                                             <option value="non_metric" selected>Non-Metric</option>
                                             <option value="metric">Metric</option>
                                         </select>
                                     </td>
-                                    <td style="text-align: right;">
+                                    <td style="text-align: right; vertical-align: bottom;">
                                         <button class="btn btn-primary" type="button" onclick="mds_send_args()">Plot</button>
                                     </td>
                                 </tr>

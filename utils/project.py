@@ -38,7 +38,7 @@ class GraphSettings:
     def __init__(self, stack_graphs: str = "true", legend: str = "true",
                  font_size: float = 12, font_name: str = "ubuntu",
                  figure_width: int = 9, figure_height: int = 7, color_map: str = "jet",
-                 modes_labeled: int = 0, fill: str = "false", render: str = "vector"):
+                 modes_labeled: int = 0, fill: str = "false"):
         self.stack_graphs = stack_graphs
         self.legend = legend
         self.font_size = font_size
@@ -48,7 +48,6 @@ class GraphSettings:
         self.color_map = color_map
         self.modes_labeled = modes_labeled
         self.fill = fill
-        self.render = render
 
     def from_json(self, json_data):
         self.stack_graphs = json_data.get("stack_graphs", "true")
@@ -60,8 +59,7 @@ class GraphSettings:
         self.color_map = json_data.get("color_map", "jet")
         self.modes_labeled = int(json_data.get("modes_labeled", 0))
         self.fill = json_data.get("fill", "false")
-        self.render = json_data.get("render", "vector")
-    
+
     def to_json(self):
         return {
             "stack_graphs": self.stack_graphs,
@@ -73,7 +71,6 @@ class GraphSettings:
             "color_map": self.color_map,
             "modes_labeled": self.modes_labeled,
             "fill": self.fill,
-            "render": self.render
         }
 
 class MappingSettings:

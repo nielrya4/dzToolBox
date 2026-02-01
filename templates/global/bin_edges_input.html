@@ -1,0 +1,8 @@
+{% macro bin_edges_input(id="bin_edges") %}
+<label for="{{ id }}" class="form-label">Bin Edges (comma-separated)</label>
+<input type="text" id="{{ id }}" class="form-control" placeholder="e.g. 0, 500, 1000, 1500, 2000, 3000" required value="0, 500, 1000, 1500, 2000, 3000">
+<div id="{{ id }}_labels_container" style="display: none;">
+    <label for="{{ id }}_labels" class="form-label">Bin Labels (comma-separated, optional)</label>
+    <input type="text" id="{{ id }}_labels" class="form-control" placeholder="e.g. Young, Middle, Old">
+</div>
+{% endmacro %}

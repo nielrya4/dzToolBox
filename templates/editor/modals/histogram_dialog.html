@@ -1,0 +1,95 @@
+{% from "global/sample_select.html" import sample_select with context %}
+{% from "global/bin_edges_input.html" import bin_edges_input %}
+
+<div id="histogram_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Histogram</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="histogram_form" data-hx-trigger="click">
+                        <label for="histogram_output_name" class="form-label">Output Title</label>
+                        <input type="text" id="histogram_output_name" name="histogram_output_name" class="form-control" required>
+                        <br />
+                        <br />
+                        {{ sample_select(id="histogram_sample_select", sender="histogram_link", event='click', multi_select=True) }}
+                        <br />
+                        {{ bin_edges_input(id="histogram_bin_edges") }}
+                        <br />
+                        <div class="table_list">
+                            <table style="width: 100%;">
+                                <tr>
+                                    <td>
+                                        <label for="histogram_select" class="form-label">Chart type:</label>
+                                        <select name="histogram_select" id="histogram_select" class="form-select">
+                                            <option value="histogram" selected>Histogram</option>
+                                            <option value="pie_chart">Pie Chart</option>
+                                        </select>
+                                    </td>
+									<td style="text-align: right; vertical-align: bottom;">
+                                        <button class="btn btn-primary" type="button" onclick="histogram_send_args()">Plot</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const histogramSampleList = document.getElementById("histogram_sample_select")
+    function histogram_send_args() {
+        var selectedSamples = [];
+        var histogram_checkboxes = histogramSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < histogram_checkboxes.length; i++) {
+            if (histogram_checkboxes[i].checked) {
+                selectedSamples.push(histogram_checkboxes[i].value);
+            }
+        }
+        var histogram_type = document.getElementById("histogram_select").value;
+        var histogram_outputName = document.getElementById("histogram_output_name").value;
+        var histogram_binEdges = document.getElementById("histogram_bin_edges").value;
+        var edges = histogram_binEdges.split(",").map(s => s.trim()).filter(s => s !== "");
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+        var queryString = "/projects/{{ project_id }}/outputs/new/histogram?sampleNames=" + encodedSamples.join("&sampleNames=") + "&outputType=" + histogram_type + "&binEdges=" + encodeURIComponent(histogram_binEdges);
+        if (histogram_type === 'pie_chart') {
+            var histogram_binLabels = document.getElementById("histogram_bin_edges_labels").value;
+            var labels = histogram_binLabels.split(",").map(s => s.trim()).filter(s => s !== "");
+            if (labels.length > 0 && labels.length !== edges.length - 1) {
+                alert("Number of labels (" + labels.length + ") must match number of bins (" + (edges.length - 1) + "), or leave labels blank.");
+                return;
+            }
+            if (labels.length > 0) {
+                queryString += "&binLabels=" + encodeURIComponent(histogram_binLabels);
+            }
+        }
+        if (histogram_outputName !== "") {
+            queryString += "&outputTitle=" + histogram_outputName;
+        }
+        var histogramModal = bootstrap.Modal.getInstance(document.getElementById('histogram_modal'));
+        if (histogramModal) {
+            histogramModal.hide();
+        }
+        generateOutput(queryString);
+    }
+</script>
+
+<script>
+    var histogramLabelsContainer = document.getElementById('histogram_bin_edges_labels_container');
+    document.getElementById('histogram_select').addEventListener('change', function() {
+        histogramLabelsContainer.style.display = this.value === 'pie_chart' ? 'block' : 'none';
+    });
+
+    // Focus on input when modal opens
+    document.getElementById('histogram_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('histogram_output_name').focus();
+    });
+</script>

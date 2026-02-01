@@ -11,26 +11,24 @@
                 <br />
                 <div class="container-sm">
                     <form id="distro_form" data-hx-trigger="click">
-                        <label for="distro_output_name">Output Title</label>
-                        <input type="text" id="distro_output_name" name="distro_output_name" required>
+                        <label for="distro_output_name" class="form-label">Output Title</label>
+                        <input type="text" id="distro_output_name" name="distro_output_name" class="form-control" required>
                         <br />
                         <br />
                         {{ sample_select(id="distro_sample_select", sender="distro_link", event='click', multi_select=True) }}
                         <br />
                         <div class="table_list">
-                            <table>
+                            <table style="width: 100%;">
                                 <tr>
                                     <td>
-                                        <label for="distro_select">Select a distribution type...</label>
-                                        <select name="distro_select" id="distro_select">
+                                        <label for="distro_select" class="form-label">Select a distribution type...</label>
+                                        <select name="distro_select" id="distro_select" class="form-select">
                                             <option value="kde" selected>Kernel Density Estimate</option>
                                             <option value="pdp">Probability Density Plot</option>
                                             <option value="cdf">Cumulative Distribution Function</option>
                                         </select>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td style="text-align: right;">
+                                    <td style="text-align: right; vertical-align: bottom;">
                                         <button class="btn btn-primary" type="button" onclick="distro_send_args()">Plot</button>
                                     </td>
                                 </tr>

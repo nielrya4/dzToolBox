@@ -90,11 +90,6 @@
 							<input type="number" class="form-control" id="figure_width" name="figure_width" value="9" required>
 							<label for="figure_height">Figure Height</label>
 							<input type="number" class="form-control" id="figure_height" name="figure_height" value="7" required>
-							<label for="render_select">Render As...</label>
-							<select id="render_select" name="render_select" class="form-select" aria-label="Default select example">
-								<option value="raster">Raster (.PNG)</option>
-								<option selected value="vector">Vector (.SVG)</option>
-							</select>
 							<br />
 						</div>
 						<br />
@@ -129,8 +124,7 @@
         const showLegendSelect = document.getElementById('show_legend_select')
 		const modesLabeled = document.getElementById('modes_labeled')
 		const fillLinesSelect=document.getElementById('fill_lines_select')
-		const renderSelect = document.getElementById('render_select')
-        
+
         // Basic validation
         if (!kde_bandwidth_textbox.value || !n_trials_textbox.value || !min_age.value || !max_age.value || !font_size.value || !figure_width.value || !figure_height.value) {
             alert('Please fill in all required fields.');
@@ -161,7 +155,6 @@
             "show_legend": showLegendSelect.value,
 			"modes_labeled": parseInt(modesLabeled.value),
 			"fill": fillLinesSelect.value,
-			"render": renderSelect.value
         };
         fetch('/projects/{{ project_id }}/settings', {
             method: 'POST',

@@ -1,4 +1,4 @@
-<div id="preview_output_modal" class="modal">
+<div id="preview_output_modal" class="modal" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="frame">
@@ -10,7 +10,7 @@
                     <div id="preview_zoom_container"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Discard</button>
                     <button type="button" class="btn btn-primary" id="save_preview_btn">Save</button>
                 </div>
             </div>
@@ -87,6 +87,8 @@
         } else if (e.ctrlKey && e.key === '0') {
             e.preventDefault();
             resetZoom();
+        } else if (e.key === 'Escape') {
+            bootstrap.Modal.getInstance(modal).hide();
         }
     });
 

@@ -11,14 +11,14 @@
                 <br />
                 <div class="container-sm">
                     <form id="unmix_form" data-hx-trigger="click">
-                        <label for="unmix_output_title">Output Title</label>
-                        <input type="text" id="unmix_output_title" name="unmix_output_title" required>
+                        <label for="unmix_output_title" class="form-label">Output Title</label>
+                        <input type="text" id="unmix_output_title" name="unmix_output_title" class="form-control" required>
                         <br />
                         <br />
                         {{ sample_select(id="unmix_sample_select", sender="unmix_link", event='click', multi_select=True) }}
                         <br />
                         <div class="table_list">
-                            <table>
+                            <table style="width: 100%;">
                                 <tr>
                                     <td>
                                         <h6>Select Output Types:</h6>
@@ -27,14 +27,14 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        <label for="unmix_metric">Select a metric...</label>
-                                        <select name="unmix_metric" id="unmix_metric">
+                                        <label for="unmix_metric" class="form-label">Select a metric...</label>
+                                        <select name="unmix_metric" id="unmix_metric" class="form-select">
                                             <option value="cross_correlation">Cross Correlation of KDEs</option>
                                             <option value="ks">KS Test of CDFs</option>
                                             <option value="kuiper">Kuiper Test of CDFs</option>
                                         </select>
                                     </td>
-                                    <td>
+                                    <td style="text-align: right; vertical-align: bottom;">
                                         <button class="btn btn-primary" type="button" onclick="unmix_send_args()">Create model</button>
                                     </td>
                                 </tr>

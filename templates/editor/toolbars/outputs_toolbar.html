@@ -10,7 +10,10 @@
                     <i class="fa fa-diamond"></i> MDA
                 </a>
                 <a class="nav-link toolbar-btn" id="distro_link" data-bs-toggle="modal" href="#distro_modal">
-                    <i class="fa fa-bar-chart"></i> Distributions
+                    <i class="fa fa-line-chart"></i> Distributions
+                </a>
+				<a class="nav-link toolbar-btn" id="histogram_link" data-bs-toggle="modal" href="#histogram_modal">
+                    <i class="fa fa-bar-chart"></i> Histograms
                 </a>
                 <a class="nav-link toolbar-btn" id="matrix_link" data-bs-toggle="modal" href="#matrix_modal">
                     <i class="fa fa-table"></i> Matrices
@@ -56,7 +59,6 @@
         const showLegendSelect = document.getElementById('show_legend_select')
         const fillLinesSelect = document.getElementById('fill_lines_select')
         const modesLabeled = document.getElementById('modes_labeled')
-		const renderSelect = document.getElementById('render_select')
         fetch('/projects/{{ project_id }}/settings', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
@@ -174,13 +176,6 @@
             else if (project_settings["fill"] === "false") {
                 fillLinesSelect.selectedIndex = 1;
             }
-
-            if (project_settings["render"] === "raster") {
-                renderSelect.selectedIndex = 0;
-			}
-            else if (project_settings["render"] === "vector") {
-                renderSelect.selectedIndex = 1;
-			}
         })
         .catch(error => {
             console.error('Error fetching settings:', error);
