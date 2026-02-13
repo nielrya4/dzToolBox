@@ -14,9 +14,8 @@ from dz_lib import univariate, bivariate
 from dz_lib.bivariate.distributions import *
 from dz_lib.univariate import mds, unmix, distributions, mda, metrics, histograms
 from dz_lib.utils import data, matrices
-from utils import embedding, monte_carlo_optimized, tensor_factorization
+from utils import embedding, monte_carlo_optimized
 try:
-    from celery_tasks import tensor_factorization_task
     from celery_app import celery_app
     from celery.result import AsyncResult
     CELERY_AVAILABLE = True

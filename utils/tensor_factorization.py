@@ -10,19 +10,43 @@ import numpy as np
 from typing import List, Tuple, Optional, Dict
 import warnings
 
-# Julia interface
-try:
-    from juliacall import Main as jl
-    JULIA_AVAILABLE = True
-except ImportError:
-    JULIA_AVAILABLE = False
-    warnings.warn("juliacall not available - tensor factorization will not work")
+# Julia interface - lazy import to avoid segfaults with uWSGI
+_julia_instance = None
+
+def get_julia():
+    """Lazy import of Julia to avoid uWSGI forking issues"""
+    global _julia_instance
+    if _julia_instance is not None:
+        return _julia_instance
+    
+    try:
+        from juliacall import Main as jl
+        _julia_instance = jl
+        return jl
+    except ImportError:
+        warnings.warn("juliacall not available - tensor factorization will not work")
+        return None
+
+# Check if juliacall is available without importing it
+def _julia_available():
+    """Check if juliacall can be imported"""
+    try:
+        import juliacall
+        return True
+    except ImportError:
+        return False
+
+JULIA_AVAILABLE = _julia_available()
 
 
 def initialize_julia_packages():
     """Initialize Julia and install/load required packages"""
     if not JULIA_AVAILABLE:
         raise RuntimeError("juliacall is not installed")
+    
+    jl = get_julia()
+    if jl is None:
+        raise RuntimeError("Failed to import juliacall")
 
     # Install MatrixTensorFactor from GitHub (same package used by dzgrainalyzer)
     # Compatible with Julia 1.10+

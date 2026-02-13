@@ -12,7 +12,6 @@ from utils.project import project_from_json
 from utils.output import Output
 
 try:
-    from celery_tasks import tensor_factorization_task
     from celery_app import celery_app
     from celery.result import AsyncResult
     CELERY_AVAILABLE = True
@@ -162,6 +161,7 @@ def register(app):
                     padding_mode = request.args.get("paddingMode", "zero")
 
                     # Start Celery task (pass user_id for database access)
+                    from celery_tasks import tensor_factorization_task
                     task = tensor_factorization_task.delay(
                         project_id=project_id,
                         user_id=current_user.id,
@@ -311,6 +311,7 @@ def register(app):
                     padding_mode = request.args.get("paddingMode", "zero")
 
                     # Start Celery task (reuse existing tensor_factorization_task)
+                    from celery_tasks import tensor_factorization_task
                     task = tensor_factorization_task.delay(
                         project_id=project_id,
                         user_id=current_user.id,

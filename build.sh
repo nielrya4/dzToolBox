@@ -24,6 +24,17 @@ pip install -r requirements.txt
 echo "Ensuring celery, redis, and juliacall are installed for background tasks..."
 pip install celery redis juliacall
 
+echo "Pre-installing Julia packages for tensor factorization..."
+python3 -c "
+try:
+    from utils.tensor_factorization import initialize_julia_packages
+    print('Installing MatrixTensorFactor and KernelDensity packages...')
+    initialize_julia_packages()
+    print('Julia packages installed successfully!')
+except Exception as e:
+    print(f'Warning: Could not pre-install Julia packages: {e}')
+"
+
 echo "Checking for dz_lib updates..."
 pip install --upgrade dz_lib
 deactivate

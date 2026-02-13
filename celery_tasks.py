@@ -3,7 +3,7 @@ Celery tasks for long-running operations
 """
 
 from celery_app import celery_app
-from utils import spreadsheet, compression, tensor_factorization, embedding
+from utils import spreadsheet, compression, embedding
 from utils.output import Output
 from utils.project import project_from_json
 from server import database
@@ -48,6 +48,9 @@ def tensor_factorization_task(
     Parameters match the route arguments but are serialized
     """
     try:
+        # Import tensor_factorization here to avoid Julia import at module load time
+        from utils import tensor_factorization
+        
         # Import Flask app inside function to avoid circular import
         from dzToolBox import app as flask_app
 
@@ -397,6 +400,9 @@ def view_empirical_kdes_task(
     This is a lightweight task that just visualizes the raw input data.
     """
     try:
+        # Import tensor_factorization here to avoid Julia import at module load time
+        from utils import tensor_factorization
+        
         from dzToolBox import app as flask_app
 
         self.update_state(state='PROGRESS', meta={'status': 'Loading project...'})
@@ -543,6 +549,9 @@ def find_optimal_rank_task(
     the rank selection visualization (misfit vs ranks + optimal rank).
     """
     try:
+        # Import tensor_factorization here to avoid Julia import at module load time
+        from utils import tensor_factorization
+        
         from dzToolBox import app as flask_app
 
         self.update_state(state='PROGRESS', meta={'status': 'Loading project...'})
