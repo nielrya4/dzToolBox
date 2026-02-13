@@ -1,15 +1,17 @@
 #!/bin/bash
 source .env.dztoolbox
-# Read password from stdin or use environment variable
-if [ -t 0 ]; then
-    # Running interactively, use environment variable
-    if [ -z "$DZTOOLBOX_PASSWORD" ]; then
-        echo "ERROR: DZTOOLBOX_PASSWORD environment variable not set"
-        exit 1
-    fi
+# Use environment variable if available, otherwise read from stdin
+if [ -n "$DZTOOLBOX_PASSWORD" ]; then
+    # Use environment variable
     PASSWORD="$DZTOOLBOX_PASSWORD"
+    echo "Using password from environment file"
+elif [ -t 0 ]; then
+    # Running interactively, prompt for password
+    echo "ERROR: DZTOOLBOX_PASSWORD environment variable not set"
+    exit 1
 else
     # Password provided via stdin
+    echo "Reading password from stdin"
     read -r PASSWORD
 fi
 
