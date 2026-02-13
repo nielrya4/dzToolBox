@@ -62,6 +62,12 @@ def initialize_julia_packages():
         Pkg.add("KernelDensity")
     end
     using KernelDensity
+    
+    # Load SedimentSourceAnalysis
+    if !haskey(Pkg.project().dependencies, "SedimentSourceAnalysis")
+        Pkg.add("SedimentSourceAnalysis")
+    end
+    using SedimentSourceAnalysis
     """)
 
     # Define wrapper functions globally for Python access

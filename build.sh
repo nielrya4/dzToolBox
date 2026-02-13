@@ -30,7 +30,7 @@ echo "Pre-installing Julia packages for tensor factorization..."
 python3 -c "
 try:
     from utils.tensor_factorization import initialize_julia_packages
-    print('Installing MatrixTensorFactor and KernelDensity packages...')
+    print('Installing MatrixTensorFactor, SedimentSourceAnalysis and KernelDensity packages...')
     initialize_julia_packages()
     print('Julia packages installed successfully!')
 except Exception as e:
