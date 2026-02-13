@@ -21,6 +21,9 @@ echo "Installing Python dependencies..."
 source venv/bin/activate
 pip install -r requirements.txt
 
+echo "Ensuring celery, redis, and juliacall are installed for background tasks..."
+pip install celery redis juliacall
+
 echo "Checking for dz_lib updates..."
 pip install --upgrade dz_lib
 deactivate
