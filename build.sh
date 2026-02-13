@@ -25,16 +25,22 @@ echo "Checking for dz_lib updates..."
 pip install --upgrade dz_lib
 deactivate
 
-echo "stopping dztoolbox..."
-echo "$PASSWORD" | sudo systemctl stop uwsgi-dztoolbox
+echo "stopping dztoolbox services..."
+echo "$PASSWORD" | sudo -S systemctl stop uwsgi-dztoolbox
+echo "$PASSWORD" | sudo -S systemctl stop celery-dztoolbox
 
 echo "updating system files..."
-echo "$PASSWORD" | sudo cp ./setup/etc_systemd_system/* /etc/systemd/system/
+echo "$PASSWORD" | sudo -S cp ./setup/etc_systemd_system/* /etc/systemd/system/
 
 echo "reloading daemons..."
-echo "$PASSWORD" | sudo systemctl daemon-reload
+echo "$PASSWORD" | sudo -S systemctl daemon-reload
 
-echo "starting up dztoolbox..."
-echo "$PASSWORD" | sudo systemctl start uwsgi-dztoolbox
+echo "starting up dztoolbox services..."
+echo "$PASSWORD" | sudo -S systemctl start uwsgi-dztoolbox
+echo "$PASSWORD" | sudo -S systemctl start celery-dztoolbox
+
+echo "checking service status..."
+echo "$PASSWORD" | sudo -S systemctl status uwsgi-dztoolbox --no-pager
+echo "$PASSWORD" | sudo -S systemctl status celery-dztoolbox --no-pager
 
 echo "dztoolbox is now up and running"

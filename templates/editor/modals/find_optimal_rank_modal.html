@@ -1,0 +1,170 @@
+{% from "global/sample_select.html" import sample_select with context %}
+
+<div id="find_optimal_rank_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Find Optimal Rank</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="find_optimal_rank_form">
+                        <label for="find_optimal_rank_output_name" class="form-label">Output Title</label>
+                        <input type="text" id="find_optimal_rank_output_name" name="find_optimal_rank_output_name" class="form-control" value="Rank Selection Analysis" required>
+                        <br />
+                        {{ sample_select(id="find_optimal_rank_sample_select", sender="find_optimal_rank_link", event='click', multi_select=True, endpoint='tensor-sample-names') }}
+                        <br />
+                        <div class="table_list">
+                            <table style="width: 100%;">
+                                <tr>
+                                    <td>
+                                        <label for="find_optimal_rank_min" class="form-label">Minimum Rank:</label>
+                                        <input type="number" id="find_optimal_rank_min" class="form-control" min="2" value="2">
+                                    </td>
+                                    <td>
+                                        <label for="find_optimal_rank_max" class="form-label">Maximum Rank:</label>
+                                        <input type="number" id="find_optimal_rank_max" class="form-control" min="2" value="11">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="find_optimal_rank_model" class="form-label">Decomposition Model:</label>
+                                        <select name="find_optimal_rank_model" id="find_optimal_rank_model" class="form-select">
+                                            <option value="Tucker1" selected>Tucker1 (constrained)</option>
+                                            <option value="CP">CP (CANDECOMP/PARAFAC)</option>
+                                            <option value="Tucker">Tucker (full)</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <label for="find_optimal_rank_normalization" class="form-label">Normalization Method:</label>
+                                        <select name="find_optimal_rank_normalization" id="find_optimal_rank_normalization" class="form-select">
+                                            <option value="standardize" selected>Standardize (z-score)</option>
+                                            <option value="minmax">Min-Max Scaling</option>
+                                            <option value="robust">Robust (median/IQR)</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <br />
+                        <label class="form-label">Output Types:</label>
+                        <div class="form-check">
+                            <input class="form-check-input rank-output-checkbox" type="checkbox" value="misfit_plot" id="misfit_plot" checked>
+                            <label class="form-check-label" for="misfit_plot">
+                                Misfit vs. Ranks (Relative Error)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input rank-output-checkbox" type="checkbox" value="curvature_plot" id="curvature_plot" checked>
+                            <label class="form-check-label" for="curvature_plot">
+                                Optimum Rank (Curvature Analysis)
+                            </label>
+                        </div>
+                    </form>
+                    <br />
+                    <div style="text-align: right;">
+                        <button class="btn btn-primary" type="button" onclick="findOptimalRankSendArgs()">Find Optimal Rank</button>
+                    </div>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const findOptimalRankSampleList = document.getElementById("find_optimal_rank_sample_select");
+
+    function findOptimalRankSendArgs() {
+        var selectedSamples = [];
+        var checkboxes = findOptimalRankSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < checkboxes.length; i++) {
+            if (checkboxes[i].checked) {
+                selectedSamples.push(checkboxes[i].value);
+            }
+        }
+
+        if (selectedSamples.length < 2) {
+            alert("Please select at least 2 samples");
+            return;
+        }
+
+        var minRank = parseInt(document.getElementById("find_optimal_rank_min").value);
+        var maxRank = parseInt(document.getElementById("find_optimal_rank_max").value);
+
+        if (minRank >= maxRank) {
+            alert("Maximum rank must be greater than minimum rank");
+            return;
+        }
+
+        var model = document.getElementById("find_optimal_rank_model").value;
+        var normalization = document.getElementById("find_optimal_rank_normalization").value;
+        var outputTitle = document.getElementById("find_optimal_rank_output_name").value;
+
+        // Collect selected output types
+        var outputTypes = [];
+        var outputCheckboxes = document.querySelectorAll(".rank-output-checkbox");
+        for (var i = 0; i < outputCheckboxes.length; i++) {
+            if (outputCheckboxes[i].checked) {
+                outputTypes.push(outputCheckboxes[i].value);
+            }
+        }
+
+        if (outputTypes.length === 0) {
+            alert("Please select at least one output type");
+            return;
+        }
+
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+        var queryString = "/projects/{{ project_id }}/grainalyzer/find-optimal-rank?sampleNames=" + encodedSamples.join("&sampleNames=");
+        queryString += "&minRank=" + minRank;
+        queryString += "&maxRank=" + maxRank;
+        queryString += "&modelType=" + encodeURIComponent(model);
+        queryString += "&normalizationMethod=" + encodeURIComponent(normalization);
+        queryString += "&outputTypes=" + outputTypes.join("&outputTypes=");
+
+        if (outputTitle !== "") {
+            queryString += "&outputTitle=" + encodeURIComponent(outputTitle);
+        }
+
+        var modal = bootstrap.Modal.getInstance(document.getElementById('find_optimal_rank_modal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        // Show spinner and disable buttons
+        show_output_spinner();
+        disableOutputButtons();
+
+        // Start the job
+        fetch(queryString)
+            .then(function(response) {
+                if (!response.ok) throw new Error('Failed to start rank selection');
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.job_id) {
+                    pollTensorJobStatus(data.job_id);
+                } else if (data.error) {
+                    hide_output_spinner();
+                    enableOutputButtons();
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(function(error) {
+                console.error('Error starting rank selection:', error);
+                hide_output_spinner();
+                enableOutputButtons();
+                alert('Error starting rank selection');
+            });
+    }
+</script>
+
+<script>
+    // Focus on input when modal opens
+    document.getElementById('find_optimal_rank_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('find_optimal_rank_output_name').focus();
+    });
+</script>

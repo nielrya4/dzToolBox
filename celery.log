@@ -1,0 +1,94 @@
+Starting Celery worker...
+Make sure Redis is running: redis-cli ping
+
+ 
+ -------------- celery@ryan-LOQ-15IRH8 v5.4.0 (opalescent)
+--- ***** ----- 
+-- ******* ---- Linux-6.8.0-94-generic-x86_64-with-glibc2.39 2026-02-11 00:25:39
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         dztoolbox:0x765631023a00
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 12 (solo)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . celery_tasks.tensor_factorization_task
+
+[2026-02-11 00:25:39,521: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+whether broker connection retries are made during startup in Celery 6.0 and above.
+If you wish to retain the existing behavior for retrying connections on startup,
+you should set broker_connection_retry_on_startup to True.
+  warnings.warn(
+
+[2026-02-11 00:25:39,527: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-02-11 00:25:39,528: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+whether broker connection retries are made during startup in Celery 6.0 and above.
+If you wish to retain the existing behavior for retrying connections on startup,
+you should set broker_connection_retry_on_startup to True.
+  warnings.warn(
+
+[2026-02-11 00:25:39,530: INFO/MainProcess] mingle: searching for neighbors
+[2026-02-11 00:25:40,538: INFO/MainProcess] mingle: all alone
+[2026-02-11 00:25:40,551: INFO/MainProcess] celery@ryan-LOQ-15IRH8 ready.
+[2026-02-11 00:28:37,480: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[2f10f1ce-0521-479f-a307-3060b75692b4] received
+[2026-02-11 00:28:38,153: WARNING/MainProcess] Warning: standardize normalization creates negative values. Using minmax instead for MatrixTensorFactor compatibility.
+[2026-02-11 00:29:06,879: WARNING/MainProcess] DEBUG: Generating visualizations. output_types = ['empirical_kdes', 'factor_loadings', 'sample_scores', 'learned_source_kdes', 'source_attribution']
+[2026-02-11 00:29:11,238: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 00:29:14,126: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 00:29:16,969: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 00:29:17,098: WARNING/MainProcess] DEBUG: Generating source attribution visualization...
+[2026-02-11 00:29:18,457: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 00:29:18,550: WARNING/MainProcess] DEBUG: Source attribution added to pending_outputs. Total outputs: 5
+[2026-02-11 00:29:20,347: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[2f10f1ce-0521-479f-a307-3060b75692b4] succeeded in 42.866191830995376s: {'status': 'completed', 'outputs': [{'output_id': '1b78764afb7191b80af0e3c394f5a2', 'output_type': 'graph'}, {'output_id': 'a3efe86a3e40f2f9950974cb0f9d11', 'output_type': 'graph'}, {'output_id': '741a828ceab9f3a46b49ebee9d56a3', 'output_type': 'graph'}, {'output_id': '3c851dbc0a9d8fd890bc0b5f5d6330', 'output_type': 'graph'}, {'output_id': '0968866a36cc5832e98e2ad752bfab', 'output_type': 'graph'}], 'saved': True, 'r2': 0.9758298564702272}
+[2026-02-11 11:04:28,339: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[d5a9c698-05c2-49c6-b4e5-1fd7d6667740] received
+[2026-02-11 11:04:29,722: WARNING/MainProcess] Warning: standardize normalization creates negative values. Using minmax instead for MatrixTensorFactor compatibility.
+[2026-02-11 11:04:38,380: WARNING/MainProcess] DEBUG: Generating visualizations. output_types = ['empirical_kdes', 'factor_loadings', 'sample_scores', 'learned_source_kdes', 'source_attribution']
+[2026-02-11 11:04:42,208: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:04:45,159: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:04:48,303: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:04:48,479: WARNING/MainProcess] DEBUG: Generating source attribution visualization...
+[2026-02-11 11:04:49,810: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:04:49,905: WARNING/MainProcess] DEBUG: Source attribution added to pending_outputs. Total outputs: 5
+[2026-02-11 11:04:53,214: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[d5a9c698-05c2-49c6-b4e5-1fd7d6667740] succeeded in 24.87454496200371s: {'status': 'completed', 'outputs': [{'output_id': 'c1f9d9e29c04f82a26fd7b08b5356d', 'output_type': 'graph'}, {'output_id': 'fdbac4341519422b50147a9383dd14', 'output_type': 'graph'}, {'output_id': '96d89d941b051a5633495388686f11', 'output_type': 'graph'}, {'output_id': '2e42d2fafd1dc0018eb0b640208ed7', 'output_type': 'graph'}, {'output_id': '3219d7243260e816a44b1a0d772c10', 'output_type': 'graph'}], 'saved': True, 'r2': 0.976977726444602}
+[2026-02-11 11:22:25,046: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[5b6dcbe8-69b2-4dda-a932-4b5e05879b76] received
+[2026-02-11 11:22:26,561: WARNING/MainProcess] Warning: standardize normalization creates negative values. Using minmax instead for MatrixTensorFactor compatibility.
+[2026-02-11 11:22:30,360: WARNING/MainProcess] DEBUG: Generating visualizations. output_types = ['empirical_kdes', 'factor_loadings', 'sample_scores', 'learned_source_kdes', 'source_attribution']
+[2026-02-11 11:22:32,365: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:22:34,028: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:22:35,567: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:22:35,634: WARNING/MainProcess] DEBUG: Generating source attribution visualization...
+[2026-02-11 11:22:36,382: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:22:36,436: WARNING/MainProcess] DEBUG: Source attribution added to pending_outputs. Total outputs: 5
+[2026-02-11 11:22:39,736: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[5b6dcbe8-69b2-4dda-a932-4b5e05879b76] succeeded in 14.689828390000912s: {'status': 'completed', 'outputs': [{'output_id': '7f1d05af1050b639c40fd6f69a1578', 'output_type': 'graph'}, {'output_id': 'e303164405b493ccc6f60ced960bd1', 'output_type': 'graph'}, {'output_id': 'd393a41b0355a64501c5fe185814b4', 'output_type': 'graph'}, {'output_id': '7185ad8680b9468087332f57ac6270', 'output_type': 'graph'}, {'output_id': 'ad393d7796897e3b5d4b288dfc5fc3', 'output_type': 'graph'}], 'saved': True, 'r2': 0.9769789259880781}
+[2026-02-11 11:25:46,243: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[75294906-bc9b-43e8-bb58-00f95f418b4e] received
+[2026-02-11 11:25:47,523: WARNING/MainProcess] Warning: standardize normalization creates negative values. Using minmax instead for MatrixTensorFactor compatibility.
+[2026-02-11 11:25:53,621: WARNING/MainProcess] DEBUG: Generating visualizations. output_types = ['empirical_kdes', 'factor_loadings', 'sample_scores', 'learned_source_kdes', 'source_attribution']
+[2026-02-11 11:25:55,572: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:25:57,328: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:25:58,886: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:25:58,954: WARNING/MainProcess] DEBUG: Generating source attribution visualization...
+[2026-02-11 11:25:59,693: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:25:59,746: WARNING/MainProcess] DEBUG: Source attribution added to pending_outputs. Total outputs: 5
+[2026-02-11 11:26:03,279: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[75294906-bc9b-43e8-bb58-00f95f418b4e] succeeded in 17.03645652400155s: {'status': 'completed', 'outputs': [{'output_id': 'a2d528d440484b04eaf62448fd86a1', 'output_type': 'graph'}, {'output_id': '70eb9341c8dd063e95b8950c4f15f3', 'output_type': 'graph'}, {'output_id': '6571c83006787bd1ad8376f60cb0ef', 'output_type': 'graph'}, {'output_id': '1cb770d059565cd82dd61fa3409daf', 'output_type': 'graph'}, {'output_id': '99803b12a9c95ad38fb4b1fd590c30', 'output_type': 'graph'}], 'saved': True, 'r2': 0.9773041903972626}
+[2026-02-11 11:30:00,223: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[ca052d76-7614-4389-ada5-ac0007917619] received
+[2026-02-11 11:30:01,751: WARNING/MainProcess] Warning: standardize normalization creates negative values. Using minmax instead for MatrixTensorFactor compatibility.
+[2026-02-11 11:30:05,021: WARNING/MainProcess] DEBUG: Generating visualizations. output_types = ['empirical_kdes', 'factor_loadings', 'sample_scores', 'learned_source_kdes', 'source_attribution']
+[2026-02-11 11:30:05,021: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/utils/tensor_factorization.py:1076: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`).
+  fig, axes = plt.subplots(n_features, 1, figsize=(fig_width, fig_height))
+
+[2026-02-11 11:30:06,906: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:30:08,507: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:30:09,999: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:30:10,064: WARNING/MainProcess] DEBUG: Generating source attribution visualization...
+[2026-02-11 11:30:10,801: WARNING/MainProcess] The PostScript backend does not support transparency; partially transparent artists will be rendered opaque.
+[2026-02-11 11:30:10,855: WARNING/MainProcess] DEBUG: Source attribution added to pending_outputs. Total outputs: 5
+[2026-02-11 11:30:22,040: INFO/MainProcess] Task celery_tasks.tensor_factorization_task[ca052d76-7614-4389-ada5-ac0007917619] succeeded in 21.81697936099954s: {'status': 'completed', 'outputs': [{'output_id': 'd2f3c8ae9237a3050a71e3db1a7235', 'output_type': 'graph'}, {'output_id': '95b8e37fa1c0d9ec648b10070804d6', 'output_type': 'graph'}, {'output_id': 'a23c236b1fe75a0c5d4b66e8c9ca54', 'output_type': 'graph'}, {'output_id': '6784e283a1a11805730537dccc6677', 'output_type': 'graph'}, {'output_id': '0271a499f7f0d47f2a159abf6a18c5', 'output_type': 'graph'}], 'saved': True, 'r2': 0.9769788607954979}
+
+worker: Warm shutdown (MainProcess)
+./start_celery_worker.sh: line 11: 63829 Killed                  celery -A celery_tasks worker --loglevel=info --pool=solo

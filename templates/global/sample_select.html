@@ -1,4 +1,4 @@
-{% macro sample_select(id="sample_select", sender="#", event='click', multi_select=True) %}
+{% macro sample_select(id="sample_select", sender="#", event='click', multi_select=True, endpoint='sample-names') %}
     {% from "global/spinner.html" import spinner with context %}
     {{ spinner(id=id+"_spinner", message="Loading Samples...") }}
     <div id="{{ id }}" class="table_list"></div>
@@ -9,7 +9,7 @@
             document.getElementById("{{id}}_spinner").classList.add("visible");
         });
         function {{ id }}getSampleNames() {
-            fetch('/projects/{{ project_id }}/sample-names', {
+            fetch('/projects/{{ project_id }}/{{ endpoint }}', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })

@@ -10,6 +10,8 @@ class Output:
     def generate_html_data(self):
         if self.output_type == 'graph':
             return self.output_data
+        elif self.output_type == 'tabbed_graph':
+            return self.output_data
         elif self.output_type == 'matrix':
             return f'<div>{self.output_data}</div>'
         else:

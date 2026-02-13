@@ -1,0 +1,63 @@
+ 
+ -------------- celery@ryan-LOQ-15IRH8 v5.4.0 (opalescent)
+--- ***** ----- 
+-- ******* ---- Linux-6.8.0-94-generic-x86_64-with-glibc2.39 2026-02-13 11:30:31
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         dztoolbox:0x7f6e94179900
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 12 (solo)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . celery_tasks.find_optimal_rank_task
+  . celery_tasks.tensor_factorization_task
+  . celery_tasks.view_empirical_kdes_task
+
+[2026-02-13 11:30:31,225: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+whether broker connection retries are made during startup in Celery 6.0 and above.
+If you wish to retain the existing behavior for retrying connections on startup,
+you should set broker_connection_retry_on_startup to True.
+  warnings.warn(
+
+[2026-02-13 11:30:31,230: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-02-13 11:30:31,230: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+whether broker connection retries are made during startup in Celery 6.0 and above.
+If you wish to retain the existing behavior for retrying connections on startup,
+you should set broker_connection_retry_on_startup to True.
+  warnings.warn(
+
+[2026-02-13 11:30:31,232: INFO/MainProcess] mingle: searching for neighbors
+[2026-02-13 11:30:32,240: INFO/MainProcess] mingle: all alone
+[2026-02-13 11:30:32,252: INFO/MainProcess] celery@ryan-LOQ-15IRH8 ready.
+[2026-02-13 11:32:32,796: INFO/MainProcess] Task celery_tasks.view_empirical_kdes_task[bb1b677c-4898-415c-a3d7-e0a6f86271ff] received
+[2026-02-13 11:32:37,735: INFO/MainProcess] Task celery_tasks.view_empirical_kdes_task[bb1b677c-4898-415c-a3d7-e0a6f86271ff] succeeded in 4.938227582999389s: {'status': 'completed', 'outputs': [{'output_id': 'fd5d3e04b007527f5b1dfbec4c09d4', 'output_type': 'tabbed_graph', 'output_data': '
+        <div class="tabbed-output-container" data-tabbed-output-id="fd5d3e04b007527f5b1dfbec4c09d4">
+            
+        <ul class="nav nav-tabs" id="tabs_fd5d3e04b007527f5b1dfbec4c09d4" role="tablist">
+            
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab_fd5d3e04b007527f5b1dfbec4c09d4_0_nav" data-bs-toggle="tab" data-bs-target="#tab_fd5d3e04b007527f5b1dfbec4c09d4_0" type="button" role="tab" aria-controls="tab_fd5d3e04b007527f5b1dfbec4c09d4_0" aria-selected="true">
+                    Age
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link " id="tab_fd5d3e04b007527f5b1dfbec4c09d4_1_nav" data-bs-toggle="tab" data-bs-target="#tab_fd5d3e04b007527f5b1dfbec4c09d4_1" type="button" role="tab"...'}], 'saved': False}
+[2026-02-13 11:49:19,080: INFO/MainProcess] Task celery_tasks.view_empirical_kdes_task[f5a16f04-5554-4844-8dd2-e941556d5a34] received
+[2026-02-13 11:49:24,102: INFO/MainProcess] Task celery_tasks.view_empirical_kdes_task[f5a16f04-5554-4844-8dd2-e941556d5a34] succeeded in 5.021234382002149s: {'status': 'completed', 'outputs': [{'output_id': '420cc87d869c727ef19ac728137cf1', 'output_type': 'tabbed_graph', 'output_data': '
+        <div class="tabbed-output-container" data-tabbed-output-id="420cc87d869c727ef19ac728137cf1">
+            
+        <ul class="nav nav-tabs" id="tabs_420cc87d869c727ef19ac728137cf1" role="tablist">
+            
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab_420cc87d869c727ef19ac728137cf1_0_nav" data-bs-toggle="tab" data-bs-target="#tab_420cc87d869c727ef19ac728137cf1_0" type="button" role="tab" aria-controls="tab_420cc87d869c727ef19ac728137cf1_0" aria-selected="true">
+                    Age
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link " id="tab_420cc87d869c727ef19ac728137cf1_1_nav" data-bs-toggle="tab" data-bs-target="#tab_420cc87d869c727ef19ac728137cf1_1" type="button" role="tab"...'}], 'saved': False}

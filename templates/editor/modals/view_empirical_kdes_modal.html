@@ -1,0 +1,94 @@
+{% from "global/sample_select.html" import sample_select with context %}
+
+<div id="view_empirical_kdes_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">View Empirical KDEs</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="view_empirical_kdes_form">
+                        <label for="view_empirical_kdes_output_name" class="form-label">Output Title</label>
+                        <input type="text" id="view_empirical_kdes_output_name" name="view_empirical_kdes_output_name" class="form-control" value="Empirical KDEs" required>
+                        <br />
+                        {{ sample_select(id="view_empirical_kdes_sample_select", sender="view_empirical_kdes_link", event='click', multi_select=True, endpoint='tensor-sample-names') }}
+                        <br />
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-primary" type="button" onclick="viewEmpiricalKdesSendArgs()">Generate</button>
+                        </div>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const viewEmpiricalKdesSampleList = document.getElementById("view_empirical_kdes_sample_select");
+
+    function viewEmpiricalKdesSendArgs() {
+        var selectedSamples = [];
+        var checkboxes = viewEmpiricalKdesSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < checkboxes.length; i++) {
+            if (checkboxes[i].checked) {
+                selectedSamples.push(checkboxes[i].value);
+            }
+        }
+
+        if (selectedSamples.length < 2) {
+            alert("Please select at least 2 samples");
+            return;
+        }
+
+        var outputTitle = document.getElementById("view_empirical_kdes_output_name").value;
+
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+        var queryString = "/projects/{{ project_id }}/grainalyzer/view-data?sampleNames=" + encodedSamples.join("&sampleNames=");
+
+        if (outputTitle !== "") {
+            queryString += "&outputTitle=" + encodeURIComponent(outputTitle);
+        }
+
+        var modal = bootstrap.Modal.getInstance(document.getElementById('view_empirical_kdes_modal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        // Show spinner and disable buttons
+        show_output_spinner();
+        disableOutputButtons();
+
+        // Start the job
+        fetch(queryString)
+            .then(function(response) {
+                if (!response.ok) throw new Error('Failed to start view data');
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.job_id) {
+                    pollTensorJobStatus(data.job_id);
+                } else if (data.error) {
+                    hide_output_spinner();
+                    enableOutputButtons();
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(function(error) {
+                console.error('Error starting view data:', error);
+                hide_output_spinner();
+                enableOutputButtons();
+                alert('Error starting view data');
+            });
+    }
+</script>
+
+<script>
+    // Focus on input when modal opens
+    document.getElementById('view_empirical_kdes_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('view_empirical_kdes_output_name').focus();
+    });
+</script>

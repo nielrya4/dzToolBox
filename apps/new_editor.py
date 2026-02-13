@@ -14,7 +14,15 @@ from dz_lib import univariate, bivariate
 from dz_lib.bivariate.distributions import *
 from dz_lib.univariate import mds, unmix, distributions, mda, metrics, histograms
 from dz_lib.utils import data, matrices
-from utils import embedding, monte_carlo_optimized
+from utils import embedding, monte_carlo_optimized, tensor_factorization
+try:
+    from celery_tasks import tensor_factorization_task
+    from celery_app import celery_app
+    from celery.result import AsyncResult
+    CELERY_AVAILABLE = True
+except ImportError:
+    CELERY_AVAILABLE = False
+    celery_app = None
 from flask import send_file
 from pathvalidate import sanitize_filename
 import pandas as pd
@@ -47,10 +55,18 @@ def register(app):
                 samples_data.append([sample.name, active])
             if not project.outputs:
                 project.outputs = [Output("Default", "graph", "<h1>No Outputs Yet</h1>")]
+
+            # Handle grainalyzer data - parse as JSON if it exists, otherwise use empty array
+            grainalyzer_data_parsed = "[[null]]"
+            if project.grainalyzer_data and project.grainalyzer_data.strip():
+                grainalyzer_data_parsed = project.grainalyzer_data
+
             return render_template("editor/editor.html",
                                    spreadsheet_data=project.data,
                                    samples=samples_data,
                                    outputs_data=project.outputs,
+                                   grainalyzer_spreadsheet_data=grainalyzer_data_parsed,
+                                   grainalyzer_outputs_data=project.grainalyzer_outputs,
                                    project_id=project_id,
                                    project_name=project.name)
         else:
@@ -95,6 +111,7 @@ def register(app):
             project = __get_project(project_id)
             spreadsheet_data = spreadsheet.text_to_array(project.data)
             try:
+                # Original behavior for univariate (column-based) tools
                 samples = spreadsheet.read_samples(spreadsheet_data)
                 sample_names = [sample.name for sample in samples]
                 return jsonify({"sample_names": sample_names})
@@ -103,6 +120,30 @@ def register(app):
                 return jsonify({"success": False, "error": str(e)})
         else:
             return jsonify({"sample-names": "access_denied"})
+
+    # MOVED TO apps/editor/dz_grainalyzer.py
+    # @app.route('/projects/<int:project_id>/tensor-sample-names', methods=['GET'])
+    # @login_required
+    # def get_tensor_sample_names(project_id):
+    #     """Get sample names for multivariate tensor factorization (row-based data)"""
+    #     if session.get("open_project", 0) == project_id:
+    #         project = __get_project(project_id)
+    #         spreadsheet_data = spreadsheet.text_to_array(project.data)
+    #         try:
+    #             # Read as multivariate (row-based) data for tensor factorization
+    #             samples, feature_names = spreadsheet.read_multivariate_samples(
+    #                 spreadsheet_array=spreadsheet_data,
+    #                 max_age=4500
+    #             )
+    #             sample_names = [sample.name for sample in samples]
+    #             return jsonify({"sample_names": sample_names, "feature_names": feature_names})
+    #         except Exception as e:
+    #             print(f"Error reading multivariate sample names: {e}")
+    #             import traceback
+    #             traceback.print_exc()
+    #             return jsonify({"success": False, "error": str(e)})
+    #     else:
+    #         return jsonify({"error": "access_denied"}), 403
 
     @app.route('/projects/<int:project_id>/data/export', methods=['GET'])
     @login_required
@@ -296,7 +337,7 @@ def register(app):
                     project_id=project_id,
                     fig_type="matplotlib",
                     img_format='svg',
-                    download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                    download_formats=['svg', 'png']
                 )
                 return jsonify({"outputs": [{
                     "output_id": output_id,
@@ -372,7 +413,7 @@ def register(app):
                     project_id=project_id,
                     fig_type="matplotlib",
                     img_format='svg',
-                    download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                    download_formats=['svg', 'png']
                 )
                 return jsonify({"outputs": [{
                     "output_id": output_id,
@@ -434,7 +475,7 @@ def register(app):
                         project_id=project_id,
                         fig_type="matplotlib",
                         img_format='svg',
-                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                        download_formats=['svg', 'png']
                     )
                     pending_outputs.append({
                         "output_id": output_id,
@@ -460,7 +501,7 @@ def register(app):
                         project_id=project_id,
                         fig_type="matplotlib",
                         img_format='svg',
-                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                        download_formats=['svg', 'png']
                     )
                     pending_outputs.append({
                         "output_id": output_id,
@@ -557,7 +598,7 @@ def register(app):
                         project_id=project_id,
                         fig_type="matplotlib",
                         img_format='svg',
-                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                        download_formats=['svg', 'png']
                     )
                     pending_outputs.append({
                         "output_id": output_id,
@@ -586,7 +627,7 @@ def register(app):
                         project_id=project_id,
                         fig_type="matplotlib",
                         img_format='svg',
-                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                        download_formats=['svg', 'png']
                     )
                     pending_outputs.append({
                         "output_id": output_id,
@@ -696,7 +737,7 @@ def register(app):
                     project_id=project_id,
                     fig_type=fig_type,
                     img_format=img_format,
-                    download_formats=['svg', 'png', 'jpg', 'pdf']
+                    download_formats=['svg', 'png']
                 )
                 return jsonify({"outputs": [{
                     "output_id": output_id,
@@ -757,7 +798,7 @@ def register(app):
                         project_id=project_id,
                         fig_type="matplotlib",
                         img_format='svg',
-                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                        download_formats=['svg', 'png']
                     )
                     pending_outputs.append({
                         "output_id": output_id,
@@ -782,7 +823,7 @@ def register(app):
                         project_id=project_id,
                         fig_type="matplotlib",
                         img_format='svg',
-                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                        download_formats=['svg', 'png']
                     )
                     pending_outputs.append({
                         "output_id": output_id,
@@ -810,7 +851,7 @@ def register(app):
                         project_id=project_id,
                         fig_type="matplotlib",
                         img_format='svg',
-                        download_formats=['svg', 'png', 'jpg', 'pdf', 'eps']
+                        download_formats=['svg', 'png']
                     )
                     pending_outputs.append({
                         "output_id": output_id,
@@ -823,6 +864,146 @@ def register(app):
                 return jsonify({"outputs": "method not allowed"})
         else:
             return jsonify({"outputs": "access_denied"})
+
+    # MOVED TO apps/editor/dz_grainalyzer.py
+    # @app.route('/projects/<int:project_id>/outputs/new/tensor-factorization', methods=['GET'])
+    # @login_required
+    # def new_tensor_factorization(project_id):
+    #     if session.get("open_project", 0) == project_id:
+    #         project = __get_project(project_id)
+    #         if request.method == "GET":
+    #             try:
+    #                 if not CELERY_AVAILABLE:
+    #                     return jsonify({"error": "Celery is not configured. Please set up Redis and Celery worker."}), 500
+    #
+    #                 # Get parameters
+    #                 output_title = request.args.get("outputTitle", "Tensor Factorization")
+    #                 sample_names = request.args.getlist("sampleNames")
+    #                 rank = int(request.args.get("rank", 5))
+    #                 model_type = request.args.get("modelType", "Tucker1")
+    #                 output_types = request.args.getlist("outputType")
+    #                 normalization_method = request.args.get("normalizationMethod", "standardize")
+    #                 padding_mode = request.args.get("paddingMode", "zero")
+    #
+    #                 # Start Celery task (pass user_id for database access)
+    #                 from flask_login import current_user
+    #                 task = tensor_factorization_task.delay(
+    #                     project_id=project_id,
+    #                     user_id=current_user.id,
+    #                     output_title=output_title,
+    #                     sample_names=sample_names,
+    #                     rank=rank,
+    #                     model_type=model_type,
+    #                     output_types=output_types,
+    #                     normalization_method=normalization_method,
+    #                     padding_mode=padding_mode,
+    #                     font_name=project.settings.graph_settings.font_name,
+    #                     font_size=project.settings.graph_settings.font_size,
+    #                     fig_width=project.settings.graph_settings.figure_width,
+    #                     fig_height=project.settings.graph_settings.figure_height,
+    #                     color_map=project.settings.graph_settings.color_map
+    #                 )
+    #
+    #                 # Return task ID immediately
+    #                 return jsonify({"job_id": task.id, "status": "started"})
+    #
+    #             except Exception as e:
+    #                 import traceback
+    #                 print(f"Tensor factorization error: {e}")
+    #                 print(traceback.format_exc())
+    #                 return jsonify({"error": str(e)}), 500
+    #         else:
+    #             return jsonify({"outputs": "method not allowed"})
+    #     else:
+    #         return jsonify({"outputs": "access_denied"})
+
+    # MOVED TO apps/editor/dz_grainalyzer.py
+    # @app.route('/projects/<int:project_id>/outputs/job-status/<job_id>', methods=['GET'])
+    # @login_required
+    # def get_job_status(project_id, job_id):
+    #     if session.get("open_project", 0) == project_id:
+    #         if not CELERY_AVAILABLE:
+    #             return jsonify({"error": "Celery is not configured"}), 500
+    #
+    #         try:
+    #             # Use our configured celery_app, not the default one
+    #             task = AsyncResult(job_id, app=celery_app)
+    #
+    #             response = {
+    #                 "job_id": job_id,
+    #                 "status": "pending",
+    #                 "progress": 0
+    #             }
+    #
+    #             # Check if we can access task state
+    #             try:
+    #                 state = task.state
+    #             except Exception as state_error:
+    #                 print(f"Error accessing task state: {state_error}")
+    #                 return jsonify({"error": f"Cannot access task state: {state_error}"}), 500
+    #
+    #             if state == 'PENDING':
+    #                 response["status"] = "pending"
+    #             elif state == 'STARTED':
+    #                 response["status"] = "running"
+    #                 response["progress"] = 10
+    #             elif state == 'PROGRESS':
+    #                 response["status"] = "running"
+    #                 response["progress"] = 50
+    #                 if task.info:
+    #                     response["message"] = task.info.get('status', '')
+    #             elif state == 'SUCCESS':
+    #                 response["status"] = "completed"
+    #                 response["progress"] = 100
+    #                 # Extract only metadata from result, not the large output_data fields
+    #                 try:
+    #                     result = task.result
+    #                     if isinstance(result, dict):
+    #                         # Send only summary info, not full output HTML/SVG data
+    #                         result_summary = {
+    #                             "status": result.get("status"),
+    #                             "saved": result.get("saved"),
+    #                             "r2": result.get("r2"),
+    #                             "output_count": len(result.get("outputs", []))
+    #                         }
+    #                         response["result"] = result_summary
+    #                     else:
+    #                         response["result"] = {"status": "completed"}
+    #                 except Exception as result_error:
+    #                     print(f"Error processing task result: {result_error}")
+    #                     import traceback
+    #                     traceback.print_exc()
+    #                     response["result"] = {"status": "completed"}
+    #             elif task.state == 'FAILURE':
+    #                 response["status"] = "failed"
+    #                 response["error"] = str(task.info)
+    #             else:
+    #                 response["status"] = task.state.lower()
+    #
+    #             return jsonify(response)
+    #
+    #         except Exception as e:
+    #             import traceback
+    #             print(f"=" * 80)
+    #             print(f"ERROR in job-status endpoint for job {job_id}:")
+    #             print(f"Error: {e}")
+    #             print(f"Error type: {type(e).__name__}")
+    #             print("Traceback:")
+    #             traceback.print_exc()
+    #             print(f"=" * 80)
+    #             return jsonify({"error": str(e), "error_type": type(e).__name__}), 500
+    #     else:
+    #         return jsonify({"error": "access_denied"}), 403
+
+    @app.route('/projects/<int:project_id>/outputs/active-jobs', methods=['GET'])
+    @login_required
+    def get_active_jobs(project_id):
+        if session.get("open_project", 0) == project_id:
+            # With Celery, we can't easily list all active jobs without additional tracking
+            # For now, return empty (frontend will handle completed jobs via status checks)
+            return jsonify({"active_jobs": []})
+        else:
+            return jsonify({"error": "access_denied"}), 403
 
     @app.route('/projects/<int:project_id>/outputs/save', methods=['POST'])
     @login_required

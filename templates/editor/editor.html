@@ -22,15 +22,26 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     {% include "editor/misc/font_style.html" %}
     {% include "global/head.html" %}
+    <style>
+        .settings-btn-hover:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 0.25rem;
+        }
+    </style>
 </head>
 <body style="overflow: hidden;" class="d-flex flex-column vh-100">
     <nav class="navbar navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand me-3 d-flex align-items-center" href="/projects">
-                <img width="40" height="40" alt="Home" src="{{ url_for('static', filename='global/img/DZ.svg') }}" class="me-2">
-                dzToolBox
+            <a class="navbar-brand me-3 d-flex align-items-center btn text-white settings-btn-hover" href="/projects">
+                <i class="fa fa-arrow-circle-left" style="font-size: 1.5rem; margin-right: 0.5rem;"></i>
+                Projects
             </a>
-            <h5 class="mt-2">Project: {{ project_name }}</h5>
+            <div class="d-flex align-items-center">
+                <h5 class="mt-2 me-3">{{ project_name }}</h5>
+                <button class="btn text-white settings-btn-hover" id="project_settings" data-bs-toggle="modal" data-bs-target="#project_settings_modal" title="Project Settings">
+                    <i class="fa fa-cog fa-lg"></i>
+                </button>
+            </div>
             <ul class="nav nav-pills" id="my_tab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link editor-tab active" id="spreadsheet_tab" onclick="showTab('spreadsheet')" type="button">
@@ -45,6 +56,11 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link editor-tab" id="maps_tab" onclick="showTab('maps')" type="button">
                         Maps
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link editor-tab" id="dz_grainalyzer_tab" onclick="showTab('dz_grainalyzer')" type="button">
+                        DZ Grainalyzer
                     </button>
                 </li>
             </ul>
@@ -72,6 +88,9 @@
         <div class="h-100" id="maps_page" style="display: none;">
             {% include "editor/pages/maps.html" %}
         </div>
+        <div class="h-100" id="dz_grainalyzer_page" style="display: none;">
+            {% include "editor/pages/dz_grainalyzer.html" %}
+        </div>
     </div>
     {% from "global/sample_select.html" import sample_select with context %}
     {% include "editor/modals/matrix_dialog.html" %}
@@ -82,6 +101,9 @@
     {% include "editor/modals/distros_dialog.html" %}
     {% include "editor/modals/histogram_dialog.html" %}
     {% include "editor/modals/unmix_dialog.html" %}
+    {% include "editor/modals/view_empirical_kdes_modal.html" %}
+    {% include "editor/modals/find_optimal_rank_modal.html" %}
+    {% include "editor/modals/run_factorization_modal.html" %}
     {% include "editor/modals/settings_dialog.html" %}
     {% include "editor/modals/databases_dialog.html" %}
     {% include "editor/modals/export_spreadsheet_dialog.html" %}
@@ -104,16 +126,19 @@
         const spreadsheetPage = document.getElementById('spreadsheet_page');
         const outputsPage = document.getElementById('outputs_page');
         const mapsPage = document.getElementById('maps_page');
-        
+        const dzGrainalyzerPage = document.getElementById('dz_grainalyzer_page');
+
         if (spreadsheetPage) spreadsheetPage.style.display = 'none';
         if (outputsPage) outputsPage.style.display = 'none';
         if (mapsPage) mapsPage.style.display = 'none';
-        
+        if (dzGrainalyzerPage) dzGrainalyzerPage.style.display = 'none';
+
         // Remove active class from all tab buttons
         document.getElementById('spreadsheet_tab').classList.remove('active');
         document.getElementById('outputs_tab').classList.remove('active');
         document.getElementById('maps_tab').classList.remove('active');
-        
+        document.getElementById('dz_grainalyzer_tab').classList.remove('active');
+
         // Show selected tab and activate button
         if (tabName === 'spreadsheet') {
             if (spreadsheetPage) spreadsheetPage.style.display = 'block';
@@ -131,12 +156,216 @@
                     initializeMap();
                 }
             }, 100);
+        } else if (tabName === 'dz_grainalyzer') {
+            if (dzGrainalyzerPage) dzGrainalyzerPage.style.display = 'block';
+            document.getElementById('dz_grainalyzer_tab').classList.add('active');
         }
     }
 	document.addEventListener('DOMContentLoaded', function() {
         console.log('Editor page loaded - new tab system');
         showTab('spreadsheet'); // Default to spreadsheet
+
+        // Check for any active background jobs
+        checkForActiveJobs();
     });
+
+    // Global functions for managing background jobs
+    var tensorJobPollingInterval = null;
+
+    function disableOutputButtons() {
+        var buttons = document.querySelectorAll('.toolbar-btn');
+        buttons.forEach(function(btn) {
+            btn.classList.add('disabled');
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.5';
+        });
+    }
+
+    function enableOutputButtons() {
+        var buttons = document.querySelectorAll('.toolbar-btn');
+        buttons.forEach(function(btn) {
+            btn.classList.remove('disabled');
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+        });
+    }
+
+    // Flag to indicate if we're saving to grainalyzer_outputs or regular outputs
+    let isGrainalyzerOutput = false;
+
+    function pollTensorJobStatus(jobId) {
+        tensorJobPollingInterval = setInterval(function() {
+            fetch('/projects/{{ project_id }}/outputs/job-status/' + jobId)
+                .then(function(response) {
+                    if (!response.ok) throw new Error('Failed to get job status');
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.status === 'completed') {
+                        clearInterval(tensorJobPollingInterval);
+                        hide_output_spinner();
+                        enableOutputButtons();
+
+                        // Check if outputs are available for preview (saved: false)
+                        if (data.saved === false && data.outputs && data.outputs.length > 0) {
+                            // Show preview modal with outputs
+                            isGrainalyzerOutput = true; // Set flag for grainalyzer outputs
+                            pendingOutputs = data.outputs;
+                            var container = document.getElementById('preview_zoom_container');
+                            container.innerHTML = pendingOutputs.map(function(o) {
+                                return '<div class="mb-3">' + o.output_data + '</div>';
+                            }).join('');
+                            container.querySelectorAll('form').forEach(function(form) {
+                                form.remove();
+                            });
+
+                            // Tell HTMX to process the preview content
+                            if (typeof htmx !== 'undefined') {
+                                htmx.process(container);
+                            }
+
+                            resetZoom();
+
+                            // Initialize any tabbed outputs
+                            setTimeout(function() {
+                                if (typeof initializeTabbedOutputs === 'function') {
+                                    initializeTabbedOutputs();
+                                }
+                            }, 100);
+
+                            bootstrap.Modal.getOrCreateInstance(document.getElementById('preview_output_modal')).show();
+                        } else {
+                            // If outputs were auto-saved (old behavior), just refresh list
+                            refreshGrainalyzerOutputsList();
+                        }
+                    } else if (data.status === 'failed') {
+                        clearInterval(tensorJobPollingInterval);
+                        hide_output_spinner();
+                        enableOutputButtons();
+                        alert('Tensor factorization failed: ' + (data.error || 'Unknown error'));
+                    }
+                    // If status is 'pending' or 'running', keep polling
+                })
+                .catch(function(error) {
+                    console.error('Error polling job status:', error);
+                    clearInterval(tensorJobPollingInterval);
+                    hide_output_spinner();
+                    enableOutputButtons();
+                });
+        }, 2000); // Poll every 2 seconds
+    }
+
+    function refreshOutputsList() {
+        // Reload the outputs container
+        fetch('/projects/{{ project_id }}/outputs')
+            .then(function(response) {
+                if (!response.ok) throw new Error('Failed to fetch outputs');
+                return response.json();
+            })
+            .then(function(outputs) {
+                var container = document.getElementById('outputs_container');
+                if (container) {
+                    // Try to find .p-3 child, otherwise use container directly
+                    var targetElement = container.querySelector('.p-3');
+                    if (!targetElement) {
+                        targetElement = container;
+                    }
+
+                    // Build outputs HTML
+                    var outputsHtml = outputs.map(function(output) {
+                        return '<div class="mb-3" style="max-width: 100%;">' + output.output_data + '</div>';
+                    }).join('');
+
+                    targetElement.innerHTML = outputsHtml;
+
+                    // Tell HTMX to process the dynamically added content
+                    if (typeof htmx !== 'undefined') {
+                        htmx.process(targetElement);
+                    }
+                }
+            })
+            .catch(function(error) {
+                console.error('Error refreshing outputs:', error);
+            });
+    }
+
+    function refreshGrainalyzerOutputsList() {
+        console.log('Refreshing grainalyzer outputs...');
+        // Reload the grainalyzer outputs container
+        fetch('/projects/{{ project_id }}/grainalyzer/outputs')
+            .then(function(response) {
+                console.log('Grainalyzer outputs response:', response);
+                if (!response.ok) throw new Error('Failed to fetch grainalyzer outputs');
+                return response.json();
+            })
+            .then(function(outputs) {
+                console.log('Grainalyzer outputs received:', outputs);
+                console.log('Number of outputs:', outputs ? outputs.length : 0);
+
+                // Update outputs container
+                var outputsContainer = document.getElementById('dz_grainalyzer_outputs');
+
+                console.log('Outputs container:', outputsContainer);
+
+                // Build outputs HTML
+                var outputsHtml = '';
+                if (outputs && outputs.length > 0) {
+                    outputsHtml = outputs.map(function(output) {
+                        return '<div class="mb-3" style="max-width: 100%;">' + output.output_data + '</div>';
+                    }).join('');
+                } else {
+                    outputsHtml = '<p class="text-muted">Run tensor factorization to see interactive results here</p>';
+                }
+
+                console.log('Setting outputs HTML, length:', outputsHtml.length);
+
+                if (outputsContainer) {
+                    outputsContainer.innerHTML = outputsHtml;
+                    console.log('Updated outputs container');
+
+                    // Tell HTMX to process the dynamically added content
+                    if (typeof htmx !== 'undefined') {
+                        htmx.process(outputsContainer);
+                    }
+
+                    // Initialize tabbed outputs after DOM update
+                    setTimeout(function() {
+                        if (typeof initializeTabbedOutputs === 'function') {
+                            initializeTabbedOutputs();
+                            console.log('Initialized tabbed outputs');
+                        }
+                    }, 100);
+                }
+            })
+            .catch(function(error) {
+                console.error('Error refreshing grainalyzer outputs:', error);
+            });
+    }
+
+    function checkForActiveJobs() {
+        fetch('/projects/{{ project_id }}/outputs/active-jobs')
+            .then(function(response) {
+                if (!response.ok) return;
+                return response.json();
+            })
+            .then(function(data) {
+                if (data && data.active_jobs && data.active_jobs.length > 0) {
+                    // There are active jobs, disable buttons and start polling
+                    console.log('Found active background jobs:', data.active_jobs);
+                    show_output_spinner();
+                    disableOutputButtons();
+
+                    // Start polling for the first active job (assume one job at a time)
+                    pollTensorJobStatus(data.active_jobs[0].job_id);
+                } else {
+                    // No active jobs - refresh outputs in case any completed while away
+                    refreshOutputsList();
+                }
+            })
+            .catch(function(error) {
+                console.error('Error checking for active jobs:', error);
+            });
+    }
     </script>
 </body>
 </html>

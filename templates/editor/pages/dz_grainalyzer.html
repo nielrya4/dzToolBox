@@ -1,0 +1,251 @@
+<style>
+.grainalyzer-tab-bar {
+    background-color: #3f5ea3;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.grainalyzer-tab-bar .nav-link {
+    color: white;
+    background-color: #3f5ea3;
+    border: 1px solid transparent;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+}
+
+.grainalyzer-tab-bar .nav-link:hover {
+    color: white;
+    background-color: #6c757d;
+    border-color: transparent;
+}
+
+.grainalyzer-tab-bar .nav-link.active {
+    color: white;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    border-bottom-color: #6c757d;
+}
+</style>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs grainalyzer-tab-bar">
+    <li class="nav-item">
+        <a class="nav-link active" id="grainalyzer-data-tab" href="#" onclick="switchGrainalyzerTab('data'); return false;">Data</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="grainalyzer-outputs-tab" href="#" onclick="switchGrainalyzerTab('outputs'); return false;">Outputs</a>
+    </li>
+</ul>
+
+<!-- Toolbars (switch based on active tab) -->
+<div id="dz_grainalyzer_spreadsheet_toolbar" style="display: block;">
+    {% include "editor/toolbars/dz_grainalyzer_spreadsheet_toolbar.html" %}
+</div>
+<div id="dz_grainalyzer_outputs_toolbar" style="display: none;">
+    {% include "editor/toolbars/dz_grainalyzer_outputs_toolbar.html" %}
+</div>
+
+<!-- Content Container -->
+<div id="dz_grainalyzer_container" style="height: calc(100vh - 180px);">
+    <!-- Data Tab Content -->
+    <div id="grainalyzer-data-content" class="h-100" style="display: flex; overflow: scroll; scrollbar-width: none;">
+        <div id="dz_grainalyzer_table" class="w-100">
+            <!-- Handsontable will be initialized here -->
+        </div>
+    </div>
+
+    <!-- Outputs Tab Content -->
+    <div id="grainalyzer-outputs-content" class="h-100" style="display: none; overflow-y: auto; overflow-x: hidden;">
+        <div id="dz_grainalyzer_outputs" class="p-3">
+            {% if grainalyzer_outputs_data and grainalyzer_outputs_data|length > 0 %}
+                {% for output in grainalyzer_outputs_data %}
+                    <div class="mb-3" style="max-width: 100%;">
+                        {{ output.output_data | safe }}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="">Run tensor factorization to see interactive results here</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+let dzGrainalyzerHot = null;
+
+function switchGrainalyzerTab(tabName) {
+    // Update tab navigation
+    document.getElementById('grainalyzer-data-tab').classList.remove('active');
+    document.getElementById('grainalyzer-outputs-tab').classList.remove('active');
+    document.getElementById('grainalyzer-' + tabName + '-tab').classList.add('active');
+
+    // Update tab content
+    const dataContent = document.getElementById('grainalyzer-data-content');
+    const outputsContent = document.getElementById('grainalyzer-outputs-content');
+
+    // Update toolbars
+    const spreadsheetToolbar = document.getElementById('dz_grainalyzer_spreadsheet_toolbar');
+    const outputsToolbar = document.getElementById('dz_grainalyzer_outputs_toolbar');
+
+    if (tabName === 'data') {
+        dataContent.style.display = 'flex';
+        outputsContent.style.display = 'none';
+        spreadsheetToolbar.style.display = 'block';
+        outputsToolbar.style.display = 'none';
+    } else {
+        dataContent.style.display = 'none';
+        outputsContent.style.display = 'flex';
+        spreadsheetToolbar.style.display = 'none';
+        outputsToolbar.style.display = 'block';
+    }
+}
+
+function clearGrainalyzerOutputs() {
+    if (!confirm('Are you sure you want to clear all DZ Grainalyzer outputs?')) {
+        return;
+    }
+
+    fetch('/projects/{{ project_id }}/grainalyzer/outputs/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Clear outputs container
+            const outputsContainer = document.getElementById('dz_grainalyzer_outputs');
+            const emptyMessage = '<p class="">Run tensor factorization to see interactive results here</p>';
+
+            if (outputsContainer) {
+                outputsContainer.innerHTML = emptyMessage;
+            }
+
+            console.log('Grainalyzer outputs cleared successfully');
+        } else {
+            console.error('Error clearing grainalyzer outputs');
+            alert('Failed to clear grainalyzer outputs');
+        }
+    })
+    .catch(error => {
+        console.error('Error clearing grainalyzer outputs:', error);
+        alert('Failed to clear grainalyzer outputs');
+    });
+}
+
+// Initialize tabbed outputs (same function as preview modal)
+function initializeTabbedOutputs() {
+    var tabbedContainers = document.querySelectorAll('.tabbed-output-container');
+
+    tabbedContainers.forEach(function(container) {
+        var outputId = container.getAttribute('data-tabbed-output-id');
+        if (!outputId) return;
+
+        var tabButtons = container.querySelectorAll('button[data-bs-toggle="tab"]');
+        var tabContent = container.querySelector('.tab-content');
+
+        if (!tabContent) return;
+
+        var tabPanes = tabContent.querySelectorAll('.tab-pane');
+
+        tabButtons.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                // Hide all panes (remove Bootstrap's show/active classes)
+                tabPanes.forEach(function(pane) {
+                    pane.classList.remove('active', 'show');
+                });
+
+                // Remove active from all buttons
+                tabButtons.forEach(function(b) {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-selected', 'false');
+                });
+
+                // Show selected pane (add Bootstrap's show/active classes)
+                var targetId = btn.getAttribute('data-bs-target');
+                var targetPane = document.querySelector(targetId);
+                if (targetPane) {
+                    targetPane.classList.add('active', 'show');
+                }
+
+                // Mark button as active
+                btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'true');
+            });
+        });
+
+        // Ensure first tab is active after initialization
+        if (tabButtons.length > 0 && tabPanes.length > 0) {
+            // Activate first button
+            tabButtons[0].classList.add('active');
+            tabButtons[0].setAttribute('aria-selected', 'true');
+
+            // Activate first pane
+            tabPanes[0].classList.add('active', 'show');
+        }
+    });
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize any tabbed outputs that are already on the page
+    initializeTabbedOutputs();
+
+    // Initialize Handsontable for multivariate data
+    const container = document.getElementById('dz_grainalyzer_table');
+    if (container) {
+        dzGrainalyzerHot = new Handsontable(container, {
+            data: {{ grainalyzer_spreadsheet_data | safe }},
+            licenseKey: 'non-commercial-and-evaluation',
+            rowHeaders: true,
+            colHeaders: true,
+            contextMenu: true,
+            height: '100%',
+            stretchH: 'all'
+        });
+
+        // Save data on edit
+        dzGrainalyzerHot.addHook('afterChange', function(changes, src) {
+            if (src === 'edit') {
+                saveTableData();
+            }
+        });
+        dzGrainalyzerHot.addHook('afterRedo', saveTableData);
+        dzGrainalyzerHot.addHook('afterUndo', saveTableData);
+        dzGrainalyzerHot.addHook('afterPaste', saveTableData);
+    }
+
+    function saveTableData() {
+        var jsonData = { data: dzGrainalyzerHot.getData() };
+        saveData(jsonData);
+    }
+
+    function saveData(jsonData) {
+        const jsonString = JSON.stringify(jsonData);
+        const compressedDataArray = pako.deflate(jsonString);
+        const compressedData = uint8ArrayToBase64(compressedDataArray);
+        fetch('/projects/{{ project_id }}/grainalyzer/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 'compressedData': compressedData })
+        }).then(response => {
+            if (response.ok) {
+                console.log('Grainalyzer data saved successfully!');
+            } else {
+                console.error('Error saving grainalyzer data');
+            }
+        }).catch(error => {
+            console.error('Error saving grainalyzer data:', error);
+        });
+    }
+
+    function uint8ArrayToBase64(uint8Array) {
+        let binary = '';
+        const len = uint8Array.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+        }
+        return window.btoa(binary);
+    }
+});
+</script>

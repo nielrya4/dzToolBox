@@ -1,0 +1,194 @@
+{% from "global/sample_select.html" import sample_select with context %}
+
+<div id="run_factorization_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Run Tensor Factorization</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="run_factorization_form">
+                        <label for="run_factorization_output_name" class="form-label">Output Title</label>
+                        <input type="text" id="run_factorization_output_name" name="run_factorization_output_name" class="form-control" value="Tensor Factorization" required>
+                        <br />
+                        {{ sample_select(id="run_factorization_sample_select", sender="run_factorization_link", event='click', multi_select=True, endpoint='tensor-sample-names') }}
+                        <br />
+                        <div class="table_list">
+                            <table style="width: 100%;">
+                                <tr>
+                                    <td>
+                                        <label for="run_factorization_rank" class="form-label">Rank:</label>
+                                        <input type="number" id="run_factorization_rank" class="form-control" min="2" value="5">
+                                    </td>
+                                    <td>
+                                        <label for="run_factorization_model" class="form-label">Decomposition Model:</label>
+                                        <select name="run_factorization_model" id="run_factorization_model" class="form-select">
+                                            <option value="Tucker1" selected>Tucker1 (constrained)</option>
+                                            <option value="CP">CP (CANDECOMP/PARAFAC)</option>
+                                            <option value="Tucker">Tucker (full)</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="run_factorization_normalization" class="form-label">Normalization Method:</label>
+                                        <select name="run_factorization_normalization" id="run_factorization_normalization" class="form-select">
+                                            <option value="standardize" selected>Standardize (z-score)</option>
+                                            <option value="minmax">Min-Max Scaling</option>
+                                            <option value="robust">Robust (median/IQR)</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <label for="run_factorization_padding" class="form-label">Padding Mode:</label>
+                                        <select name="run_factorization_padding" id="run_factorization_padding" class="form-select">
+                                            <option value="zero" selected>Zero Padding</option>
+                                            <option value="mean">Mean Padding</option>
+                                            <option value="replicate">Replicate Last Grain</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <label for="run_factorization_outputs_select" class="form-label">Output Types:</label>
+                                        <select id="run_factorization_outputs_select" multiple></select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="text-align: right;">
+                                        <button class="btn btn-primary" type="button" onclick="runFactorizationSendArgs()">Run Factorization</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const runFactorizationSampleList = document.getElementById("run_factorization_sample_select");
+    let runFactorizationOutputsMultiSelect = null;
+
+    // Initialize MultiSelect when modal opens
+    document.getElementById('run_factorization_modal').addEventListener('shown.bs.modal', function() {
+        // Initialize MultiSelect if not already done
+        if (!runFactorizationOutputsMultiSelect) {
+            runFactorizationOutputsMultiSelect = new MultiSelect(document.getElementById('run_factorization_outputs_select'), {
+                data: [
+                    {
+                        value: 'factor_loadings',
+                        text: 'Factor Loadings Heatmap',
+                        selected: true
+                    },
+                    {
+                        value: 'sample_scores',
+                        text: 'Sample Scores Plot (Learned Coefficients)',
+                        selected: true
+                    },
+                    {
+                        value: 'learned_source_kdes',
+                        text: 'Learned Source KDEs',
+                        selected: true
+                    },
+                    {
+                        value: 'source_attribution',
+                        text: 'Source Attribution',
+                        selected: true
+                    },
+                    {
+                        value: 'reconstruction_plot',
+                        text: 'Reconstruction Comparison',
+                        selected: false
+                    }
+                ],
+                search: false,
+                selectAll: false
+            });
+        }
+
+        // Focus on input
+        document.getElementById('run_factorization_output_name').focus();
+    });
+
+    function runFactorizationSendArgs() {
+        var selectedSamples = [];
+        var checkboxes = runFactorizationSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < checkboxes.length; i++) {
+            if (checkboxes[i].checked) {
+                selectedSamples.push(checkboxes[i].value);
+            }
+        }
+
+        if (selectedSamples.length < 2) {
+            alert("Please select at least 2 samples");
+            return;
+        }
+
+        var rank = parseInt(document.getElementById("run_factorization_rank").value);
+        var model = document.getElementById("run_factorization_model").value;
+        var normalization = document.getElementById("run_factorization_normalization").value;
+        var padding = document.getElementById("run_factorization_padding").value;
+        var outputTitle = document.getElementById("run_factorization_output_name").value;
+
+        // Get selected output types from MultiSelect
+        var outputTypes = document.getElementById('run_factorization_outputs_select').selectedValues;
+
+        if (!outputTypes || outputTypes.length === 0) {
+            alert("Please select at least one output type");
+            return;
+        }
+
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+        var queryString = "/projects/{{ project_id }}/grainalyzer/run-factorization?sampleNames=" + encodedSamples.join("&sampleNames=");
+        queryString += "&rank=" + rank;
+        queryString += "&modelType=" + encodeURIComponent(model);
+        queryString += "&normalizationMethod=" + encodeURIComponent(normalization);
+        queryString += "&paddingMode=" + encodeURIComponent(padding);
+
+        // Add output types
+        outputTypes.forEach(function(outputType) {
+            queryString += "&outputType=" + encodeURIComponent(outputType);
+        });
+
+        if (outputTitle !== "") {
+            queryString += "&outputTitle=" + encodeURIComponent(outputTitle);
+        }
+
+        var modal = bootstrap.Modal.getInstance(document.getElementById('run_factorization_modal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        // Show spinner and disable buttons
+        show_output_spinner();
+        disableOutputButtons();
+
+        // Start the job
+        fetch(queryString)
+            .then(function(response) {
+                if (!response.ok) throw new Error('Failed to start factorization');
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.job_id) {
+                    pollTensorJobStatus(data.job_id);
+                } else if (data.error) {
+                    hide_output_spinner();
+                    enableOutputButtons();
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(function(error) {
+                console.error('Error starting factorization:', error);
+                hide_output_spinner();
+                enableOutputButtons();
+                alert('Error starting factorization');
+            });
+    }
+</script>

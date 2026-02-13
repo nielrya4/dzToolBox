@@ -107,19 +107,33 @@ class Settings:
         return json_data
 
 class Project:
-    def __init__(self, name: str, data: str, outputs: [Output], settings: Settings=Settings()):
+    def __init__(self, name: str, data: str, outputs: [Output], settings: Settings=Settings(),
+                 grainalyzer_data: str = "", grainalyzer_outputs: [Output] = None):
         self.name = name
         self.data = data
         self.outputs = outputs
         self.settings = settings
+        self.grainalyzer_data = grainalyzer_data
+        self.grainalyzer_outputs = grainalyzer_outputs if grainalyzer_outputs is not None else []
 
     def delete_output(self, output_id):
         for project_output in self.outputs:
             if project_output.output_id == output_id:
                 self.outputs.remove(project_output)
 
+    def delete_grainalyzer_output(self, output_id):
+        for project_output in self.grainalyzer_outputs:
+            if project_output.output_id == output_id:
+                self.grainalyzer_outputs.remove(project_output)
+
     def get_output(self, output_id):
         for project_output in self.outputs:
+            if project_output.output_id == output_id:
+                return project_output
+        return None
+
+    def get_grainalyzer_output(self, output_id):
+        for project_output in self.grainalyzer_outputs:
             if project_output.output_id == output_id:
                 return project_output
         return None
@@ -129,10 +143,18 @@ class Project:
             "name": self.name,
             "data": self.data,
             "outputs": [],
-            "settings": self.settings.to_json()
+            "settings": self.settings.to_json(),
+            "grainalyzer_data": self.grainalyzer_data,
+            "grainalyzer_outputs": []
         }
         for output in self.outputs:
             json_data["outputs"].append({
+                "output_id": output.output_id,
+                "output_type": output.output_type,
+                "output_data": output.generate_html_data()
+            })
+        for output in self.grainalyzer_outputs:
+            json_data["grainalyzer_outputs"].append({
                 "output_id": output.output_id,
                 "output_type": output.output_type,
                 "output_data": output.generate_html_data()
@@ -151,7 +173,17 @@ def project_from_json(json_data):
         output_type = output.get("output_type", "")
         output_data = output.get("output_data", "")
         outputs.append(Output(output_id, output_type, output_data))
-    project = Project(name, data, outputs, settings)
+
+    # Load grainalyzer data if it exists (backward compatibility)
+    grainalyzer_data = json_data.get("grainalyzer_data", "")
+    grainalyzer_outputs = []
+    for output in json_data.get("grainalyzer_outputs", []):
+        output_id = output.get("output_id", "")
+        output_type = output.get("output_type", "")
+        output_data = output.get("output_data", "")
+        grainalyzer_outputs.append(Output(output_id, output_type, output_data))
+
+    project = Project(name, data, outputs, settings, grainalyzer_data, grainalyzer_outputs)
     if "settings" in json_data:
         project.settings.from_json(json_data["settings"])
     return project

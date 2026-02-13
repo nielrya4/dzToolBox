@@ -10,7 +10,7 @@
                     <div id="preview_zoom_container"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Discard</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" id="discard_preview_btn">Discard</button>
                     <button type="button" class="btn btn-primary" id="save_preview_btn">Save</button>
                 </div>
             </div>
@@ -31,6 +31,88 @@
     const ZOOM_LEVELS = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 2, 3, 4];
     let currentZoomIndex = ZOOM_LEVELS.indexOf(1);
 
+    // Initialize tabbed outputs
+    function initializeTabbedOutputs() {
+        console.log('Initializing tabbed outputs...');
+        var tabbedContainers = document.querySelectorAll('.tabbed-output-container');
+        console.log('Found', tabbedContainers.length, 'tabbed containers');
+
+        tabbedContainers.forEach(function(container) {
+            var outputId = container.getAttribute('data-tabbed-output-id');
+            console.log('Processing container with ID:', outputId);
+            if (!outputId) return;
+
+            var tabButtons = container.querySelectorAll('button[data-bs-toggle="tab"]');
+            var tabContent = container.querySelector('.tab-content');
+
+            console.log('Found', tabButtons.length, 'tab buttons');
+            console.log('Tab content container:', tabContent);
+
+            if (!tabContent) {
+                console.error('No tab-content container found!');
+                return;
+            }
+
+            var tabPanes = tabContent.querySelectorAll('.tab-pane');
+            console.log('Found', tabPanes.length, 'tab panes');
+
+            // Log first tab pane content
+            if (tabPanes.length > 0) {
+                console.log('First tab pane ID:', tabPanes[0].id);
+                console.log('First tab pane HTML (first 500 chars):', tabPanes[0].innerHTML.substring(0, 500));
+                console.log('First tab pane display style:', tabPanes[0].style.display);
+                var img = tabPanes[0].querySelector('img');
+                console.log('First tab pane img element:', img);
+                if (img) {
+                    console.log('Img src (first 100 chars):', img.src.substring(0, 100));
+                }
+            }
+
+            tabButtons.forEach(function(btn, btnIndex) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Tab clicked:', btn.textContent, 'index:', btnIndex);
+
+                    // Hide all panes (remove Bootstrap's show/active classes)
+                    tabPanes.forEach(function(pane) {
+                        pane.classList.remove('active', 'show');
+                    });
+
+                    // Remove active from all buttons
+                    tabButtons.forEach(function(b) {
+                        b.classList.remove('active');
+                        b.setAttribute('aria-selected', 'false');
+                    });
+
+                    // Show selected pane (add Bootstrap's show/active classes)
+                    var targetId = btn.getAttribute('data-bs-target');
+                    var targetPane = document.querySelector(targetId);
+                    console.log('Target pane:', targetId, 'found:', !!targetPane);
+                    if (targetPane) {
+                        targetPane.classList.add('active', 'show');
+                        console.log('Showing pane, classes:', targetPane.className);
+                    }
+
+                    // Mark button as active
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-selected', 'true');
+                });
+            });
+
+            // Ensure first tab is active after initialization
+            if (tabButtons.length > 0 && tabPanes.length > 0) {
+                console.log('Activating first tab...');
+                // Activate first button
+                tabButtons[0].classList.add('active');
+                tabButtons[0].setAttribute('aria-selected', 'true');
+
+                // Activate first pane
+                tabPanes[0].classList.add('active', 'show');
+                console.log('First tab activated. Classes:', tabPanes[0].className);
+            }
+        });
+    }
+
     function generateOutput(url) {
         show_output_spinner();
         fetch(url)
@@ -47,7 +129,19 @@
                 container.querySelectorAll('form').forEach(function(form) {
                     form.remove();
                 });
+
+                // Tell HTMX to process the preview content (needed for any remaining HTMX elements)
+                if (typeof htmx !== 'undefined') {
+                    htmx.process(container);
+                }
+
                 resetZoom();
+
+                // Initialize any tabbed outputs
+                setTimeout(function() {
+                    initializeTabbedOutputs();
+                }, 100);
+
                 bootstrap.Modal.getOrCreateInstance(document.getElementById('preview_output_modal')).show();
             })
             .catch(function(error) {
@@ -94,7 +188,17 @@
 
     document.getElementById('save_preview_btn').addEventListener('click', function() {
         show_save_spinner();
-        fetch('/projects/{{ project_id }}/outputs/save', {
+
+        // Use appropriate endpoint based on output type
+        var saveEndpoint = isGrainalyzerOutput
+            ? '/projects/{{ project_id }}/grainalyzer/outputs/save'
+            : '/projects/{{ project_id }}/outputs/save';
+
+        var outputContainerId = isGrainalyzerOutput
+            ? 'dz_grainalyzer_outputs'
+            : 'outputs_container';
+
+        fetch(saveEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ outputs: pendingOutputs })
@@ -104,8 +208,24 @@
             return response.text();
         })
         .then(function(html) {
-            document.getElementById('outputs_container').innerHTML = html;
+            var container = document.getElementById(outputContainerId);
+            container.innerHTML = html;
+
+            // Tell HTMX to process the dynamically added content
+            if (typeof htmx !== 'undefined') {
+                htmx.process(container);
+            }
+
             pendingOutputs = [];
+            isGrainalyzerOutput = false; // Reset flag
+
+            // Reinitialize tabbed outputs after inserting new HTML
+            if (typeof initializeTabbedOutputs === 'function') {
+                setTimeout(function() {
+                    initializeTabbedOutputs();
+                }, 100);
+            }
+
             bootstrap.Modal.getInstance(document.getElementById('preview_output_modal')).hide();
         })
         .catch(function(error) {
@@ -114,5 +234,16 @@
         .finally(function() {
             hide_save_spinner();
         });
+    });
+
+    // Reset flag when discarding
+    document.getElementById('discard_preview_btn').addEventListener('click', function() {
+        isGrainalyzerOutput = false;
+        pendingOutputs = [];
+    });
+
+    // Also reset when modal is hidden (in case user clicks outside or uses Escape)
+    document.getElementById('preview_output_modal').addEventListener('hidden.bs.modal', function() {
+        isGrainalyzerOutput = false;
     });
 </script>

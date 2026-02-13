@@ -1,0 +1,130 @@
+{% from "global/sample_select.html" import sample_select with context %}
+
+<div id="tensor_factorization_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tensor Factorization</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="tensor_factorization_form" data-hx-trigger="click">
+                        <label for="tensor_factorization_output_name" class="form-label">Output Title</label>
+                        <input type="text" id="tensor_factorization_output_name" name="tensor_factorization_output_name" class="form-control" required>
+                        <br />
+                        <br />
+                        {{ sample_select(id="tensor_factorization_sample_select", sender="tensor_factorization_link", event='click', multi_select=True) }}
+                        <br />
+                        <div class="table_list">
+                            <table style="width: 100%;">
+                                <tr>
+                                    <td>
+                                        <label for="tensor_factorization_model" class="form-label">Decomposition Model:</label>
+                                        <select name="tensor_factorization_model" id="tensor_factorization_model" class="form-select">
+                                            <option value="Tucker1" selected>Tucker1 (constrained)</option>
+                                            <option value="CP">CP (CANDECOMP/PARAFAC)</option>
+                                            <option value="Tucker">Tucker (full)</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="tensor_factorization_rank" class="form-label">Rank (number of components):</label>
+                                        <input type="number" id="tensor_factorization_rank" class="form-control" min="1" value="5">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="tensor_factorization_output_types" class="form-label">Select outputs:</label>
+                                        <div id="tensor_factorization_output_types">
+                                            <div class="form-check">
+                                                <input class="form-check-input tensor-factorization-output-checkbox" type="checkbox" value="factors_plot" id="factors_plot" checked>
+                                                <label class="form-check-label" for="factors_plot">
+                                                    Factor Components
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input tensor-factorization-output-checkbox" type="checkbox" value="reconstruction_plot" id="reconstruction_plot" checked>
+                                                <label class="form-check-label" for="reconstruction_plot">
+                                                    Reconstruction Comparison
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="text-align: right; vertical-align: bottom;">
+                                        <button class="btn btn-primary" type="button" onclick="tensor_factorization_send_args()">Factorize</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const tensorFactorizationSampleList = document.getElementById("tensor_factorization_sample_select")
+    function tensor_factorization_send_args() {
+        var selectedSamples = [];
+        var tensor_factorization_checkboxes = tensorFactorizationSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < tensor_factorization_checkboxes.length; i++) {
+            if (tensor_factorization_checkboxes[i].checked) {
+                selectedSamples.push(tensor_factorization_checkboxes[i].value);
+            }
+        }
+
+        if (selectedSamples.length < 2) {
+            alert("Please select at least 2 samples for tensor factorization");
+            return;
+        }
+
+        var tensor_factorization_model = document.getElementById("tensor_factorization_model").value;
+        var tensor_factorization_rank = document.getElementById("tensor_factorization_rank").value;
+        var tensor_factorization_outputName = document.getElementById("tensor_factorization_output_name").value;
+
+        // Get selected output types
+        var outputTypes = [];
+        var outputCheckboxes = document.querySelectorAll('.tensor-factorization-output-checkbox');
+        outputCheckboxes.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                outputTypes.push(checkbox.value);
+            }
+        });
+
+        if (outputTypes.length === 0) {
+            alert("Please select at least one output type");
+            return;
+        }
+
+        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+        var queryString = "/projects/{{ project_id }}/outputs/new/tensor-factorization?sampleNames=" + encodedSamples.join("&sampleNames=");
+        queryString += "&modelType=" + tensor_factorization_model;
+        queryString += "&rank=" + tensor_factorization_rank;
+        outputTypes.forEach(function(type) {
+            queryString += "&outputType=" + type;
+        });
+
+        if (tensor_factorization_outputName !== "") {
+            queryString += "&outputTitle=" + encodeURIComponent(tensor_factorization_outputName);
+        }
+
+        var tensorFactorizationModal = bootstrap.Modal.getInstance(document.getElementById('tensor_factorization_modal'));
+        if (tensorFactorizationModal) {
+            tensorFactorizationModal.hide();
+        }
+
+        generateOutput(queryString);
+    }
+</script>
+
+<script>
+    // Focus on input when modal opens
+    document.getElementById('tensor_factorization_modal').addEventListener('shown.bs.modal', function() {
+        document.getElementById('tensor_factorization_output_name').focus();
+    });
+</script>

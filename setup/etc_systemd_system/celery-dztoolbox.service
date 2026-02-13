@@ -1,0 +1,26 @@
+[Unit]
+Description=Celery Worker for dzToolBox Background Tasks
+After=network-online.target redis.service
+
+[Service]
+Type=simple
+User=dztoolbox
+Group=dztoolbox
+WorkingDirectory=/home/dztoolbox/dztoolbox
+Environment="PATH=/home/dztoolbox/dztoolbox/venv/bin"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/home/dztoolbox/dztoolbox/venv/bin/celery -A celery_tasks worker --loglevel=info --pool=solo --logfile=/var/log/celery-dztoolbox.log
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/celery-dztoolbox.log
+StandardError=append:/var/log/celery-dztoolbox.log
+
+# Ensures the service runs even when no user is logged in
+TTYPath=/dev/console
+
+# Graceful shutdown
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

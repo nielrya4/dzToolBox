@@ -27,14 +27,8 @@
                 <a class="nav-link toolbar-btn" id="hafnium_link" data-bs-toggle="modal" href="#hafnium_modal">
                     <i class="fa fa-cube"></i> Hafnium
                 </a>
-				<!--<a class="nav-link toolbar-btn" id="tensor_link" data-bs-toggle="modal" href="#tensor_modal">
-                    <i class="fa fa-book"></i> Tensor Factorization
-                </a>-->
             </div>
             <div class="navbar-nav">
-                <a class="nav-link toolbar-btn-secondary" id="project_settings" data-bs-toggle="modal" href="#project_settings_modal">
-                    <i class="fa fa-cog"></i> Settings
-                </a>
                 <a class="nav-link toolbar-btn-danger" id="clear_outputs" data-hx-post="/projects/{{ project_id }}/outputs/clear" data-hx-target="#outputs_container" data-hx-swap="innerHTML" style="cursor: pointer;">
                     <i class="fa fa-trash"></i> Clear
                 </a>

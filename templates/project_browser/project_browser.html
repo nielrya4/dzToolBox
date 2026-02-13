@@ -63,6 +63,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
 
     <script>
+        // Hide all spinners when page is shown (handles browser back button and page load)
+        window.addEventListener('pageshow', function() {
+            const spinners = ['new_proj_spinner', 'del_proj_spinner', 'open_proj_spinner', 'updating_proj_spinner'];
+            spinners.forEach(function(spinnerId) {
+                const spinner = document.getElementById(spinnerId);
+                if (spinner) {
+                    spinner.classList.remove("visible");
+                    spinner.classList.add("hidden");
+                }
+            });
+        });
+
         document.getElementById("new_project_form").addEventListener("submit", function() {
             document.getElementById("new_proj_spinner").classList.remove("hidden");
             document.getElementById("new_proj_spinner").classList.add("visible");
