@@ -63,9 +63,9 @@ def initialize_julia_packages():
     end
     using KernelDensity
     
-    # Load SedimentSourceAnalysis
+    # Load SedimentSourceAnalysis from GitHub
     if !haskey(Pkg.project().dependencies, "SedimentSourceAnalysis")
-        Pkg.add("SedimentSourceAnalysis")
+        Pkg.add(url="https://github.com/njericha/Sediment-Source-Analysis.jl.git")
     end
     using SedimentSourceAnalysis
     """)
