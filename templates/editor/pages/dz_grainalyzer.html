@@ -101,9 +101,8 @@ function switchGrainalyzerTab(tabName) {
 }
 
 function clearGrainalyzerOutputs() {
-    if (!confirm('Are you sure you want to clear all DZ Grainalyzer outputs?')) {
-        return;
-    }
+    // Show spinner
+    show_clear_outputs_spinner();
 
     fetch('/projects/{{ project_id }}/grainalyzer/outputs/clear', {
         method: 'POST',
@@ -128,6 +127,11 @@ function clearGrainalyzerOutputs() {
     .catch(error => {
         console.error('Error clearing grainalyzer outputs:', error);
         alert('Failed to clear grainalyzer outputs');
+    })
+    .finally(() => {
+        // Hide spinner
+        document.getElementById("clear_outputs_spinner").classList.remove("visible");
+        document.getElementById("clear_outputs_spinner").classList.add("hidden");
     });
 }
 
@@ -190,6 +194,12 @@ function initializeTabbedOutputs() {
 document.addEventListener('DOMContentLoaded', function () {
     // Initialize any tabbed outputs that are already on the page
     initializeTabbedOutputs();
+
+    // Process HTMX for grainalyzer outputs that were rendered on page load
+    const grainalyzerOutputsContainer = document.getElementById('dz_grainalyzer_outputs');
+    if (grainalyzerOutputsContainer && typeof htmx !== 'undefined') {
+        htmx.process(grainalyzerOutputsContainer);
+    }
 
     // Initialize Handsontable for multivariate data
     const container = document.getElementById('dz_grainalyzer_table');

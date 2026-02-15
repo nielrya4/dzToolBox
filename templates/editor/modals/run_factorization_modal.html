@@ -82,13 +82,13 @@
             runFactorizationOutputsMultiSelect = new MultiSelect(document.getElementById('run_factorization_outputs_select'), {
                 data: [
                     {
-                        value: 'factor_loadings',
-                        text: 'Factor Loadings Heatmap',
+                        value: 'source_attribution_plots',
+                        text: 'Source Attribution Plot',
                         selected: true
                     },
                     {
-                        value: 'sample_scores',
-                        text: 'Sample Scores Plot (Learned Coefficients)',
+                        value: 'source_attribution_matrix',
+                        text: 'Source Attribution Matrix',
                         selected: true
                     },
                     {
@@ -97,14 +97,9 @@
                         selected: true
                     },
                     {
-                        value: 'source_attribution',
-                        text: 'Source Attribution',
+                        value: 'learned_coefficients',
+                        text: 'Learned Coefficients',
                         selected: true
-                    },
-                    {
-                        value: 'reconstruction_plot',
-                        text: 'Reconstruction Comparison',
-                        selected: false
                     }
                 ],
                 search: false,
@@ -137,7 +132,7 @@
         var outputTitle = document.getElementById("run_factorization_output_name").value;
 
         // Get selected output types from MultiSelect
-        var outputTypes = document.getElementById('run_factorization_outputs_select').selectedValues;
+        var outputTypes = runFactorizationOutputsMultiSelect.selectedValues;
 
         if (!outputTypes || outputTypes.length === 0) {
             alert("Please select at least one output type");

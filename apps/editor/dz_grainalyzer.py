@@ -176,7 +176,9 @@ def register(app):
                         font_size=project.settings.graph_settings.font_size,
                         fig_width=project.settings.graph_settings.figure_width,
                         fig_height=project.settings.graph_settings.figure_height,
-                        color_map=project.settings.graph_settings.color_map
+                        color_map=project.settings.graph_settings.color_map,
+                        stack_graphs=project.settings.graph_settings.stack_graphs,
+                        fill=project.settings.graph_settings.fill
                     )
 
                     # Return task ID immediately
@@ -326,7 +328,9 @@ def register(app):
                         font_size=project.settings.graph_settings.font_size,
                         fig_width=project.settings.graph_settings.figure_width,
                         fig_height=project.settings.graph_settings.figure_height,
-                        color_map=project.settings.graph_settings.color_map
+                        color_map=project.settings.graph_settings.color_map,
+                        stack_graphs=project.settings.graph_settings.stack_graphs,
+                        fill=project.settings.graph_settings.fill
                     )
 
                     # Return task ID immediately

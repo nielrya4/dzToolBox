@@ -11,6 +11,8 @@ from dz_lib.univariate import distributions
 from dz_lib.utils import data
 import secrets
 import os
+import sys
+import traceback
 
 
 def clean_sample_name(sample_name):
@@ -40,7 +42,9 @@ def tensor_factorization_task(
     font_size=12,
     fig_width=10,
     fig_height=8,
-    color_map='viridis'
+    color_map='viridis',
+    stack_graphs='true',
+    fill='false'
 ):
     """
     Run multivariate tensor factorization as a Celery task
@@ -92,245 +96,319 @@ def tensor_factorization_task(
         if len(active_samples) < 2:
             raise ValueError(f"At least 2 samples required, got {len(active_samples)}")
 
-        self.update_state(state='PROGRESS', meta={'status': 'Building tensor from raw features...'})
+        self.update_state(state='PROGRESS', meta={'status': 'Running factorization using original dzgrainalyzer code...'})
 
-        # Create tensor from multivariate samples
-        tensor, metadata = tensor_factorization.create_tensor_from_multivariate_samples(
-            samples=active_samples,
-            feature_names=feature_names,
-            padding_mode=padding_mode
-        )
+        # Call original Julia code directly to match dzgrainalyzer exactly
+        # This uses rank_sources_custom_rank() from dzgrainalyzer_helpers.jl
+        import subprocess
+        import tempfile
+        import json
 
-        self.update_state(state='PROGRESS', meta={'status': 'Normalizing features...'})
+        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+        temp_json = tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w')
+        temp_excel.close()
+        temp_json.close()
 
-        # Normalize tensor
-        # IMPORTANT: MatrixTensorFactor requires nonnegative input,
-        # so we override standardize to minmax if needed
-        if normalization_method == 'standardize':
-            print("Warning: standardize normalization creates negative values. Using minmax instead for MatrixTensorFactor compatibility.")
-            normalization_method = 'minmax'
-
-        normalized_tensor, norm_params = tensor_factorization.normalize_tensor(
-            tensor=tensor,
-            method=normalization_method,
-            grain_counts=metadata['grain_counts']
-        )
-
-        self.update_state(state='PROGRESS', meta={'status': 'Running factorization (this may take several minutes)...'})
-
-        # Perform factorization
-        # MatrixTensorFactor always uses nonnegative constraints
         try:
-            factorization_result = tensor_factorization.factorize_tensor(
-                tensor=normalized_tensor,
-                rank=rank,
-                model=model_type,
-                nonnegative=True,  # Always True for MatrixTensorFactor
-                metadata=metadata
-            )
-        except Exception as julia_error:
-            print(f"Julia factorization error: {julia_error}", file=sys.stderr)
-            import traceback
-            traceback.print_exc()
-            raise RuntimeError(f"Tensor factorization failed: {julia_error}") from julia_error
+            # Transform to column-based format expected by read_raw_data()
+            # One sheet per feature, columns = samples, rows = grains
+            import openpyxl
+            wb = openpyxl.Workbook()
 
-        # Denormalize reconstruction for visualization
-        denormalized_reconstruction = tensor_factorization.denormalize_tensor(
-            normalized_tensor=factorization_result['reconstruction'],
-            normalization_params=norm_params
-        )
+            # Find max grain count
+            max_grains = max([len(sample.grains) for sample in active_samples])
 
-        # Calculate explained variance on original scale
-        r2 = tensor_factorization.explained_variance(
-            tensor, denormalized_reconstruction
-        )
+            # Create one sheet per feature
+            for feat_idx, feature_name in enumerate(feature_names):
+                if feat_idx == 0:
+                    ws = wb.active
+                    ws.title = feature_name
+                else:
+                    ws = wb.create_sheet(title=feature_name)
+
+                # Write data: rows = grains, columns = samples (no headers)
+                for grain_idx in range(max_grains):
+                    row = []
+                    for sample in active_samples:
+                        if grain_idx < len(sample.grains):
+                            val = sample.grains[grain_idx].features.get(feature_name, None)
+                            row.append(val)
+                        else:
+                            row.append(None)  # Pad with None for missing grains
+                    ws.append(row)
+
+            wb.save(temp_excel.name)
+            print(f"Temporary Excel created (column-based format): {temp_excel.name}")
+
+            # Get Julia executable path from juliapkg
+            import juliapkg
+            julia_exe = juliapkg.executable()
+            julia_project = juliapkg.project()
+
+            # Call Julia script with environment set to use juliacall packages
+            julia_script = os.path.join(os.path.dirname(__file__), 'julia_scripts', 'run_factorization.jl')
+            cmd = [julia_exe, '--project=' + julia_project, julia_script, temp_excel.name, str(rank), temp_json.name]
+
+            print(f"Running Julia command: {' '.join(cmd)}")
+            print(f"Julia project: {julia_project}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+
+            print(f"Julia stdout: {result.stdout}")
+            if result.stderr:
+                print(f"Julia stderr: {result.stderr}")
+
+            if result.returncode != 0:
+                raise RuntimeError(f"Julia script failed with code {result.returncode}: {result.stderr}")
+
+            # Read JSON results
+            with open(temp_json.name, 'r') as f:
+                julia_results = json.load(f)
+
+            if julia_results.get('status') == 'error':
+                raise RuntimeError(f"Julia script error: {julia_results.get('error')}")
+
+            print(f"Julia factorization complete")
+
+        finally:
+            # Clean up temp files
+            if os.path.exists(temp_excel.name):
+                os.unlink(temp_excel.name)
+            if os.path.exists(temp_json.name):
+                os.unlink(temp_json.name)
+
+        # Extract data from Julia results
+        # Julia returns:
+        # - measurement_data: empirical KDE visualization data
+        # - learned_densities: learned source KDE data
+        # - learned_coefficients: C matrix coefficient data
+        # - source_identification_per_sink: grain-level source attribution
+
+        sample_names_list = [s.replace("sink ", "") for s in julia_results.get('sinks', [])]
+        feature_names_from_julia = [md['name'] for md in julia_results.get('measurement_data', [])]
+        r2 = 0.0  # Julia doesn't return R² in this function
 
         self.update_state(state='PROGRESS', meta={'status': 'Generating visualizations...'})
 
         pending_outputs = []
-        sample_names_list = metadata['sample_names']
 
-        # Debug: log which output types were requested
+        # Debug: log which output types were requested and Julia results
         print(f"DEBUG: Generating visualizations. output_types = {output_types}")
+        print(f"DEBUG: Sample names from Julia: {sample_names_list}")
+        print(f"DEBUG: Features from Julia: {feature_names_from_julia}")
+        print(f"DEBUG: Julia results keys: {julia_results.keys()}")
 
-        # Generate empirical KDEs (input data visualization)
-        if "empirical_kdes" in output_types:
-            n_features = len(metadata['feature_names'])
-            empirical_height = max(fig_height, n_features * 2)  # At least 2 inches per feature
-            graph_fig = tensor_factorization.visualize_empirical_kdes(
-                tensor=tensor,
-                feature_names=metadata['feature_names'],
-                sample_names=sample_names_list,
-                grain_counts=metadata['grain_counts'],
-                title=f"{output_title}\nEmpirical Kernel Density Estimates",
-                font_path=f'static/global/fonts/{font_name}.ttf',
-                font_size=font_size,
-                fig_width=fig_width,
-                fig_height=empirical_height,
-                color_map='tab20'
-            )
-            output_id = secrets.token_hex(15)
-            output_data = embedding.embed_graph(
-                fig=graph_fig,
-                output_id=output_id,
-                project_id=project_id,
-                fig_type="matplotlib",
-                img_format='svg',
-                download_formats=['svg', 'png'],
-                is_grainalyzer=True
-            )
-            pending_outputs.append({
-                "output_id": output_id,
-                "output_type": "graph",
-                "output_data": output_data
-            })
+        print(f"Factorization completed successfully using original dzgrainalyzer code")
+        print(f"Rank: {rank}, Samples: {len(sample_names_list)}, Features: {len(feature_names_from_julia)}")
 
-        # Generate factor loadings heatmap
-        if "factor_loadings" in output_types:
-            graph_fig = tensor_factorization.visualize_factor_loadings(
-                factors=factorization_result['factors'],
-                feature_names=metadata['feature_names'],
-                title=f"{output_title}\nFactor Loadings (rank={rank}, R²={r2:.3f})",
-                font_path=f'static/global/fonts/{font_name}.ttf',
-                font_size=font_size,
-                fig_width=fig_width,
-                fig_height=fig_height,
-                color_map='RdBu_r'
-            )
-            output_id = secrets.token_hex(15)
-            output_data = embedding.embed_graph(
-                fig=graph_fig,
-                output_id=output_id,
-                project_id=project_id,
-                fig_type="matplotlib",
-                img_format='svg',
-                download_formats=['svg', 'png'],
-                is_grainalyzer=True
-            )
-            pending_outputs.append({
-                "output_id": output_id,
-                "output_type": "graph",
-                "output_data": output_data
-            })
+        # Generate source attribution scatter plots if requested
+        if "source_attribution_plots" in output_types:
+            print(f"DEBUG: Generating source attribution plots from Julia data...")
 
-        # Generate sample scores plot
-        if "sample_scores" in output_types:
-            graph_fig = tensor_factorization.visualize_sample_scores(
-                factors=factorization_result['factors'],
-                sample_names=sample_names_list,
-                title=f"{output_title} - Sample Scores (rank={rank})",
-                font_path=f'static/global/fonts/{font_name}.ttf',
-                font_size=font_size,
-                fig_width=fig_width,
-                fig_height=fig_height,
-                color_map=color_map
-            )
-            output_id = secrets.token_hex(15)
-            output_data = embedding.embed_graph(
-                fig=graph_fig,
-                output_id=output_id,
-                project_id=project_id,
-                fig_type="matplotlib",
-                img_format='svg',
-                download_formats=['svg', 'png'],
-                is_grainalyzer=True
-            )
-            pending_outputs.append({
-                "output_id": output_id,
-                "output_type": "graph",
-                "output_data": output_data
-            })
+            # Transform Julia format to Python visualization format
+            # Julia: {name: "sink 1", data: {sources: [1,2,1,...], loglikelihood_ratios: [0.9,...]}}
+            # Python: {sample_name: "1", grain_attributions: [1,2,1,...], grain_confidences: [0.9,...]}
+            # Note: Keep 1-indexed sources to match visualization Y-axis ticks
 
-        # Generate learned source KDEs
-        if "learned_source_kdes" in output_types:
-            n_features = len(metadata['feature_names'])
-            learned_height = max(fig_height, n_features * 2)  # At least 2 inches per feature
-            graph_fig = tensor_factorization.visualize_learned_source_kdes(
-                reconstruction=denormalized_reconstruction,
-                factors=factorization_result['factors'],
-                grain_counts=metadata['grain_counts'],
-                feature_names=metadata['feature_names'],
-                rank=rank,
-                title=f"{output_title} - Learned Source KDE Densities (rank={rank})",
-                font_path=f'static/global/fonts/{font_name}.ttf',
-                font_size=font_size,
-                fig_width=fig_width,
-                fig_height=learned_height,
-                color_map='Set2'
-            )
-            output_id = secrets.token_hex(15)
-            output_data = embedding.embed_graph(
-                fig=graph_fig,
-                output_id=output_id,
-                project_id=project_id,
-                fig_type="matplotlib",
-                img_format='svg',
-                download_formats=['svg', 'png'],
-                is_grainalyzer=True
-            )
-            pending_outputs.append({
-                "output_id": output_id,
-                "output_type": "graph",
-                "output_data": output_data
-            })
+            attribution_results = []
+            all_sources_seen = set()
+            for sink_data in julia_results.get('source_identification_per_sink', []):
+                sample_name = sink_data['name'].replace('sink ', '')  # "sink 1" -> "1"
+                sources = sink_data['data']['sources']
+                confidences = sink_data['data']['loglikelihood_ratios']
 
-        # Generate reconstruction comparison
-        if "reconstruction_plot" in output_types:
-            graph_fig = tensor_factorization.visualize_reconstruction_comparison(
-                original=tensor,
-                reconstruction=denormalized_reconstruction,
-                feature_names=metadata['feature_names'],
-                sample_names=sample_names_list,
-                grain_counts=metadata['grain_counts'],
-                sample_index=0,
-                title=f"{output_title}\nReconstruction (R²={r2:.3f})",
-                font_path=f'static/global/fonts/{font_name}.ttf',
-                font_size=font_size,
-                fig_width=fig_width,
-                fig_height=fig_height,
-                color_map=color_map
-            )
-            output_id = secrets.token_hex(15)
-            output_data = embedding.embed_graph(
-                fig=graph_fig,
-                output_id=output_id,
-                project_id=project_id,
-                fig_type="matplotlib",
-                img_format='svg',
-                download_formats=['svg', 'png'],
-                is_grainalyzer=True
-            )
-            pending_outputs.append({
-                "output_id": output_id,
-                "output_type": "graph",
-                "output_data": output_data
-            })
+                # DEBUG: Check what sources Julia is returning
+                unique_sources = set(sources)
+                all_sources_seen.update(unique_sources)
+                print(f"DEBUG: Sample {sample_name} has {len(sources)} grains, sources: {sorted(unique_sources)} (Julia 1-indexed)")
+                if len(sources) >= 5:
+                    print(f"DEBUG: Sample {sample_name} first 5 sources: {sources[:5]}")
 
-        # Generate source attribution
-        if "source_attribution" in output_types:
-            print(f"DEBUG: Generating source attribution visualization...")
-            # Calculate grain-level source attribution
-            attribution_results = tensor_factorization.calculate_source_attribution(
-                original=tensor,
-                factors=factorization_result['factors'],
-                grain_counts=metadata['grain_counts'],
-                sample_names=sample_names_list
-            )
+                # Keep Julia's 1-indexed sources (don't convert to 0-indexed)
+                # The visualization expects 1-indexed sources to match the Y-axis ticks
+                grain_attributions = sources
 
-            # Visualize source attribution for each sample
-            graph_fig = tensor_factorization.visualize_source_attribution(
+                # Convert confidences to floats and handle 'null' values
+                # Julia's clean_inf() converts -Inf to "null" string
+                grain_confidences = []
+                for conf in confidences:
+                    if conf == 'null' or conf is None:
+                        grain_confidences.append(0.0)  # Low confidence for null values
+                    else:
+                        # Ensure it's a float, even if JSON parsed it as string
+                        grain_confidences.append(float(conf))
+
+                attribution_results.append({
+                    'sample_name': sample_name,
+                    'grain_attributions': grain_attributions,
+                    'grain_confidences': grain_confidences
+                })
+
+            print(f"DEBUG: ALL sources seen across all samples (Julia 1-indexed): {sorted(all_sources_seen)}")
+            print(f"DEBUG: Expected rank={rank} sources, so should see sources 1 through {rank}")
+
+            print(f"DEBUG: Transformed {len(attribution_results)} samples for visualization")
+
+            # Visualize source attribution for each sample (returns list of tabs)
+            tabs = tensor_factorization.visualize_source_attribution_tabbed(
                 attributions=attribution_results,
                 rank=rank,
-                title=f"{output_title}\nSource Attribution (rank={rank})",
+                title=f"{output_title}",
                 font_path=f'static/global/fonts/{font_name}.ttf',
                 font_size=font_size,
                 fig_width=fig_width,
-                fig_height=fig_height * 1.5,  # Taller figure for multiple samples
-                color_map=color_map
+                fig_height=fig_height,
+                color_map='Greens'
             )
+
+            output_id = secrets.token_hex(15)
+            output_data = embedding.embed_tabbed_graphs(
+                tabs=tabs,
+                output_id=output_id,
+                project_id=project_id,
+                fig_type="matplotlib",
+                img_format='svg',
+                download_formats=['svg', 'png'],
+                is_grainalyzer=True
+            )
+            pending_outputs.append({
+                "output_id": output_id,
+                "output_type": "tabbed_graph",
+                "output_data": output_data
+            })
+            print(f"DEBUG: Source attribution scatter plots added. Total outputs: {len(pending_outputs)}")
+
+        # Generate source attribution matrix if requested
+        if "source_attribution_matrix" in output_types:
+            print(f"DEBUG: Generating source attribution matrix from Julia data...")
+
+            # Create tabbed matrix output for source attribution (exportable as XLSX)
+            import pandas as pd
+            matrix_tabs = []
+            for sink_data in julia_results.get('source_identification_per_sink', []):
+                sample_name = sink_data['name'].replace('sink ', '')
+                sources = sink_data['data']['sources']
+                confidences = sink_data['data']['loglikelihood_ratios']
+
+                # Convert confidences to floats
+                clean_confidences = []
+                for conf in confidences:
+                    if conf == 'null' or conf is None:
+                        clean_confidences.append(0.0)
+                    else:
+                        clean_confidences.append(float(conf))
+
+                # Create DataFrame for this sample
+                df = pd.DataFrame({
+                    'loglikelihood_ratios': clean_confidences,
+                    'sources': sources
+                })
+
+                matrix_tabs.append({
+                    'name': sample_name,
+                    'dataframe': df
+                })
+
+            # Embed as tabbed matrix
+            output_id = secrets.token_hex(15)
+            output_data = embedding.embed_tabbed_matrices(
+                tabs=matrix_tabs,
+                output_id=output_id,
+                project_id=project_id,
+                download_formats=['xlsx', 'csv'],
+                is_grainalyzer=True
+            )
+            pending_outputs.append({
+                "output_id": output_id,
+                "output_type": "tabbed_matrix",
+                "output_data": output_data
+            })
+            print(f"DEBUG: Source attribution matrix added. Total outputs: {len(pending_outputs)}")
+
+        # Generate learned source KDEs visualization
+        if "learned_source_kdes" in output_types:
+            print(f"DEBUG: Generating learned source KDEs from Julia data...")
+
+            # Julia format: [{name: "Age", data: [{domain: 100, "source 1": 0.01, "source 2": 0.02}, ...]}, ...]
+            learned_densities = julia_results.get('learned_densities', [])
+
+            # Use dedicated visualization function (matches empirical KDEs style)
+            # stack_sources = True means overlay (like stack_samples=True for empirical)
+            # stack_sources = False means stacked vertically (like stack_samples=False for empirical)
+            stack_sources = stack_graphs != "true"
+            fill_kdes = fill == "true"
+
+            figures = tensor_factorization.visualize_learned_source_kdes_from_julia(
+                learned_densities=learned_densities,
+                rank=rank,
+                title=f"{output_title}",
+                font_path=f'static/global/fonts/{font_name}.ttf',
+                font_size=font_size,
+                fig_width=fig_width,
+                fig_height=fig_height,
+                color_map=color_map,
+                stack_sources=stack_sources,
+                fill=fill_kdes
+            )
+
+            # Convert figures to tabs format
+            tabs = []
+            for i, fig in enumerate(figures):
+                feature_name = learned_densities[i]['name']
+                tabs.append({
+                    'name': feature_name,
+                    'fig': fig
+                })
+
+            output_id = secrets.token_hex(15)
+            output_data = embedding.embed_tabbed_graphs(
+                tabs=tabs,
+                output_id=output_id,
+                project_id=project_id,
+                fig_type="matplotlib",
+                img_format='svg',
+                download_formats=['svg', 'png'],
+                is_grainalyzer=True
+            )
+            pending_outputs.append({
+                "output_id": output_id,
+                "output_type": "tabbed_graph",
+                "output_data": output_data
+            })
+            print(f"DEBUG: Learned source KDEs added. Total outputs: {len(pending_outputs)}")
+
+        # Generate learned coefficients visualization
+        if "learned_coefficients" in output_types:
+            print(f"DEBUG: Generating learned coefficients from Julia data...")
+
+            # Julia format: [{name: "sink 1", data: [0.3, 0.5, 0.2]}, ...]
+            coefficients_data = julia_results.get('learned_coefficients', [])
+
+            # Create horizontal stacked bar chart
+            import matplotlib.pyplot as plt
+            import numpy as np
+
+            fig, ax = plt.subplots(1, 1, figsize=(fig_width, fig_height))
+
+            # Build data
+            y_pos = np.arange(len(sample_names_list))
+            left_offset = np.zeros(len(sample_names_list))
+
+            for source_idx in range(rank):
+                coeffs = [coef_dict['data'][source_idx] for coef_dict in coefficients_data]
+                ax.barh(y_pos, coeffs, left=left_offset, label=f'source {source_idx + 1}')
+                left_offset += np.array(coeffs)
+
+            ax.set_yticks(y_pos)
+            ax.set_yticklabels(sample_names_list, fontsize=font_size-2)
+            ax.set_xlabel('coefficient', fontsize=font_size)
+            ax.set_ylabel('sample', fontsize=font_size)
+            ax.legend(fontsize=font_size-2, loc='center left', bbox_to_anchor=(1, 0.5))
+            ax.grid(True, alpha=0.3, axis='x')
+            plt.tight_layout()
+
             output_id = secrets.token_hex(15)
             output_data = embedding.embed_graph(
-                fig=graph_fig,
+                fig=fig,
                 output_id=output_id,
                 project_id=project_id,
                 fig_type="matplotlib",
@@ -343,7 +421,7 @@ def tensor_factorization_task(
                 "output_type": "graph",
                 "output_data": output_data
             })
-            print(f"DEBUG: Source attribution added to pending_outputs. Total outputs: {len(pending_outputs)}")
+            print(f"DEBUG: Learned coefficients added. Total outputs: {len(pending_outputs)}")
 
         # Return outputs for preview (don't auto-save)
         print(f"DEBUG: Returning {len(pending_outputs)} outputs for preview")
@@ -356,10 +434,7 @@ def tensor_factorization_task(
         }
 
     except Exception as e:
-        import traceback
-        import sys
-
-        # Print detailed error to worker logs BEFORE serialization
+        # Print detailed error to worker logs
         error_msg = str(e)
         error_trace = traceback.format_exc()
         print("=" * 80, file=sys.stderr)
@@ -371,14 +446,8 @@ def tensor_factorization_task(
         print("=" * 80, file=sys.stderr)
         sys.stderr.flush()
 
-        self.update_state(state='FAILURE', meta={'error': error_msg, 'traceback': error_trace})
-
-        # Return error dict instead of raising to avoid serialization issues
-        return {
-            "status": "failed",
-            "error": error_msg,
-            "error_type": type(e).__name__
-        }
+        # Re-raise the exception to let Celery handle it properly
+        raise
 
 
 @celery_app.task(bind=True)
@@ -506,9 +575,6 @@ def view_empirical_kdes_task(
         }
 
     except Exception as e:
-        import traceback
-        import sys
-
         error_msg = str(e)
         error_trace = traceback.format_exc()
         print("=" * 80, file=sys.stderr)
@@ -750,9 +816,6 @@ def find_optimal_rank_task(
         }
 
     except Exception as e:
-        import traceback
-        import sys
-
         error_msg = str(e)
         error_trace = traceback.format_exc()
         print("=" * 80, file=sys.stderr)

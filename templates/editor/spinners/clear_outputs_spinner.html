@@ -7,6 +7,10 @@
         document.getElementById("clear_outputs_spinner").classList.remove("hidden");
         document.getElementById("clear_outputs_spinner").classList.add("visible");
     });
+	function show_clear_outputs_spinner(){
+        document.getElementById("clear_outputs_spinner").classList.remove("hidden");
+        document.getElementById("clear_outputs_spinner").classList.add("visible");
+    }
 
     document.addEventListener("htmx:afterRequest", function() {
         document.getElementById("clear_outputs_spinner").classList.remove("visible");

@@ -140,6 +140,9 @@ def create_kde_tensor_from_samples(
     # Initialize Julia packages and wrapper functions
     initialize_julia_packages()
 
+    # Get Julia instance
+    jl = get_julia()
+
     n_samples = len(samples)
     n_features = len(feature_names)
 
@@ -564,6 +567,9 @@ def factorize_tensor(
     # Initialize Julia packages
     initialize_julia_packages()
 
+    # Get Julia instance
+    jl = get_julia()
+
     # Convert numpy array to Julia array
     jl_tensor = jl.Array(tensor)
 
@@ -643,7 +649,8 @@ def factorize_tensor(
         'iterations': len(rel_errors_list),
         'converged': converged,
         'model': 'nnmtf',
-        'rank': rank
+        'rank': rank,
+        'F_full': F_np  # Full F matrix for source attribution
     }
 
     # Include metadata if provided
@@ -654,29 +661,36 @@ def factorize_tensor(
 
 
 def calculate_source_attribution(
-    original: np.ndarray,
-    factors: List[np.ndarray],
-    grain_counts: List[int],
+    samples,
+    F_full: np.ndarray,
+    domains: Dict[str, np.ndarray],
+    feature_names: List[str],
     sample_names: List[str]
 ) -> List[Dict]:
     """
-    Calculate grain-level source attribution (which source each grain belongs to).
+    Calculate grain-level source attribution using KDE likelihood evaluation.
 
-    For each grain in each sample, determines which latent source (factor) it most
-    likely belongs to based on reconstruction contribution.
+    This matches the original dzgrainalyzer implementation where each grain is
+    evaluated against learned source KDEs using probability density functions.
+
+    Implementation follows dzgrainalyzer_helpers.jl lines 198-205 / 290-298:
+    For each grain, calls estimate_which_source(g, F) which evaluates the grain's
+    raw measurements against each source's learned KDEs and returns the source
+    with highest combined likelihood.
 
     Parameters
     ----------
-    original : np.ndarray
-        Original tensor of shape (n_samples, max_grains, n_features)
-    factors : List[np.ndarray]
-        Factor matrices from factorization
-        factors[0] = C (n_samples, rank) - sample coefficients
-        factors[2] = feature loadings (n_features, rank)
-    grain_counts : List[int]
-        Actual grain counts per sample
+    samples : List[MultivariateSample]
+        Original samples with raw grain measurements
+    F_full : np.ndarray
+        Full F matrix from nnmtf with shape (rank, n_kde_points, n_features)
+        Contains KDE density values for each source
+    domains : Dict[str, np.ndarray]
+        Domain (x-axis) values for each feature's KDE
+    feature_names : List[str]
+        Names of features
     sample_names : List[str]
-        Names of samples
+        Names of samples (for matching)
 
     Returns
     -------
@@ -684,59 +698,84 @@ def calculate_source_attribution(
         List of attribution dicts, one per sample:
         {
             'sample_name': str,
-            'grain_attributions': List[int],  # Source index for each grain
+            'grain_attributions': List[int],  # Source index for each grain (1-indexed)
             'grain_confidences': List[float]  # Confidence scores [0-1]
         }
     """
-    n_samples, max_grains, n_features = original.shape
-    C = factors[0]  # (n_samples, rank)
-    rank = C.shape[1]
+    from scipy.interpolate import interp1d
 
-    # For nnmtf: F is (rank, n_grains, n_features)
-    # But we stored feature_loadings as averaged/transposed version
-    # We need to work with the actual reconstruction contributions
+    rank = F_full.shape[0]
+    n_features = len(feature_names)
+
+    # Build interpolated KDE functions for each source and feature
+    # source_kdes[source_idx][feature_idx] = interpolation function
+    source_kdes = []
+    for r in range(rank):
+        feature_kdes = []
+        for f_idx, feature_name in enumerate(feature_names):
+            domain = domains[feature_name]
+            density = F_full[r, :, f_idx]
+
+            # Create interpolation function (linear interpolation of KDE)
+            # Use bounds_error=False with fill_value=0 for out-of-bounds
+            kde_func = interp1d(domain, density, kind='linear',
+                               bounds_error=False, fill_value=0.0)
+            feature_kdes.append(kde_func)
+        source_kdes.append(feature_kdes)
 
     attributions = []
 
-    for s in range(n_samples):
-        n_grains = grain_counts[s]
+    for sample in samples:
         grain_sources = []
         grain_confidences = []
 
-        for i in range(n_grains):
-            # For each grain, calculate contribution from each source/factor
-            # Contribution of factor r to grain i = C[s, r] * ||original grain features||
-            # We measure how well each factor explains this grain
+        for grain in sample.grains:
+            # Calculate likelihood for each source
+            # Likelihood = product of PDF values across all features
+            source_likelihoods = []
 
-            grain_features = original[s, i, :]
+            for r in range(rank):
+                log_likelihood = 0.0  # Use log to avoid underflow
 
-            # Calculate "likelihood" that this grain belongs to each source
-            # Using the factor coefficients as weights
-            source_weights = C[s, :]  # (rank,)
+                for f_idx, feature_name in enumerate(feature_names):
+                    if feature_name in grain.features:
+                        grain_value = grain.features[feature_name]
 
-            # Normalize to get probabilities
-            if np.sum(source_weights) > 0:
-                source_probs = source_weights / np.sum(source_weights)
+                        # Evaluate KDE at this grain's measurement value
+                        pdf_value = source_kdes[r][f_idx](grain_value)
+
+                        # Add to log likelihood (with small epsilon to avoid log(0))
+                        log_likelihood += np.log(max(pdf_value, 1e-10))
+
+                source_likelihoods.append(log_likelihood)
+
+            # Assign to source with highest log-likelihood
+            best_source = np.argmax(source_likelihoods)
+
+            # Calculate confidence using log-likelihood ratios
+            # Following dzgrainalyzer's confidence_score approach
+            max_ll = source_likelihoods[best_source]
+
+            # Get second-best likelihood
+            likelihoods_array = np.array(source_likelihoods)
+            sorted_lls = np.sort(likelihoods_array)[::-1]  # Descending
+
+            if len(sorted_lls) > 1:
+                second_best_ll = sorted_lls[1]
+                # Log-likelihood ratio (difference in log space)
+                ll_ratio = max_ll - second_best_ll
+
+                # Map to [0, 1] range (higher ratio = more confident)
+                # Use sigmoid-like mapping: confidence = 1 / (1 + exp(-ratio))
+                confidence = 1.0 / (1.0 + np.exp(-ll_ratio))
             else:
-                source_probs = np.ones(rank) / rank
-
-            # Assign to most likely source
-            best_source = np.argmax(source_probs)
-
-            # Calculate confidence as the ratio of best to second-best
-            sorted_probs = np.sort(source_probs)[::-1]
-            if len(sorted_probs) > 1 and sorted_probs[1] > 0:
-                confidence = sorted_probs[0] / sorted_probs[1]  # Ratio of best to 2nd best
-                confidence = min(confidence, 10.0)  # Cap at 10x
-                confidence = confidence / 10.0  # Normalize to [0, 1]
-            else:
-                confidence = 1.0
+                confidence = 1.0  # Only one source, full confidence
 
             grain_sources.append(int(best_source + 1))  # 1-indexed for display
             grain_confidences.append(float(confidence))
 
         attributions.append({
-            'sample_name': sample_names[s],
+            'sample_name': sample.name,
             'grain_attributions': grain_sources,
             'grain_confidences': grain_confidences
         })
@@ -1225,6 +1264,225 @@ def visualize_source_attribution(
 
     return fig
 
+def visualize_source_attribution_tabbed(
+    attributions: List[Dict],
+    rank: int,
+    title: str = "Source attribution based on learned kernel density estimates",
+    font_path: str = None,
+    font_size: int = 12,
+    fig_width: float = 14,
+    fig_height: float = 6,
+    color_map: str = 'Greens'
+):
+    """
+    Visualize grain-level source attribution in tabbed format (dzgrainalyzer style).
+
+    Creates one figure per sample showing which source each grain belongs to,
+    with confidence scores indicated by color intensity.
+    Returns a list of figures suitable for embed_tabbed_graphs().
+
+    Parameters
+    ----------
+    attributions : List[Dict]
+        Source attribution data from calculate_source_attribution()
+    rank : int
+        Number of sources/factors
+    title : str
+        Base title for plots
+    font_path : str
+        Path to font file
+    font_size : int
+        Font size
+    fig_width : float
+        Figure width for each tab
+    fig_height : float
+        Figure height for each tab
+    color_map : str
+        Colormap name (use 'Greens' for dzgrainalyzer style)
+
+    Returns
+    -------
+    List[Dict[str, Any]]
+        List of dicts with 'name' (sample name) and 'fig' (matplotlib figure)
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from matplotlib import cm
+    from matplotlib.colors import Normalize
+
+    # Set up font
+    if font_path:
+        prop = fm.FontProperties(fname=font_path, size=font_size)
+        plt.rcParams['font.family'] = prop.get_name()
+        plt.rcParams['font.size'] = font_size
+
+    # Get colormap for confidence
+    conf_cmap = cm.get_cmap(color_map)
+    norm = Normalize(vmin=0.0, vmax=1.0)
+
+    tabs = []
+
+    # Create one figure per sample
+    for attr in attributions:
+        sample_name = attr['sample_name']
+        grain_sources = np.array(attr['grain_attributions'])
+        grain_confidences = np.array(attr['grain_confidences'])
+        n_grains = len(grain_sources)
+
+        fig, ax = plt.subplots(1, 1, figsize=(fig_width, fig_height))
+
+        grain_indices = np.arange(n_grains)
+
+        # Plot each grain with color intensity based on confidence
+        scatter = ax.scatter(
+            grain_indices,
+            grain_sources,
+            c=grain_confidences,
+            cmap=conf_cmap,
+            norm=norm,
+            s=80,
+            alpha=0.8,
+            edgecolors='none'
+        )
+
+        # Configure axes
+        ax.set_xlabel('grain index', fontsize=font_size)
+        ax.set_ylabel('source', fontsize=font_size)
+        ax.set_yticks(range(1, rank + 1))
+        ax.set_ylim(0.5, rank + 0.5)
+        ax.set_xlim(-2, n_grains + 2)
+        ax.grid(True, alpha=0.3, axis='both')
+
+        # Add colorbar for confidence
+        cbar = plt.colorbar(scatter, ax=ax, orientation='vertical', pad=0.02)
+        cbar.set_label('confidence', fontsize=font_size)
+
+        plt.tight_layout()
+
+        tabs.append({
+            'name': sample_name,
+            'fig': fig
+        })
+
+    return tabs
+
+def visualize_learned_coefficients(
+    factors: List[np.ndarray],
+    sample_names: List[str],
+    rank: int,
+    title: str = "Learned Coefficients",
+    font_path: str = None,
+    font_size: int = 12,
+    fig_width: float = 12,
+    fig_height: float = 10,
+    color_map: str = 'Greys'
+):
+    """
+    Visualize learned coefficients as horizontal stacked bar chart (dzgrainalyzer style).
+
+    Shows the C matrix (sample coefficients) as a horizontal bar chart where each
+    sample/sink has a bar showing the contribution from each source.
+
+    Parameters
+    ----------
+    factors : List[np.ndarray]
+        Factor matrices from factorization
+        factors[0] = C (n_samples, rank) - sample coefficients
+    sample_names : List[str]
+        Names of samples/sinks
+    rank : int
+        Number of sources/factors
+    title : str
+        Plot title
+    font_path : str
+        Path to font file
+    font_size : int
+        Font size
+    fig_width : float
+        Figure width
+    fig_height : float
+        Figure height
+    color_map : str
+        Colormap name (use 'Greys' for dzgrainalyzer style)
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with horizontal stacked bar chart
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from matplotlib import cm
+    from matplotlib.colors import Normalize
+
+    # Set up font
+    if font_path:
+        prop = fm.FontProperties(fname=font_path, size=font_size)
+        plt.rcParams['font.family'] = prop.get_name()
+        plt.rcParams['font.size'] = font_size
+
+    # Extract coefficient matrix C
+    C = factors[0]  # Shape: (n_samples, rank)
+    n_samples = len(sample_names)
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    # Get colormap
+    cmap = cm.get_cmap(color_map)
+    norm = Normalize(vmin=0.0, vmax=1.0)
+
+    # Y positions for samples
+    y_positions = np.arange(n_samples)
+
+    # Plot stacked horizontal bars
+    left_positions = np.zeros(n_samples)
+
+    for source_idx in range(rank):
+        source_contributions = C[:, source_idx]
+
+        # Create bars with color based on contribution value
+        for sample_idx in range(n_samples):
+            contribution = source_contributions[sample_idx]
+            color = cmap(norm(contribution))
+
+            ax.barh(
+                y_positions[sample_idx],
+                contribution,
+                left=left_positions[sample_idx],
+                color=color,
+                edgecolor='white',
+                linewidth=0.5
+            )
+
+        # Update left positions for next source
+        left_positions += source_contributions
+
+    # Configure axes
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(sample_names, fontsize=font_size - 2)
+    ax.set_xlabel('Contribution', fontsize=font_size)
+    ax.set_xlim(0, 1)
+
+    # Add source labels as x-axis sections
+    source_positions = [i * (1.0 / rank) + (0.5 / rank) for i in range(rank)]
+    ax2 = ax.twiny()
+    ax2.set_xlim(0, 1)
+    ax2.set_xticks(source_positions)
+    ax2.set_xticklabels([f'source {i+1}' for i in range(rank)], fontsize=font_size - 1)
+    ax2.tick_params(axis='x', which='both', length=0)
+
+    # Add colorbar
+    sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, orientation='vertical', pad=0.02, fraction=0.046)
+    cbar.set_label('Coefficient Value', fontsize=font_size)
+
+    ax.set_title(title, fontsize=font_size + 2, pad=20)
+    plt.tight_layout()
+
+    return fig
+
 
 def visualize_empirical_kdes(
     tensor: np.ndarray,
@@ -1545,6 +1803,161 @@ def visualize_empirical_kdes_tabbed(
     return figures
 
 
+def visualize_learned_source_kdes_from_julia(
+    learned_densities: List[dict],
+    rank: int,
+    title: str = "Learned Kernel Density Estimates",
+    font_path: str = None,
+    font_size: int = 12,
+    fig_width: float = 14,
+    fig_height: float = 6,
+    color_map: str = 'tab20',
+    stack_sources: bool = True,
+    fill: bool = False
+):
+    """
+    Create individual KDE plots for learned sources (for tabbed display).
+
+    Each feature gets its own figure showing learned source distributions.
+    Matches the style of visualize_empirical_kdes_tabbed() exactly.
+
+    Parameters
+    ----------
+    learned_densities : List[dict]
+        Julia format: [{name: "Age", data: [{domain: 100, "source 1": 0.01, ...}, ...]}, ...]
+    rank : int
+        Number of sources
+    title : str
+        Base title for plots
+    font_path : str
+        Path to font file
+    font_size : int
+        Font size
+    fig_width : float
+        Figure width for each tab
+    fig_height : float
+        Figure height for each tab
+    color_map : str
+        Colormap name
+    stack_sources : bool
+        If True, overlay all sources on one plot per feature (non-stacked).
+        If False, create separate subplots for each source stacked vertically within each feature.
+    fill : bool
+        If True, fill the area under each KDE curve.
+        If False, just plot the KDE line.
+
+    Returns
+    -------
+    List[matplotlib.figure.Figure]
+        List of figures, one per feature
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from matplotlib import cm
+    from matplotlib import gridspec
+
+    # Set up font
+    if font_path:
+        prop = fm.FontProperties(fname=font_path, size=font_size)
+        plt.rcParams['font.family'] = prop.get_name()
+        plt.rcParams['font.size'] = font_size
+
+    # Get colormap
+    cmap = cm.get_cmap(color_map, rank)
+    colors = [cmap(i) for i in range(rank)]
+
+    figures = []
+
+    # Create one figure per feature
+    for feature_data in learned_densities:
+        feature_name = feature_data['name']
+        data_points = feature_data['data']
+
+        # Extract domain and source densities
+        domain = [point['domain'] for point in data_points]
+        source_densities = {}
+        for i in range(1, rank + 1):
+            source_key = f"source {i}"
+            source_densities[source_key] = [point[source_key] for point in data_points]
+
+        if stack_sources:
+            # Overlaid mode: all sources on one plot
+            fig, ax = plt.subplots(1, 1, figsize=(fig_width, fig_height))
+            axes = [ax]
+        else:
+            # Stacked mode: one subplot per source (stacked vertically, like dz_lib)
+            fig = plt.figure(figsize=(fig_width, fig_height))
+            gs = gridspec.GridSpec(rank, 1, figure=fig)
+            axes = []
+            for i in range(rank):
+                ax = fig.add_subplot(gs[i])
+                axes.append(ax)
+
+        # Plot each source
+        for idx, (source_key, densities) in enumerate(source_densities.items()):
+            # Select appropriate axis
+            if stack_sources:
+                ax = axes[0]
+                # Plot with label for legend
+                if fill:
+                    ax.fill_between(domain, densities, alpha=0.25, color=colors[idx],
+                                   linewidth=0)
+                    ax.plot(domain, densities, color=colors[idx], label=source_key)
+                else:
+                    ax.plot(domain, densities, color=colors[idx],
+                           label=source_key)
+            else:
+                ax = axes[idx]
+                # Plot with label (for legend on the right, like dz_lib)
+                if fill:
+                    ax.fill_between(domain, densities, alpha=0.25, color=colors[idx],
+                                   linewidth=0)
+                    ax.plot(domain, densities, color=colors[idx], label=source_key)
+                else:
+                    ax.plot(domain, densities, color=colors[idx],
+                           label=source_key)
+
+                # Add legend on the right side, like dz_lib
+                ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=font_size)
+
+        # Format axes - following dz_lib pattern
+        for i, ax in enumerate(axes):
+            ax.tick_params(axis='both', which='major', labelsize=font_size)
+
+            # Remove x-tick labels for all but the last subplot in stacked mode
+            if not stack_sources and i < len(axes) - 1:
+                ax.tick_params(axis='x', labelbottom=False)
+
+            ax.set_facecolor('white')
+            ax.tick_params(axis='x', colors='black', width=2)
+            ax.tick_params(axis='y', colors='black', width=2)
+
+        if stack_sources:
+            # Format overlaid plot
+            ax = axes[0]
+            ax.set_xlabel('value', fontsize=font_size)
+            ax.set_ylabel('density', fontsize=font_size)
+            ax.set_title(f'{feature_name}\n{title}', fontsize=font_size + 1)
+            ax.legend(loc='upper right', fontsize=font_size - 2, ncol=min(3, rank))
+            plt.tight_layout()
+        else:
+            # Format stacked subplots - following dz_lib pattern exactly
+            fig.suptitle(f'{feature_name}\n{title}', fontsize=font_size * 1.75, fontproperties=prop if font_path else None)
+
+            # Add figure-level axis labels (one for whole figure, like dz_lib)
+            fig.text(0.5, 0.02, 'value', ha='center', va='center',
+                    fontsize=font_size, fontproperties=prop if font_path else None)
+            fig.text(0.01, 0.5, 'density', va='center', rotation='vertical',
+                    fontsize=font_size, fontproperties=prop if font_path else None)
+
+            # Use tight_layout with rect to leave space for labels
+            fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.96])
+
+        figures.append(fig)
+
+    return figures
+
+
 # =============================================================================
 # Rank Selection Visualization Functions
 # =============================================================================
@@ -1827,6 +2240,150 @@ def visualize_learned_source_kdes(
     plt.tight_layout()
 
     return fig
+
+def visualize_learned_source_kdes_tabbed(
+    reconstruction: np.ndarray,
+    factors: List[np.ndarray],
+    grain_counts: List[int],
+    feature_names: List[str],
+    rank: int,
+    title: str = "Learned Kernel Density Estimates",
+    font_path: str = None,
+    font_size: int = 12,
+    fig_width: float = 14,
+    fig_height: float = 6,
+    color_map: str = 'Set2'
+):
+    """
+    Visualize learned source distributions as KDEs in tabbed format (dzgrainalyzer style).
+
+    Creates one figure per feature, each showing all sources overlaid.
+    Returns a list of figures suitable for embed_tabbed_graphs().
+
+    Parameters
+    ----------
+    reconstruction : np.ndarray
+        Reconstructed tensor from factorization (n_samples, max_grains, n_features)
+    factors : List[np.ndarray]
+        Factor matrices: [C (samples×rank), G (grains×rank), F (features×rank)]
+    grain_counts : List[int]
+        Actual grain counts per sample
+    feature_names : List[str]
+        Names of features
+    rank : int
+        Number of sources/factors
+    title : str
+        Base title (feature name will be added for each tab)
+    font_path : str
+        Path to font file
+    font_size : int
+        Font size
+    fig_width : float
+        Figure width
+    fig_height : float
+        Figure height per feature
+    color_map : str
+        Colormap name
+
+    Returns
+    -------
+    List[Dict[str, Any]]
+        List of dicts with 'name' (feature name) and 'fig' (matplotlib figure)
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from matplotlib import cm
+    from scipy.stats import gaussian_kde
+
+    # Set up font
+    if font_path:
+        prop = fm.FontProperties(fname=font_path, size=font_size)
+        plt.rcParams['font.family'] = prop.get_name()
+        plt.rcParams['font.size'] = font_size
+
+    # Extract factors
+    C = factors[0]  # (n_samples, rank) - sample coefficients
+    G = factors[1]  # (max_grains, rank) - grain coefficients
+    F = factors[2]  # (n_features, rank) - feature coefficients
+
+    # Get colormap
+    cmap = cm.get_cmap(color_map, rank)
+    colors = [cmap(i) for i in range(rank)]
+
+    tabs = []
+
+    # Create one figure per feature
+    for feat_idx, feature_name in enumerate(feature_names):
+        fig, ax = plt.subplots(1, 1, figsize=(fig_width, fig_height))
+
+        # For each source, reconstruct the distribution for this feature
+        for source_idx in range(rank):
+            # Get grain weights for this source
+            grain_weights = G[:, source_idx]  # (max_grains,)
+
+            # Get feature coefficient for this source
+            feature_coef = F[feat_idx, source_idx]
+
+            # Collect grain values weighted by their source membership
+            source_values = []
+
+            # Gather values from all samples
+            n_samples = reconstruction.shape[0]
+            max_grains = reconstruction.shape[1]
+
+            for s_idx in range(n_samples):
+                sample_coef = C[s_idx, source_idx]  # How much this sample has of this source
+                n_grains = min(grain_counts[s_idx], max_grains)
+
+                for g_idx in range(n_grains):
+                    grain_weight = grain_weights[g_idx]
+                    # Weight determines how much this grain belongs to this source
+                    weight = sample_coef * grain_weight * feature_coef
+
+                    if abs(weight) > 0.01:  # Only include significantly weighted grains
+                        grain_value = reconstruction[s_idx, g_idx, feat_idx]
+                        # Add multiple copies based on weight to build distribution
+                        n_copies = max(1, int(abs(weight) * 100))
+                        source_values.extend([grain_value] * n_copies)
+
+            if len(source_values) > 5:  # Need enough points for KDE
+                source_values = np.array(source_values)
+                source_values = source_values[~np.isnan(source_values)]
+
+                if len(source_values) > 5:
+                    try:
+                        # Create KDE
+                        kde = gaussian_kde(source_values)
+
+                        # Create domain for evaluation
+                        x_min, x_max = np.percentile(source_values, [1, 99])
+                        x_range = x_max - x_min
+                        x_min -= x_range * 0.1
+                        x_max += x_range * 0.1
+                        x_domain = np.linspace(x_min, x_max, 200)
+
+                        # Evaluate KDE
+                        density = kde(x_domain)
+
+                        # Plot
+                        ax.plot(x_domain, density, color=colors[source_idx],
+                               label=f'source {source_idx + 1}', alpha=0.7, linewidth=2)
+                    except:
+                        pass  # Skip if KDE fails
+
+        ax.set_xlabel('value', fontsize=font_size)
+        ax.set_ylabel('density', fontsize=font_size)
+        ax.grid(True, alpha=0.3)
+        ax.legend(loc='upper right', fontsize=font_size - 2)
+
+        plt.tight_layout()
+
+        tabs.append({
+            'name': feature_name,
+            'fig': fig
+        })
+
+    return tabs
 
 def standard_curvature(errors: List[float]) -> List[float]:
     """
