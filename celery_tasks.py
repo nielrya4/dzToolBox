@@ -257,7 +257,7 @@ def tensor_factorization_task(
                 font_size=font_size,
                 fig_width=fig_width,
                 fig_height=fig_height,
-                color_map='Greens'
+                color_map='coolwarm'
             )
 
             output_id = secrets.token_hex(15)
@@ -422,6 +422,41 @@ def tensor_factorization_task(
                 "output_data": output_data
             })
             print(f"DEBUG: Learned coefficients added. Total outputs: {len(pending_outputs)}")
+
+        # Generate learned coefficients matrix if requested
+        if "learned_coefficients_matrix" in output_types:
+            print(f"DEBUG: Generating learned coefficients matrix from Julia data...")
+
+            import pandas as pd
+            coefficients_data = julia_results.get('learned_coefficients', [])
+
+            # Build a single DataFrame: rows = samples, columns = sources
+            source_cols = {f'source {i+1}': [] for i in range(rank)}
+            row_labels = []
+            for coef_dict in coefficients_data:
+                sample_name = coef_dict['name'].replace('sink ', '')
+                row_labels.append(sample_name)
+                for i in range(rank):
+                    source_cols[f'source {i+1}'].append(coef_dict['data'][i])
+
+            df = pd.DataFrame({'sample': row_labels, **source_cols})
+
+            output_id = secrets.token_hex(15)
+            output_data = embedding.embed_matrix(
+                dataframe=df,
+                output_id=output_id,
+                project_id=project_id,
+                title="Learned Coefficients",
+                download_formats=['xlsx', 'csv'],
+                is_grainalyzer=True,
+                show_index=False
+            )
+            pending_outputs.append({
+                "output_id": output_id,
+                "output_type": "matrix",
+                "output_data": output_data
+            })
+            print(f"DEBUG: Learned coefficients matrix added. Total outputs: {len(pending_outputs)}")
 
         # Return outputs for preview (don't auto-save)
         print(f"DEBUG: Returning {len(pending_outputs)} outputs for preview")

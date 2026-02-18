@@ -1,23 +1,23 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-secondary">
     <div class="container-fluid">
-        <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#dz_grainalyzer_outputs_nav" aria-controls="dz_grainalyzer_outputs_nav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#multivariate_outputs_nav" aria-controls="multivariate_outputs_nav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse" id="dz_grainalyzer_outputs_nav">
+        <div class="collapse navbar-collapse" id="multivariate_outputs_nav">
             <div class="navbar-nav me-auto">
                 <a class="nav-link toolbar-btn" id="view_empirical_kdes_link" data-bs-toggle="modal" href="#view_empirical_kdes_modal">
-                    <i class="fa fa-bar-chart"></i> View Data
+                    <i class="fa fa-line-chart"></i> KDE
                 </a>
                 <a class="nav-link toolbar-btn" id="find_optimal_rank_link" data-bs-toggle="modal" href="#find_optimal_rank_modal">
-                    <i class="fa fa-line-chart"></i> Find Optimal Rank
+                    <i class="fa fa-list-ol"></i> Find Optimal Rank
                 </a>
                 <a class="nav-link toolbar-btn" id="run_factorization_link" data-bs-toggle="modal" href="#run_factorization_modal">
-                    <i class="fa fa-cube"></i> Run Factorization
+                    <i class="fa fa-book"></i> Tensor Factorization
                 </a>
             </div>
             <div class="navbar-nav">
-                <a class="nav-link toolbar-btn-danger" id="clear_grainalyzer_outputs_btn" onclick="clearGrainalyzerOutputs()" style="cursor: pointer;">
+                <a class="nav-link toolbar-btn-danger" id="clear_multivariate_outputs_btn" onclick="clearMultivariateOutputs()" style="cursor: pointer;">
                     <i class="fa fa-trash"></i> Clear
                 </a>
             </div>

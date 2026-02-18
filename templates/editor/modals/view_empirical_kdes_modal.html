@@ -47,7 +47,7 @@
         var outputTitle = document.getElementById("view_empirical_kdes_output_name").value;
 
         var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
-        var queryString = "/projects/{{ project_id }}/grainalyzer/view-data?sampleNames=" + encodedSamples.join("&sampleNames=");
+        var queryString = "/projects/{{ project_id }}/multivariate/view-data?sampleNames=" + encodedSamples.join("&sampleNames=");
 
         if (outputTitle !== "") {
             queryString += "&outputTitle=" + encodeURIComponent(outputTitle);

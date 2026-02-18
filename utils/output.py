@@ -14,5 +14,7 @@ class Output:
             return self.output_data
         elif self.output_type == 'matrix':
             return f'<div>{self.output_data}</div>'
+        elif self.output_type == 'tabbed_matrix':
+            return f'<div>{self.output_data}</div>'
         else:
             return '<h1>Invalid</h1>'

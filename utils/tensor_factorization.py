@@ -1160,7 +1160,7 @@ def visualize_source_attribution(
     font_size: int = 12,
     fig_width: float = 14,
     fig_height: float = 6,
-    color_map: str = 'Greens'
+    color_map: str = 'coolwarm'
 ):
     """
     Visualize grain-level source attribution showing which source each grain belongs to.
@@ -1272,7 +1272,7 @@ def visualize_source_attribution_tabbed(
     font_size: int = 12,
     fig_width: float = 14,
     fig_height: float = 6,
-    color_map: str = 'Greens'
+    color_map: str = 'coolwarm'
 ):
     """
     Visualize grain-level source attribution in tabbed format (dzgrainalyzer style).
@@ -1706,6 +1706,27 @@ def visualize_empirical_kdes_tabbed(
                 ax = fig.add_subplot(gs[i])
                 axes.append(ax)
 
+        # Pre-compute global x range across all samples for aligned axes
+        all_feat_values = []
+        for s_idx in range(n_samples):
+            grain_count = grain_counts[s_idx]
+            fv = tensor[s_idx, :grain_count, feat_idx]
+            fv = fv[~np.isnan(fv)]
+            if len(fv) >= 2:
+                all_feat_values.append(fv)
+
+        if all_feat_values:
+            all_vals = np.concatenate(all_feat_values)
+            global_x_min = np.min(all_vals)
+            global_x_max = np.max(all_vals)
+            global_x_range = global_x_max - global_x_min
+            global_x_min -= global_x_range * 0.1
+            global_x_max += global_x_range * 0.1
+        else:
+            global_x_min, global_x_max = 0.0, 1.0
+
+        x_domain = np.linspace(global_x_min, global_x_max, 200)
+
         # Create KDE for each sample
         for s_idx in range(n_samples):
             # Get actual grains (not padded)
@@ -1725,13 +1746,6 @@ def visualize_empirical_kdes_tabbed(
             # Create KDE
             try:
                 kde = gaussian_kde(feature_values)
-
-                # Create domain for evaluation
-                x_min, x_max = np.min(feature_values), np.max(feature_values)
-                x_range = x_max - x_min
-                x_min -= x_range * 0.1
-                x_max += x_range * 0.1
-                x_domain = np.linspace(x_min, x_max, 200)
 
                 # Evaluate KDE
                 density = kde(x_domain)
@@ -1776,6 +1790,7 @@ def visualize_empirical_kdes_tabbed(
             ax.set_facecolor('white')
             ax.tick_params(axis='x', colors='black', width=2)
             ax.tick_params(axis='y', colors='black', width=2)
+            ax.set_xlim(global_x_min, global_x_max)
 
         if stack_samples:
             # Format overlaid plot

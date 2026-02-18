@@ -118,7 +118,7 @@
         }
 
         var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
-        var queryString = "/projects/{{ project_id }}/grainalyzer/find-optimal-rank?sampleNames=" + encodedSamples.join("&sampleNames=");
+        var queryString = "/projects/{{ project_id }}/multivariate/find-optimal-rank?sampleNames=" + encodedSamples.join("&sampleNames=");
         queryString += "&minRank=" + minRank;
         queryString += "&maxRank=" + maxRank;
         queryString += "&modelType=" + encodeURIComponent(model);

@@ -1,0 +1,151 @@
+<style>
+.univariate-tab-bar {
+    background-color: #3f5ea3;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.univariate-tab-bar .nav-link {
+    color: white;
+    background-color: #3f5ea3;
+    border: 1px solid transparent;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+}
+
+.univariate-tab-bar .nav-link:hover {
+    color: white;
+    background-color: #6c757d;
+    border-color: transparent;
+}
+
+.univariate-tab-bar .nav-link.active {
+    color: white;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    border-bottom-color: #6c757d;
+}
+</style>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs univariate-tab-bar">
+    <li class="nav-item">
+        <a class="nav-link" id="univariate-spreadsheet-tab" href="#" onclick="switchUnivariateTab('spreadsheet'); return false;">Spreadsheet</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" id="univariate-outputs-tab" href="#" onclick="switchUnivariateTab('outputs'); return false;">Outputs</a>
+    </li>
+</ul>
+
+<!-- Toolbars (switch based on active tab) -->
+<div id="univariate_spreadsheet_toolbar" style="display: none;">
+    {% include "editor/toolbars/spreadsheet_toolbar.html" %}
+</div>
+<div id="univariate_outputs_toolbar" style="display: block;">
+    {% include "editor/toolbars/outputs_toolbar.html" %}
+</div>
+
+<!-- Content Container -->
+<div id="univariate_container" style="height: calc(100vh - 180px);">
+    <!-- Spreadsheet Tab Content -->
+    <div id="univariate-spreadsheet-content" class="h-100" style="display: none; overflow: scroll; scrollbar-width: none;">
+        <div id="hot" class="w-100">
+            <!-- Handsontable will be initialized here -->
+        </div>
+    </div>
+
+    <!-- Outputs Tab Content -->
+    <div id="univariate-outputs-content" class="h-100" style="display: block; overflow-y: auto; overflow-x: auto; max-width: 100vw;">
+        <div class="p-3" id="outputs_container">
+            {% block outputs %}
+            {% for output in outputs_data %}
+                <div class="mb-3" style="max-width: 100%;">
+                    {{ output.output_data | safe }}
+                </div>
+            {% endfor %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+
+<script>
+function switchUnivariateTab(tabName) {
+    document.getElementById('univariate-spreadsheet-tab').classList.remove('active');
+    document.getElementById('univariate-outputs-tab').classList.remove('active');
+    document.getElementById('univariate-' + tabName + '-tab').classList.add('active');
+
+    const spreadsheetContent = document.getElementById('univariate-spreadsheet-content');
+    const outputsContent = document.getElementById('univariate-outputs-content');
+    const spreadsheetToolbar = document.getElementById('univariate_spreadsheet_toolbar');
+    const outputsToolbar = document.getElementById('univariate_outputs_toolbar');
+
+    if (tabName === 'spreadsheet') {
+        spreadsheetContent.style.display = 'flex';
+        outputsContent.style.display = 'none';
+        spreadsheetToolbar.style.display = 'block';
+        outputsToolbar.style.display = 'none';
+    } else {
+        spreadsheetContent.style.display = 'none';
+        outputsContent.style.display = 'block';
+        spreadsheetToolbar.style.display = 'none';
+        outputsToolbar.style.display = 'block';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('hot');
+    if (container) {
+        var hot = new Handsontable(container, {
+            data: {{ spreadsheet_data | safe }},
+            licenseKey: 'non-commercial-and-evaluation',
+            rowHeaders: true,
+            colHeaders: true,
+            contextMenu: true,
+            height: '100%',
+            stretchH: 'all'
+        });
+
+        hot.addHook('afterChange', function(changes, src) {
+            if (src === 'edit') {
+                saveTableData();
+            }
+        });
+        hot.addHook('afterRedo', saveTableData);
+        hot.addHook('afterUndo', saveTableData);
+        hot.addHook('afterPaste', saveTableData);
+
+        function saveTableData() {
+            var jsonData = { data: hot.getData() };
+            saveData(jsonData);
+        }
+
+        function saveData(jsonData) {
+            const jsonString = JSON.stringify(jsonData);
+            const compressedDataArray = pako.deflate(jsonString);
+            const compressedData = uint8ArrayToBase64(compressedDataArray);
+            fetch('/projects/{{ project_id }}/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 'compressedData': compressedData })
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Data saved successfully!');
+                } else {
+                    console.error('Error saving data');
+                }
+            }).catch(error => {
+                console.error('Error saving data:', error);
+            });
+        }
+
+        function uint8ArrayToBase64(uint8Array) {
+            let binary = '';
+            const len = uint8Array.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(uint8Array[i]);
+            }
+            return window.btoa(binary);
+        }
+    }
+});
+</script>

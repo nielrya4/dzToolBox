@@ -25,8 +25,8 @@ def embed_graph(fig, output_id, project_id, fig_type="matplotlib", img_format='s
 
     # Use grainalyzer-specific endpoints and containers if needed
     if is_grainalyzer:
-        delete_endpoint = f"/projects/{project_id}/grainalyzer/outputs/delete/{output_id}"
-        target_container = "#dz_grainalyzer_outputs"
+        delete_endpoint = f"/projects/{project_id}/multivariate/outputs/delete/{output_id}"
+        target_container = "#multivariate_outputs"
     else:
         delete_endpoint = f"/projects/{project_id}/outputs/delete/{output_id}"
         target_container = "#outputs_container"
@@ -79,8 +79,8 @@ def embed_tabbed_graphs(tabs, output_id, project_id, fig_type="matplotlib", img_
 
     # Use grainalyzer-specific endpoints and containers if needed
     if is_grainalyzer:
-        delete_endpoint = f"/projects/{project_id}/grainalyzer/outputs/delete/{output_id}"
-        target_container = "#dz_grainalyzer_outputs"
+        delete_endpoint = f"/projects/{project_id}/multivariate/outputs/delete/{output_id}"
+        target_container = "#multivariate_outputs"
     else:
         delete_endpoint = f"/projects/{project_id}/outputs/delete/{output_id}"
         target_container = "#outputs_container"
@@ -181,7 +181,7 @@ def embed_tabbed_graphs(tabs, output_id, project_id, fig_type="matplotlib", img_
     return html
 
 
-def embed_matrix(dataframe: DataFrame, output_id, project_id, title:str = None, download_formats=['xlsx']):
+def embed_matrix(dataframe: DataFrame, output_id, project_id, title:str = None, download_formats=['xlsx'], is_grainalyzer=False, show_index=True):
     accepted_image_formats = ['xlsx', 'xls', 'csv']
     download_tags = ""
     for download_format in download_formats:
@@ -198,17 +198,38 @@ def embed_matrix(dataframe: DataFrame, output_id, project_id, title:str = None, 
         download_data = encode.buffer_to_base64(buffer, mime_type)
         download_tag = f'<a class="dropdown-item" href="{download_data}" download="{safe_filename(title if title else "data")}.{download_format}">Download As {download_format.upper()}</a>\n'
         download_tags += download_tag
+
+    if is_grainalyzer:
+        delete_endpoint = f"/projects/{project_id}/multivariate/outputs/delete/{output_id}"
+        target_container = "#multivariate_outputs"
+    else:
+        delete_endpoint = f"/projects/{project_id}/outputs/delete/{output_id}"
+        target_container = "#outputs_container"
+
+    if show_index:
+        table_html = matrices.dataframe_to_html(dataframe, title=title)
+    else:
+        table_html = (
+            (f"<h4>{title}</h4>" if title else "") +
+            dataframe.to_html(
+                classes="table table-bordered table-striped",
+                justify="center",
+                index=False,
+            ).replace('<th>', '<th style="background-color: White;">')
+             .replace('<td>', '<td style="background-color: White;">')
+        )
+
     html = f"""
         <div>
-            {matrices.dataframe_to_html(dataframe, title=title)}
-            <form method="post" action="/projects/{project_id}/outputs/{output_id}">
+            {table_html}
+            <form method="post" action="{delete_endpoint}">
                 <div class="dropdown show">
                     <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="{output_id}_dropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         Actions
                     </a>
                     <div class="dropdown-menu" aria-labelledby="{output_id}_dropdown">
                         {download_tags}
-                        <button class="dropdown-item" type="submit" data-hx-post="/projects/{project_id}/outputs/delete/{output_id}" data-hx-target="#outputs_container" data-hx-swap="innerHTML" onclick="show_delete_output_spinner();">Delete This Output</button>
+                        <button class="dropdown-item" type="submit" data-hx-post="{delete_endpoint}" data-hx-target="{target_container}" data-hx-swap="innerHTML" onclick="show_delete_output_spinner();">Delete This Output</button>
                     </div>
                 </div>
             </form>
@@ -242,8 +263,8 @@ def embed_tabbed_matrices(tabs, output_id, project_id, download_formats=['xlsx']
 
     # Use grainalyzer-specific endpoints and containers if needed
     if is_grainalyzer:
-        delete_endpoint = f"/projects/{project_id}/grainalyzer/outputs/delete/{output_id}"
-        target_container = "#dz_grainalyzer_outputs"
+        delete_endpoint = f"/projects/{project_id}/multivariate/outputs/delete/{output_id}"
+        target_container = "#multivariate_outputs"
     else:
         delete_endpoint = f"/projects/{project_id}/outputs/delete/{output_id}"
         target_container = "#outputs_container"

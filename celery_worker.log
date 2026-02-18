@@ -1,10 +1,10 @@
  
  -------------- celery@ryan-LOQ-15IRH8 v5.4.0 (opalescent)
 --- ***** ----- 
--- ******* ---- Linux-6.8.0-94-generic-x86_64-with-glibc2.39 2026-02-15 01:39:25
+-- ******* ---- Linux-6.8.0-94-generic-x86_64-with-glibc2.39 2026-02-18 14:21:58
 - *** --- * --- 
 - ** ---------- [config]
-- ** ---------- .> app:         dztoolbox:0x7882a8e75900
+- ** ---------- .> app:         dztoolbox:0x7bbf05c6d900
 - ** ---------- .> transport:   redis://localhost:6379/0
 - ** ---------- .> results:     redis://localhost:6379/0
 - *** --- * --- .> concurrency: 12 (solo)
@@ -19,44 +19,35 @@
   . celery_tasks.tensor_factorization_task
   . celery_tasks.view_empirical_kdes_task
 
-[2026-02-15 01:39:25,353: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+[2026-02-18 14:21:58,113: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
 whether broker connection retries are made during startup in Celery 6.0 and above.
 If you wish to retain the existing behavior for retrying connections on startup,
 you should set broker_connection_retry_on_startup to True.
   warnings.warn(
 
-[2026-02-15 01:39:25,356: INFO/MainProcess] Connected to redis://localhost:6379/0
-[2026-02-15 01:39:25,356: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+[2026-02-18 14:21:58,124: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-02-18 14:21:58,125: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
 whether broker connection retries are made during startup in Celery 6.0 and above.
 If you wish to retain the existing behavior for retrying connections on startup,
 you should set broker_connection_retry_on_startup to True.
   warnings.warn(
 
-[2026-02-15 01:39:25,357: INFO/MainProcess] mingle: searching for neighbors
-[2026-02-15 01:39:26,362: INFO/MainProcess] mingle: all alone
-[2026-02-15 01:39:26,381: INFO/MainProcess] celery@ryan-LOQ-15IRH8 ready.
-[2026-02-15 01:39:43,394: INFO/MainProcess] Task celery_tasks.find_optimal_rank_task[11ee1379-c4e7-497b-adc1-86e33646a207] received
-[2026-02-15 01:39:46,302: WARNING/MainProcess] Temporary Excel created (column-based format): /tmp/tmpsp8poevg.xlsx
-[2026-02-15 01:39:46,302: WARNING/MainProcess] Running Julia command: /home/ryan/PycharmProjects/dzToolBox/.venv/julia_env/pyjuliapkg/install/bin/julia --project=/home/ryan/PycharmProjects/dzToolBox/.venv/julia_env /home/ryan/PycharmProjects/dzToolBox/julia_scripts/rank_selection.jl /tmp/tmpsp8poevg.xlsx 2 11 /tmp/tmp7k_e50y6.json
-[2026-02-15 01:39:46,302: WARNING/MainProcess] Julia project: /home/ryan/PycharmProjects/dzToolBox/.venv/julia_env
-[2026-02-15 01:40:24,309: WARNING/MainProcess] Julia stdout: Reading data from /tmp/tmpsp8poevg.xlsx...
-Preparing KDEs...
-Running factorization...
-Using rank range: 1:11 (like original DZ Grainalyzer)
-Best rank: 3 (R² = 0.981)
-Success! Results written to /tmp/tmp7k_e50y6.json
-[2026-02-15 01:40:24,309: WARNING/MainProcess] Julia stderr: [ Info: extracting Age...
-[ Info: extracting Eu_anomaly...
-[ Info: extracting Ti_temp...
-[ Info: extracting Th_U...
-[ Info: extracting LREE_HREE...
-[ Info: extracting Dy_Yb...
-[ Info: extracting (Ce_Nd)_Y...
-[2026-02-15 01:40:24,309: WARNING/MainProcess] Julia analysis complete: best rank = 3
-[2026-02-15 01:40:24,310: WARNING/MainProcess] Rank selection: Best rank is 3 (from Julia analysis)
-[2026-02-15 01:40:24,310: WARNING/MainProcess] Generating outputs: ['misfit_plot', 'curvature_plot']
-[2026-02-15 01:40:24,870: INFO/MainProcess] Task celery_tasks.find_optimal_rank_task[11ee1379-c4e7-497b-adc1-86e33646a207] succeeded in 41.476117518992396s: {'status': 'completed', 'outputs': [{'output_id': '46ab166608072f1b0582566a4170f2', 'output_type': 'graph', 'output_data': '
-        <div>
-            <img...'}, {'output_id': '9dd2677fda49f43caa37b73c4be06a', 'output_type': 'graph', 'output_data': '
-        <div>
-            <img...'}], 'saved': False, 'best_rank': 3, 'max_r2': 0.9809510922168418}
+[2026-02-18 14:21:58,128: INFO/MainProcess] mingle: searching for neighbors
+[2026-02-18 14:21:59,144: INFO/MainProcess] mingle: all alone
+[2026-02-18 14:21:59,165: INFO/MainProcess] celery@ryan-LOQ-15IRH8 ready.
+[2026-02-18 14:22:05,551: INFO/MainProcess] Task celery_tasks.view_empirical_kdes_task[3e88008a-242a-4893-a784-3757a46a5a99] received
+[2026-02-18 14:22:15,616: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/utils/tensor_factorization.py:1814: UserWarning: Tight layout not applied. tight_layout cannot make axes height small enough to accommodate all axes decorations.
+  fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.96])
+
+[2026-02-18 14:22:59,657: INFO/MainProcess] Task celery_tasks.view_empirical_kdes_task[3e88008a-242a-4893-a784-3757a46a5a99] succeeded in 54.10489856500135s: {'status': 'completed', 'outputs': [{'output_id': '7383ceb8860a2473f5c442517c44c7', 'output_type': 'tabbed_graph', 'output_data': '
+        <div class="tabbed-output-container" data-tabbed-output-id="7383ceb8860a2473f5c442517c44c7">
+            
+        <ul class="nav nav-tabs" id="tabs_7383ceb8860a2473f5c442517c44c7" role="tablist">
+            
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab_7383ceb8860a2473f5c442517c44c7_0_nav" data-bs-toggle="tab" data-bs-target="#tab_7383ceb8860a2473f5c442517c44c7_0" type="button" role="tab" aria-controls="tab_7383ceb8860a2473f5c442517c44c7_0" aria-selected="true">
+                    Age
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link " id="tab_7383ceb8860a2473f5c442517c44c7_1_nav" data-bs-toggle="tab" data-bs-target="#tab_7383ceb8860a2473f5c442517c44c7_1" type="button" role="tab"...'}], 'saved': False}

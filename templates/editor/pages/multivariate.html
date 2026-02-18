@@ -1,11 +1,11 @@
 <style>
-.grainalyzer-tab-bar {
+.multivariate-tab-bar {
     background-color: #3f5ea3;
     margin-bottom: 0;
     border-bottom: none;
 }
 
-.grainalyzer-tab-bar .nav-link {
+.multivariate-tab-bar .nav-link {
     color: white;
     background-color: #3f5ea3;
     border: 1px solid transparent;
@@ -13,13 +13,13 @@
     border-top-right-radius: 0.25rem;
 }
 
-.grainalyzer-tab-bar .nav-link:hover {
+.multivariate-tab-bar .nav-link:hover {
     color: white;
     background-color: #6c757d;
     border-color: transparent;
 }
 
-.grainalyzer-tab-bar .nav-link.active {
+.multivariate-tab-bar .nav-link.active {
     color: white;
     background-color: #6c757d;
     border-color: #6c757d;
@@ -28,64 +28,63 @@
 </style>
 
 <!-- Tab Navigation -->
-<ul class="nav nav-tabs grainalyzer-tab-bar">
+<ul class="nav nav-tabs multivariate-tab-bar">
     <li class="nav-item">
-        <a class="nav-link active" id="grainalyzer-data-tab" href="#" onclick="switchGrainalyzerTab('data'); return false;">Data</a>
+        <a class="nav-link" id="multivariate-data-tab" href="#" onclick="switchMultivariateTab('data'); return false;">Spreadsheet</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="grainalyzer-outputs-tab" href="#" onclick="switchGrainalyzerTab('outputs'); return false;">Outputs</a>
+        <a class="nav-link active" id="multivariate-outputs-tab" href="#" onclick="switchMultivariateTab('outputs'); return false;">Outputs</a>
     </li>
 </ul>
 
 <!-- Toolbars (switch based on active tab) -->
-<div id="dz_grainalyzer_spreadsheet_toolbar" style="display: block;">
-    {% include "editor/toolbars/dz_grainalyzer_spreadsheet_toolbar.html" %}
+<div id="multivariate_spreadsheet_toolbar" style="display: none;">
+    {% include "editor/toolbars/multivariate_spreadsheet_toolbar.html" %}
 </div>
-<div id="dz_grainalyzer_outputs_toolbar" style="display: none;">
-    {% include "editor/toolbars/dz_grainalyzer_outputs_toolbar.html" %}
+<div id="multivariate_outputs_toolbar" style="display: block;">
+    {% include "editor/toolbars/multivariate_outputs_toolbar.html" %}
 </div>
 
 <!-- Content Container -->
-<div id="dz_grainalyzer_container" style="height: calc(100vh - 180px);">
+<div id="multivariate_container" style="height: calc(100vh - 180px);">
     <!-- Data Tab Content -->
-    <div id="grainalyzer-data-content" class="h-100" style="display: flex; overflow: scroll; scrollbar-width: none;">
-        <div id="dz_grainalyzer_table" class="w-100">
+    <div id="multivariate-data-content" class="h-100" style="display: none; overflow: scroll; scrollbar-width: none;">
+        <div id="multivariate_table" class="w-100">
             <!-- Handsontable will be initialized here -->
         </div>
     </div>
 
     <!-- Outputs Tab Content -->
-    <div id="grainalyzer-outputs-content" class="h-100" style="display: none; overflow-y: auto; overflow-x: hidden;">
-        <div id="dz_grainalyzer_outputs" class="p-3">
-            {% if grainalyzer_outputs_data and grainalyzer_outputs_data|length > 0 %}
-                {% for output in grainalyzer_outputs_data %}
+    <div id="multivariate-outputs-content" class="h-100" style="display: flex; overflow-y: auto; overflow-x: hidden;">
+        <div id="multivariate_outputs" class="p-3">
+            {% if multivariate_outputs_data and multivariate_outputs_data|length > 0 %}
+                {% for output in multivariate_outputs_data %}
                     <div class="mb-3" style="max-width: 100%;">
                         {{ output.output_data | safe }}
                     </div>
                 {% endfor %}
             {% else %}
-                <p class="">Run tensor factorization to see interactive results here</p>
             {% endif %}
         </div>
     </div>
 </div>
 
 <script>
-let dzGrainalyzerHot = null;
+let multivariateHot = null;
 
-function switchGrainalyzerTab(tabName) {
+function switchMultivariateTab(tabName) {
     // Update tab navigation
-    document.getElementById('grainalyzer-data-tab').classList.remove('active');
-    document.getElementById('grainalyzer-outputs-tab').classList.remove('active');
-    document.getElementById('grainalyzer-' + tabName + '-tab').classList.add('active');
+    document.getElementById('multivariate-data-tab').classList.remove('active');
+    document.getElementById('multivariate-outputs-tab').classList.remove('active');
+    document.getElementById('multivariate-' + tabName + '-tab').classList.add('active');
 
     // Update tab content
-    const dataContent = document.getElementById('grainalyzer-data-content');
-    const outputsContent = document.getElementById('grainalyzer-outputs-content');
+    const dataContent = document.getElementById('multivariate-data-content');
+    const outputsContent = document.getElementById('multivariate-outputs-content');
 
     // Update toolbars
-    const spreadsheetToolbar = document.getElementById('dz_grainalyzer_spreadsheet_toolbar');
-    const outputsToolbar = document.getElementById('dz_grainalyzer_outputs_toolbar');
+    const spreadsheetToolbar = document.getElementById('multivariate_spreadsheet_toolbar');
+    const outputsToolbar = document.getElementById('multivariate_outputs_toolbar');
 
     if (tabName === 'data') {
         dataContent.style.display = 'flex';
@@ -100,33 +99,33 @@ function switchGrainalyzerTab(tabName) {
     }
 }
 
-function clearGrainalyzerOutputs() {
+function clearMultivariateOutputs() {
     // Show spinner
     show_clear_outputs_spinner();
 
-    fetch('/projects/{{ project_id }}/grainalyzer/outputs/clear', {
+    fetch('/projects/{{ project_id }}/multivariate/outputs/clear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
     })
     .then(response => {
         if (response.ok) {
             // Clear outputs container
-            const outputsContainer = document.getElementById('dz_grainalyzer_outputs');
+            const outputsContainer = document.getElementById('multivariate_outputs');
             const emptyMessage = '<p class="">Run tensor factorization to see interactive results here</p>';
 
             if (outputsContainer) {
                 outputsContainer.innerHTML = emptyMessage;
             }
 
-            console.log('Grainalyzer outputs cleared successfully');
+            console.log('Multivariate outputs cleared successfully');
         } else {
-            console.error('Error clearing grainalyzer outputs');
-            alert('Failed to clear grainalyzer outputs');
+            console.error('Error clearing multivariate outputs');
+            alert('Failed to clear multivariate outputs');
         }
     })
     .catch(error => {
-        console.error('Error clearing grainalyzer outputs:', error);
-        alert('Failed to clear grainalyzer outputs');
+        console.error('Error clearing multivariate outputs:', error);
+        alert('Failed to clear multivariate outputs');
     })
     .finally(() => {
         // Hide spinner
@@ -195,17 +194,17 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initialize any tabbed outputs that are already on the page
     initializeTabbedOutputs();
 
-    // Process HTMX for grainalyzer outputs that were rendered on page load
-    const grainalyzerOutputsContainer = document.getElementById('dz_grainalyzer_outputs');
-    if (grainalyzerOutputsContainer && typeof htmx !== 'undefined') {
-        htmx.process(grainalyzerOutputsContainer);
+    // Process HTMX for multivariate outputs that were rendered on page load
+    const multivariateOutputsContainer = document.getElementById('multivariate_outputs');
+    if (multivariateOutputsContainer && typeof htmx !== 'undefined') {
+        htmx.process(multivariateOutputsContainer);
     }
 
     // Initialize Handsontable for multivariate data
-    const container = document.getElementById('dz_grainalyzer_table');
+    const container = document.getElementById('multivariate_table');
     if (container) {
-        dzGrainalyzerHot = new Handsontable(container, {
-            data: {{ grainalyzer_spreadsheet_data | safe }},
+        multivariateHot = new Handsontable(container, {
+            data: {{ multivariate_spreadsheet_data | safe }},
             licenseKey: 'non-commercial-and-evaluation',
             rowHeaders: true,
             colHeaders: true,
@@ -215,18 +214,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Save data on edit
-        dzGrainalyzerHot.addHook('afterChange', function(changes, src) {
+        multivariateHot.addHook('afterChange', function(changes, src) {
             if (src === 'edit') {
                 saveTableData();
             }
         });
-        dzGrainalyzerHot.addHook('afterRedo', saveTableData);
-        dzGrainalyzerHot.addHook('afterUndo', saveTableData);
-        dzGrainalyzerHot.addHook('afterPaste', saveTableData);
+        multivariateHot.addHook('afterRedo', saveTableData);
+        multivariateHot.addHook('afterUndo', saveTableData);
+        multivariateHot.addHook('afterPaste', saveTableData);
     }
 
     function saveTableData() {
-        var jsonData = { data: dzGrainalyzerHot.getData() };
+        var jsonData = { data: multivariateHot.getData() };
         saveData(jsonData);
     }
 
@@ -234,18 +233,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const jsonString = JSON.stringify(jsonData);
         const compressedDataArray = pako.deflate(jsonString);
         const compressedData = uint8ArrayToBase64(compressedDataArray);
-        fetch('/projects/{{ project_id }}/grainalyzer/save', {
+        fetch('/projects/{{ project_id }}/multivariate/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 'compressedData': compressedData })
         }).then(response => {
             if (response.ok) {
-                console.log('Grainalyzer data saved successfully!');
+                console.log('Multivariate data saved successfully!');
             } else {
-                console.error('Error saving grainalyzer data');
+                console.error('Error saving multivariate data');
             }
         }).catch(error => {
-            console.error('Error saving grainalyzer data:', error);
+            console.error('Error saving multivariate data:', error);
         });
     }
 

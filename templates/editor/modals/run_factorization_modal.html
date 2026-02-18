@@ -19,35 +19,9 @@
                         <div class="table_list">
                             <table style="width: 100%;">
                                 <tr>
-                                    <td>
+                                    <td colspan="2">
                                         <label for="run_factorization_rank" class="form-label">Rank:</label>
                                         <input type="number" id="run_factorization_rank" class="form-control" min="2" value="5">
-                                    </td>
-                                    <td>
-                                        <label for="run_factorization_model" class="form-label">Decomposition Model:</label>
-                                        <select name="run_factorization_model" id="run_factorization_model" class="form-select">
-                                            <option value="Tucker1" selected>Tucker1 (constrained)</option>
-                                            <option value="CP">CP (CANDECOMP/PARAFAC)</option>
-                                            <option value="Tucker">Tucker (full)</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <label for="run_factorization_normalization" class="form-label">Normalization Method:</label>
-                                        <select name="run_factorization_normalization" id="run_factorization_normalization" class="form-select">
-                                            <option value="standardize" selected>Standardize (z-score)</option>
-                                            <option value="minmax">Min-Max Scaling</option>
-                                            <option value="robust">Robust (median/IQR)</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <label for="run_factorization_padding" class="form-label">Padding Mode:</label>
-                                        <select name="run_factorization_padding" id="run_factorization_padding" class="form-select">
-                                            <option value="zero" selected>Zero Padding</option>
-                                            <option value="mean">Mean Padding</option>
-                                            <option value="replicate">Replicate Last Grain</option>
-                                        </select>
                                     </td>
                                 </tr>
                                 <tr>
@@ -88,7 +62,7 @@
                     },
                     {
                         value: 'source_attribution_matrix',
-                        text: 'Source Attribution Matrix',
+                        text: 'Source Attribution Table',
                         selected: true
                     },
                     {
@@ -98,7 +72,12 @@
                     },
                     {
                         value: 'learned_coefficients',
-                        text: 'Learned Coefficients',
+                        text: 'Learned Coefficients Plot',
+                        selected: true
+                    },
+                    {
+                        value: 'learned_coefficients_matrix',
+                        text: 'Learned Coefficients Table',
                         selected: true
                     }
                 ],
@@ -126,9 +105,6 @@
         }
 
         var rank = parseInt(document.getElementById("run_factorization_rank").value);
-        var model = document.getElementById("run_factorization_model").value;
-        var normalization = document.getElementById("run_factorization_normalization").value;
-        var padding = document.getElementById("run_factorization_padding").value;
         var outputTitle = document.getElementById("run_factorization_output_name").value;
 
         // Get selected output types from MultiSelect
@@ -140,11 +116,11 @@
         }
 
         var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
-        var queryString = "/projects/{{ project_id }}/grainalyzer/run-factorization?sampleNames=" + encodedSamples.join("&sampleNames=");
+        var queryString = "/projects/{{ project_id }}/multivariate/run-factorization?sampleNames=" + encodedSamples.join("&sampleNames=");
         queryString += "&rank=" + rank;
-        queryString += "&modelType=" + encodeURIComponent(model);
-        queryString += "&normalizationMethod=" + encodeURIComponent(normalization);
-        queryString += "&paddingMode=" + encodeURIComponent(padding);
+        queryString += "&modelType=Tucker1";
+        queryString += "&normalizationMethod=standardize";
+        queryString += "&paddingMode=zero";
 
         // Add output types
         outputTypes.forEach(function(outputType) {

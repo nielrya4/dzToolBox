@@ -190,12 +190,12 @@
         show_save_spinner();
 
         // Use appropriate endpoint based on output type
-        var saveEndpoint = isGrainalyzerOutput
-            ? '/projects/{{ project_id }}/grainalyzer/outputs/save'
+        var saveEndpoint = isMultivariateOutput
+            ? '/projects/{{ project_id }}/multivariate/outputs/save'
             : '/projects/{{ project_id }}/outputs/save';
 
-        var outputContainerId = isGrainalyzerOutput
-            ? 'dz_grainalyzer_outputs'
+        var outputContainerId = isMultivariateOutput
+            ? 'multivariate_outputs'
             : 'outputs_container';
 
         fetch(saveEndpoint, {
@@ -217,7 +217,7 @@
             }
 
             pendingOutputs = [];
-            isGrainalyzerOutput = false; // Reset flag
+            isMultivariateOutput = false; // Reset flag
 
             // Reinitialize tabbed outputs after inserting new HTML
             if (typeof initializeTabbedOutputs === 'function') {
@@ -238,12 +238,12 @@
 
     // Reset flag when discarding
     document.getElementById('discard_preview_btn').addEventListener('click', function() {
-        isGrainalyzerOutput = false;
+        isMultivariateOutput = false;
         pendingOutputs = [];
     });
 
     // Also reset when modal is hidden (in case user clicks outside or uses Escape)
     document.getElementById('preview_output_modal').addEventListener('hidden.bs.modal', function() {
-        isGrainalyzerOutput = false;
+        isMultivariateOutput = false;
     });
 </script>
