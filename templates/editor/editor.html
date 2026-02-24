@@ -20,6 +20,8 @@
     <!-- Leaflet CSS and JS for Maps -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <!-- Plotly JS for interactive 3D plots -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     {% include "editor/misc/font_style.html" %}
     {% include "global/head.html" %}
     <style>
@@ -77,6 +79,7 @@
     {% from "global/sample_select.html" import sample_select with context %}
     {% include "editor/modals/matrix_dialog.html" %}
     {% include "editor/modals/hafnium_dialog.html" %}
+    {% include "editor/modals/heatmap_dialog.html" %}
     {% include "editor/modals/mds_dialog.html" %}
     {% include "editor/modals/mda_dialog.html" %}
 	{% include "editor/modals/tensor_dialog.html" %}
@@ -304,6 +307,17 @@
                             console.log('Initialized tabbed outputs');
                         }
                     }, 100);
+
+                    // Process any Plotly plots
+                    setTimeout(function() {
+                        outputsContainer.querySelectorAll('script[type="text/javascript"]').forEach(function(script) {
+                            try {
+                                eval(script.textContent);
+                            } catch (e) {
+                                console.error('Error executing Plotly script:', e);
+                            }
+                        });
+                    }, 150);
                 }
             })
             .catch(function(error) {

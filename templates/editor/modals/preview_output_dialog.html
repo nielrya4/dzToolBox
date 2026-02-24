@@ -142,6 +142,17 @@
                     initializeTabbedOutputs();
                 }, 100);
 
+                // Process any Plotly plots
+                setTimeout(function() {
+                    container.querySelectorAll('script[type="text/javascript"]').forEach(function(script) {
+                        try {
+                            eval(script.textContent);
+                        } catch (e) {
+                            console.error('Error executing Plotly script:', e);
+                        }
+                    });
+                }, 150);
+
                 bootstrap.Modal.getOrCreateInstance(document.getElementById('preview_output_modal')).show();
             })
             .catch(function(error) {
@@ -225,6 +236,17 @@
                     initializeTabbedOutputs();
                 }, 100);
             }
+
+            // Process any Plotly plots after saving
+            setTimeout(function() {
+                container.querySelectorAll('script[type="text/javascript"]').forEach(function(script) {
+                    try {
+                        eval(script.textContent);
+                    } catch (e) {
+                        console.error('Error executing Plotly script:', e);
+                    }
+                });
+            }, 150);
 
             bootstrap.Modal.getInstance(document.getElementById('preview_output_modal')).hide();
         })

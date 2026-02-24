@@ -1,0 +1,151 @@
+{% from "global/sample_select.html" import sample_select with context %}
+
+<div id="heatmap_modal" class="modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="frame" id="content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Heatmap Plotter</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <br />
+                <div class="container-sm">
+                    <form id="heatmap_form" data-hx-trigger="click">
+                        <label for="heatmap_output_name" class="form-label">Output Title</label>
+                        <input type="text" id="heatmap_output_name" name="heatmap_output_name" class="form-control" required>
+                        <br />
+                        <br />
+                        {{ sample_select(id="heatmap_sample_select", sender="heatmap_link", event='click', multi_select=False, endpoint='tensor-sample-names') }}
+                        <br />
+                        <div class="table_list">
+                            <table style="width: 100%;">
+                                <tr>
+                                    <td>
+                                        <label for="heatmap_feature_x" class="form-label">X-axis Feature:</label>
+                                        <select name="heatmap_feature_x" id="heatmap_feature_x" class="form-select">
+                                            <option value="" disabled selected>Select feature...</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="heatmap_feature_y" class="form-label">Y-axis Feature:</label>
+                                        <select name="heatmap_feature_y" id="heatmap_feature_y" class="form-select">
+                                            <option value="" disabled selected>Select feature...</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="heatmap_select" class="form-label">Graph type:</label>
+                                        <select name="heatmap_select" id="heatmap_select" class="form-select">
+                                            <option value="kde_2d_heatmap" selected>Heatmap</option>
+                                            <option value="kde_2d_surface">3D Surface</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: right; vertical-align: bottom;">
+                                        <button class="btn btn-primary" type="button" onclick="heatmap_send_args()">Plot</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </form>
+                    <br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const heatmapSampleList = document.getElementById("heatmap_sample_select");
+    let heatmapFeatureNames = [];
+
+    // Fetch feature names when modal opens
+    document.getElementById('heatmap_modal').addEventListener('shown.bs.modal', async function() {
+        document.getElementById('heatmap_output_name').focus();
+
+        // Fetch feature names from the server
+        try {
+            const response = await fetch('/projects/{{ project_id }}/tensor-sample-names');
+            const data = await response.json();
+            heatmapFeatureNames = data.feature_names || [];
+
+            // Populate feature dropdowns
+            const featureXSelect = document.getElementById('heatmap_feature_x');
+            const featureYSelect = document.getElementById('heatmap_feature_y');
+
+            // Clear existing options (except the first placeholder)
+            featureXSelect.innerHTML = '<option value="" disabled selected>Select feature...</option>';
+            featureYSelect.innerHTML = '<option value="" disabled selected>Select feature...</option>';
+
+            // Add feature options
+            heatmapFeatureNames.forEach((feature, index) => {
+                const optionX = document.createElement('option');
+                optionX.value = index;
+                optionX.textContent = feature;
+                featureXSelect.appendChild(optionX);
+
+                const optionY = document.createElement('option');
+                optionY.value = index;
+                optionY.textContent = feature;
+                featureYSelect.appendChild(optionY);
+            });
+        } catch (error) {
+            console.error('Error fetching feature names:', error);
+        }
+    });
+
+    function heatmap_send_args() {
+        // Get selected sample
+        var selectedSample = null;
+        var heatmap_checkboxes = heatmapSampleList.querySelectorAll(".sample-checkbox");
+        for (var i = 0; i < heatmap_checkboxes.length; i++) {
+            if (heatmap_checkboxes[i].checked) {
+                selectedSample = heatmap_checkboxes[i].value;
+                break;  // Only take the first selected sample
+            }
+        }
+
+        if (!selectedSample) {
+            alert("Please select a sample.");
+            return;
+        }
+
+        var featureXIndex = document.getElementById("heatmap_feature_x").value;
+        var featureYIndex = document.getElementById("heatmap_feature_y").value;
+
+        if (!featureXIndex || !featureYIndex) {
+            alert("Please select both X and Y features.");
+            return;
+        }
+
+        if (featureXIndex === featureYIndex) {
+            alert("Please select different features for X and Y axes.");
+            return;
+        }
+
+        var heatmap_type = document.getElementById("heatmap_select").value;
+        var heatmap_outputName = document.getElementById("heatmap_output_name").value;
+
+        var queryString = "/projects/{{ project_id }}/multivariate/outputs/new/heatmap?sampleName=" + encodeURIComponent(selectedSample) +
+                         "&featureX=" + featureXIndex +
+                         "&featureY=" + featureYIndex +
+                         "&outputType=" + heatmap_type;
+
+        if (heatmap_outputName !== "") {
+            queryString += "&outputTitle=" + encodeURIComponent(heatmap_outputName);
+        }
+
+        var heatmapModal = bootstrap.Modal.getInstance(document.getElementById('heatmap_modal'));
+        if (heatmapModal) {
+            heatmapModal.hide();
+        }
+
+        // Set flag to save to multivariate outputs
+        isMultivariateOutput = true;
+        generateOutput(queryString);
+    }
+</script>

@@ -102,6 +102,175 @@ def register(app):
         else:
             return jsonify({"error": "access_denied"}), 403
 
+    @app.route('/projects/<int:project_id>/multivariate/outputs/new/heatmap', methods=['GET'])
+    @login_required
+    def new_heatmap(project_id):
+        """Create a 2D KDE heatmap or surface plot for any two features of a sample"""
+        if session.get("open_project", 0) == project_id:
+            try:
+                from utils import spreadsheet, tensor_factorization, embedding
+
+                # Get parameters
+                sample_name = request.args.get('sampleName')
+                feature_x_idx = int(request.args.get('featureX'))
+                feature_y_idx = int(request.args.get('featureY'))
+                output_type = request.args.get('outputType', 'kde_2d_heatmap')
+                output_title = request.args.get('outputTitle', f'Heatmap: {sample_name}')
+
+                # Load project and settings
+                project = __get_project(project_id)
+                spreadsheet_data = spreadsheet.text_to_array(project.grainalyzer_data)
+
+                # Read multivariate samples and create tensor
+                samples, feature_names = spreadsheet.read_multivariate_samples(
+                    spreadsheet_array=spreadsheet_data,
+                    max_age=4500
+                )
+
+                # Find the sample
+                sample = None
+                sample_idx = None
+                for idx, s in enumerate(samples):
+                    if s.name == sample_name:
+                        sample = s
+                        sample_idx = idx
+                        break
+
+                if sample is None:
+                    return jsonify({"error": f"Sample '{sample_name}' not found"}), 404
+
+                # Validate feature indices
+                if feature_x_idx < 0 or feature_x_idx >= len(feature_names):
+                    return jsonify({"error": f"Invalid X feature index: {feature_x_idx}"}), 400
+                if feature_y_idx < 0 or feature_y_idx >= len(feature_names):
+                    return jsonify({"error": f"Invalid Y feature index: {feature_y_idx}"}), 400
+
+                feature_x_name = feature_names[feature_x_idx]
+                feature_y_name = feature_names[feature_y_idx]
+
+                # Create tensor to get the data
+                tensor, metadata = tensor_factorization.create_tensor_from_multivariate_samples(
+                    samples=samples,
+                    feature_names=feature_names,
+                    padding_mode='zero'
+                )
+
+                # Extract features for the sample
+                grain_count = metadata['grain_counts'][sample_idx]
+                feature_x_data = tensor[sample_idx, :grain_count, feature_x_idx]
+                feature_y_data = tensor[sample_idx, :grain_count, feature_y_idx]
+
+                # Create 2D KDE
+                kde_data = tensor_factorization.create_2d_kde_from_features(
+                    feature_x_data,
+                    feature_y_data,
+                    grid_size=100
+                )
+
+                # Get graph settings
+                font_name = project.settings.graph_settings.font_name
+                font_path = f'static/global/fonts/{font_name}.ttf' if font_name and font_name.lower() != "default" else None
+
+                font_size = project.settings.graph_settings.font_size
+                fig_width = project.settings.graph_settings.figure_width
+                fig_height = project.settings.graph_settings.figure_height
+
+                # Generate output ID
+                output_id = f"heatmap_{sample_name}_{feature_x_idx}_{feature_y_idx}"
+
+                # Generate the appropriate plot
+                if output_type == 'kde_2d_surface':
+                    # 3D surface plot (Plotly) - return as interactive HTML
+                    fig = tensor_factorization.visualize_2d_kde_surface(
+                        kde_data=kde_data,
+                        feature_x_name=feature_x_name,
+                        feature_y_name=feature_y_name,
+                        sample_name=sample_name,
+                        title=output_title,
+                        show_points=True,
+                        font_path=font_path,
+                        font_size=font_size,
+                        fig_width=fig_width,
+                        fig_height=fig_height
+                    )
+
+                    # Create interactive Plotly HTML
+                    # Plotly is already loaded in editor.html, so don't re-include it
+                    plotly_html = fig.to_html(include_plotlyjs=False, full_html=False)
+
+                    # Generate a PNG snapshot for download
+                    from dz_lib.utils import encode
+                    buffer = encode.fig_to_img_buffer(fig, fig_type='plotly', img_format='png')
+                    mime_type = encode.get_mime_type('png')
+                    download_data = encode.buffer_to_base64(buffer, mime_type)
+
+                    # Wrap with actions dropdown
+                    delete_endpoint = f"/projects/{project_id}/multivariate/outputs/delete/{output_id}"
+                    target_container = "#multivariate_outputs"
+
+                    embedded = f"""
+                        <div>
+                            {plotly_html}
+                            <form method="delete" action="{delete_endpoint}">
+                                <div class="dropdown show">
+                                    <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="{output_id}_dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Actions
+                                    </a>
+                                    <div class="dropdown-menu" aria-labelledby="{output_id}_dropdown">
+                                        <a class="dropdown-item" href="{download_data}" download="heatmap_3d.png">Download As PNG</a>
+                                        <button class="dropdown-item" type="submit" data-hx-post="{delete_endpoint}" data-hx-target="{target_container}" data-hx-swap="innerHTML" onclick="show_delete_output_spinner();">Delete This Output</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <hr>"""
+
+                else:  # kde_2d_heatmap
+                    # 2D heatmap (matplotlib figure)
+                    color_map = project.settings.graph_settings.color_map
+                    fig = tensor_factorization.visualize_2d_kde_heatmap(
+                        kde_data=kde_data,
+                        feature_x_name=feature_x_name,
+                        feature_y_name=feature_y_name,
+                        sample_name=sample_name,
+                        title=output_title,
+                        show_points=True,
+                        font_path=font_path,
+                        font_size=font_size,
+                        fig_width=fig_width,
+                        fig_height=fig_height,
+                        color_map=color_map
+                    )
+
+                    # Embed as PNG for display, with SVG and PNG download options
+                    embedded = embedding.embed_graph(
+                        fig=fig,
+                        output_id=output_id,
+                        project_id=project_id,
+                        fig_type="matplotlib",
+                        img_format='png',
+                        download_formats=['svg', 'png'],
+                        is_grainalyzer=True
+                    )
+
+                # Return for preview (wrapped in outputs array for preview modal)
+                output_id = f"heatmap_{sample_name}_{feature_x_idx}_{feature_y_idx}"
+                return jsonify({
+                    "outputs": [{
+                        "output_id": output_id,
+                        "output_type": "graph",
+                        "output_data": embedded
+                    }]
+                })
+
+            except Exception as e:
+                print(f"Error creating heatmap: {e}")
+                import traceback
+                traceback.print_exc()
+                return jsonify({"error": str(e)}), 500
+        else:
+            return jsonify({"error": "access_denied"}), 403
+
     @app.route('/projects/<int:project_id>/multivariate/view-data', methods=['GET'])
     @login_required
     def view_empirical_data(project_id):
@@ -327,3 +496,4 @@ def register(app):
                 return jsonify({"error": str(e), "error_type": type(e).__name__}), 500
         else:
             return jsonify({"error": "access_denied"}), 403
+

@@ -2430,3 +2430,269 @@ def standard_curvature(errors: List[float]) -> List[float]:
             curvatures.append(abs(d2))
 
     return curvatures
+
+
+def create_2d_kde_from_features(
+    feature_x: np.ndarray,
+    feature_y: np.ndarray,
+    grid_size: int = 100
+):
+    """
+    Create a 2D KDE from two feature arrays.
+
+    Parameters
+    ----------
+    feature_x : np.ndarray
+        Values for the x-axis feature
+    feature_y : np.ndarray
+        Values for the y-axis feature
+    grid_size : int
+        Number of grid points in each dimension (default: 100)
+
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - mesh_x: X coordinates of the mesh grid
+        - mesh_y: Y coordinates of the mesh grid
+        - mesh_z: Density values at each grid point
+        - sample_x: Original x data points
+        - sample_y: Original y data points
+    """
+    from scipy.stats import gaussian_kde
+
+    # Remove NaN values
+    valid_mask = ~(np.isnan(feature_x) | np.isnan(feature_y))
+    feature_x = feature_x[valid_mask]
+    feature_y = feature_y[valid_mask]
+
+    if len(feature_x) < 2:
+        raise ValueError("Not enough valid data points to create KDE")
+
+    # Create mesh grid
+    x_min, x_max = np.min(feature_x), np.max(feature_x)
+    y_min, y_max = np.min(feature_y), np.max(feature_y)
+
+    # Add 10% buffer
+    x_range = x_max - x_min
+    y_range = y_max - y_min
+    x_min -= x_range * 0.1
+    x_max += x_range * 0.1
+    y_min -= y_range * 0.1
+    y_max += y_range * 0.1
+
+    mesh_x, mesh_y = np.meshgrid(
+        np.linspace(x_min, x_max, grid_size),
+        np.linspace(y_min, y_max, grid_size)
+    )
+
+    # Create KDE
+    kernel = gaussian_kde(np.vstack([feature_x, feature_y]))
+
+    # Evaluate KDE on mesh
+    positions = np.vstack([mesh_x.ravel(), mesh_y.ravel()])
+    mesh_z = np.reshape(kernel(positions).T, mesh_x.shape)
+
+    # Evaluate KDE at sample points for correct z-elevation
+    sample_positions = np.vstack([feature_x, feature_y])
+    sample_z = kernel(sample_positions)
+
+    return {
+        'mesh_x': mesh_x,
+        'mesh_y': mesh_y,
+        'mesh_z': mesh_z,
+        'sample_x': feature_x,
+        'sample_y': feature_y,
+        'sample_z': sample_z
+    }
+
+
+def visualize_2d_kde_surface(
+    kde_data: dict,
+    feature_x_name: str,
+    feature_y_name: str,
+    sample_name: str,
+    title: str = "2D KDE Surface Plot",
+    show_points: bool = True,
+    font_path: str = None,
+    font_size: int = 12,
+    fig_width: float = 14,
+    fig_height: float = 10
+):
+    """
+    Create a 3D surface plot from 2D KDE data.
+
+    Parameters
+    ----------
+    kde_data : dict
+        Dictionary from create_2d_kde_from_features
+    feature_x_name : str
+        Name of the x-axis feature
+    feature_y_name : str
+        Name of the y-axis feature
+    sample_name : str
+        Name of the sample
+    title : str
+        Plot title
+    show_points : bool
+        Whether to show original data points
+    font_path : str
+        Path to font file
+    font_size : int
+        Font size
+    fig_width : float
+        Figure width in inches
+    fig_height : float
+        Figure height in inches
+
+    Returns
+    -------
+    str
+        HTML string containing the Plotly figure
+    """
+    import plotly.graph_objects as go
+
+    # Create surface plot
+    surface = go.Surface(
+        x=kde_data['mesh_x'],
+        y=kde_data['mesh_y'],
+        z=kde_data['mesh_z'],
+        colorscale='Viridis',
+        name='KDE',
+        showscale=True
+    )
+
+    data = [surface]
+
+    # Add scatter points if requested
+    if show_points:
+        scatter = go.Scatter3d(
+            x=kde_data['sample_x'],
+            y=kde_data['sample_y'],
+            z=kde_data['sample_z'],  # Points at their density elevation
+            mode='markers',
+            marker=dict(
+                size=2,
+                color='white',
+                line=dict(color='black', width=0.5)
+            ),
+            name='Data points'
+        )
+        data.append(scatter)
+
+    # Create layout
+    layout = go.Layout(
+        title=dict(
+            text=f'{title}<br>{sample_name}',
+            font=dict(size=font_size + 2)
+        ),
+        scene=dict(
+            xaxis=dict(title=feature_x_name),
+            yaxis=dict(title=feature_y_name),
+            zaxis=dict(title='Density')
+        ),
+        width=int(fig_width * 72),  # Convert inches to pixels
+        height=int(fig_height * 72),
+        showlegend=show_points
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+
+    return fig
+
+
+def visualize_2d_kde_heatmap(
+    kde_data: dict,
+    feature_x_name: str,
+    feature_y_name: str,
+    sample_name: str,
+    title: str = "2D KDE Heatmap",
+    show_points: bool = True,
+    font_path: str = None,
+    font_size: int = 12,
+    fig_width: float = 14,
+    fig_height: float = 10,
+    color_map: str = 'viridis'
+):
+    """
+    Create a 2D heatmap from 2D KDE data.
+
+    Parameters
+    ----------
+    kde_data : dict
+        Dictionary from create_2d_kde_from_features
+    feature_x_name : str
+        Name of the x-axis feature
+    feature_y_name : str
+        Name of the y-axis feature
+    sample_name : str
+        Name of the sample
+    title : str
+        Plot title
+    show_points : bool
+        Whether to show original data points
+    font_path : str
+        Path to font file
+    font_size : int
+        Font size
+    fig_width : float
+        Figure width in inches
+    fig_height : float
+        Figure height in inches
+    color_map : str
+        Matplotlib colormap name
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Matplotlib figure
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+
+    # Set up font
+    if font_path:
+        prop = fm.FontProperties(fname=font_path, size=font_size)
+        plt.rcParams['font.family'] = prop.get_name()
+        plt.rcParams['font.size'] = font_size
+
+    fig, ax = plt.subplots(1, 1, figsize=(fig_width, fig_height))
+
+    # Create heatmap
+    im = ax.pcolormesh(
+        kde_data['mesh_x'],
+        kde_data['mesh_y'],
+        kde_data['mesh_z'],
+        cmap=color_map,
+        shading='auto'
+    )
+
+    # Add colorbar
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('Density', fontsize=font_size)
+
+    # Add scatter points if requested
+    if show_points:
+        ax.scatter(
+            kde_data['sample_x'],
+            kde_data['sample_y'],
+            c='white',
+            s=10,
+            edgecolors='black',
+            linewidths=0.5,
+            alpha=0.5,
+            label='Data points'
+        )
+        ax.legend(fontsize=font_size - 2)
+
+    # Labels and title
+    ax.set_xlabel(feature_x_name, fontsize=font_size)
+    ax.set_ylabel(feature_y_name, fontsize=font_size)
+    ax.set_title(f'{title}\n{sample_name}', fontsize=font_size + 2)
+
+    # Turn off gridlines
+    ax.grid(False)
+
+    plt.tight_layout()
+
+    return fig
