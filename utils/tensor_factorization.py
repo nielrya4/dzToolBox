@@ -29,12 +29,9 @@ def get_julia():
 
 # Check if juliacall is available without importing it
 def _julia_available():
-    """Check if juliacall can be imported"""
-    try:
-        import juliacall
-        return True
-    except ImportError:
-        return False
+    """Check if juliacall can be imported without actually importing it"""
+    import importlib.util
+    return importlib.util.find_spec("juliacall") is not None
 
 JULIA_AVAILABLE = _julia_available()
 
