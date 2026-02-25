@@ -108,7 +108,14 @@ def register(app):
         """Create a 2D KDE heatmap or surface plot for any two features of a sample"""
         if session.get("open_project", 0) == project_id:
             try:
-                from utils import spreadsheet, tensor_factorization, embedding
+                from utils import spreadsheet, embedding
+                # Import only specific functions to avoid Julia initialization
+                from utils.tensor_factorization import (
+                    create_2d_kde_from_features,
+                    visualize_2d_kde_surface,
+                    visualize_2d_kde_heatmap
+                )
+                import numpy as np
 
                 # Get parameters
                 sample_name = request.args.get('sampleName')
@@ -121,7 +128,7 @@ def register(app):
                 project = __get_project(project_id)
                 spreadsheet_data = spreadsheet.text_to_array(project.grainalyzer_data)
 
-                # Read multivariate samples and create tensor
+                # Read multivariate samples
                 samples, feature_names = spreadsheet.read_multivariate_samples(
                     spreadsheet_array=spreadsheet_data,
                     max_age=4500
@@ -148,20 +155,14 @@ def register(app):
                 feature_x_name = feature_names[feature_x_idx]
                 feature_y_name = feature_names[feature_y_idx]
 
-                # Create tensor to get the data
-                tensor, metadata = tensor_factorization.create_tensor_from_multivariate_samples(
-                    samples=samples,
-                    feature_names=feature_names,
-                    padding_mode='zero'
-                )
-
-                # Extract features for the sample
-                grain_count = metadata['grain_counts'][sample_idx]
-                feature_x_data = tensor[sample_idx, :grain_count, feature_x_idx]
-                feature_y_data = tensor[sample_idx, :grain_count, feature_y_idx]
+                # Extract feature data directly from the sample (avoid tensor creation to avoid Julia)
+                # MultivariateGrain stores features as a dict with feature names as keys
+                grains = samples[sample_idx].grains
+                feature_x_data = np.array([g.features[feature_x_name] for g in grains])
+                feature_y_data = np.array([g.features[feature_y_name] for g in grains])
 
                 # Create 2D KDE
-                kde_data = tensor_factorization.create_2d_kde_from_features(
+                kde_data = create_2d_kde_from_features(
                     feature_x_data,
                     feature_y_data,
                     grid_size=100
@@ -181,7 +182,7 @@ def register(app):
                 # Generate the appropriate plot
                 if output_type == 'kde_2d_surface':
                     # 3D surface plot (Plotly) - return as interactive HTML
-                    fig = tensor_factorization.visualize_2d_kde_surface(
+                    fig = visualize_2d_kde_surface(
                         kde_data=kde_data,
                         feature_x_name=feature_x_name,
                         feature_y_name=feature_y_name,
@@ -228,7 +229,7 @@ def register(app):
                 else:  # kde_2d_heatmap
                     # 2D heatmap (matplotlib figure)
                     color_map = project.settings.graph_settings.color_map
-                    fig = tensor_factorization.visualize_2d_kde_heatmap(
+                    fig = visualize_2d_kde_heatmap(
                         kde_data=kde_data,
                         feature_x_name=feature_x_name,
                         feature_y_name=feature_y_name,

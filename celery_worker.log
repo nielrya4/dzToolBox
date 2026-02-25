@@ -1,10 +1,10 @@
  
  -------------- celery@ryan-LOQ-15IRH8 v5.4.0 (opalescent)
 --- ***** ----- 
--- ******* ---- Linux-6.8.0-94-generic-x86_64-with-glibc2.39 2026-02-24 15:34:42
+-- ******* ---- Linux-6.8.0-94-generic-x86_64-with-glibc2.39 2026-02-25 01:30:28
 - *** --- * --- 
 - ** ---------- [config]
-- ** ---------- .> app:         dztoolbox:0x7af354775900
+- ** ---------- .> app:         dztoolbox:0x7db166c75900
 - ** ---------- .> transport:   redis://localhost:6379/0
 - ** ---------- .> results:     redis://localhost:6379/0
 - *** --- * --- .> concurrency: 12 (solo)
@@ -19,35 +19,19 @@
   . celery_tasks.tensor_factorization_task
   . celery_tasks.view_empirical_kdes_task
 
-[2026-02-24 15:34:42,345: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+[2026-02-25 01:30:28,408: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
 whether broker connection retries are made during startup in Celery 6.0 and above.
 If you wish to retain the existing behavior for retrying connections on startup,
 you should set broker_connection_retry_on_startup to True.
   warnings.warn(
 
-[2026-02-24 15:34:42,356: INFO/MainProcess] Connected to redis://localhost:6379/0
-[2026-02-24 15:34:42,356: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+[2026-02-25 01:30:28,414: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-02-25 01:30:28,415: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
 whether broker connection retries are made during startup in Celery 6.0 and above.
 If you wish to retain the existing behavior for retrying connections on startup,
 you should set broker_connection_retry_on_startup to True.
   warnings.warn(
 
-[2026-02-24 15:34:42,358: INFO/MainProcess] mingle: searching for neighbors
-[2026-02-24 15:34:43,373: INFO/MainProcess] mingle: all alone
-[2026-02-24 15:34:43,398: INFO/MainProcess] celery@ryan-LOQ-15IRH8 ready.
-[2026-02-24 15:46:52,736: INFO/MainProcess] Task celery_tasks.view_empirical_kdes_task[82d4f1a8-bf8a-4869-ac63-c9aebe184528] received
-[2026-02-24 15:47:01,663: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/utils/tensor_factorization.py:1814: UserWarning: Tight layout not applied. tight_layout cannot make axes height small enough to accommodate all axes decorations.
-  fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.96])
-
-[2026-02-24 15:47:35,421: INFO/MainProcess] Task celery_tasks.view_empirical_kdes_task[82d4f1a8-bf8a-4869-ac63-c9aebe184528] succeeded in 42.68382638700132s: {'status': 'completed', 'outputs': [{'output_id': 'cb308ef0ce7635d02fa6dfa44921e1', 'output_type': 'tabbed_graph', 'output_data': '
-        <div class="tabbed-output-container" data-tabbed-output-id="cb308ef0ce7635d02fa6dfa44921e1">
-            
-        <ul class="nav nav-tabs" id="tabs_cb308ef0ce7635d02fa6dfa44921e1" role="tablist">
-            
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tab_cb308ef0ce7635d02fa6dfa44921e1_0_nav" data-bs-toggle="tab" data-bs-target="#tab_cb308ef0ce7635d02fa6dfa44921e1_0" type="button" role="tab" aria-controls="tab_cb308ef0ce7635d02fa6dfa44921e1_0" aria-selected="true">
-                    Age
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link " id="tab_cb308ef0ce7635d02fa6dfa44921e1_1_nav" data-bs-toggle="tab" data-bs-target="#tab_cb308ef0ce7635d02fa6dfa44921e1_1" type="button" role="tab"...'}], 'saved': False}
+[2026-02-25 01:30:28,417: INFO/MainProcess] mingle: searching for neighbors
+[2026-02-25 01:30:29,434: INFO/MainProcess] mingle: all alone
+[2026-02-25 01:30:29,466: INFO/MainProcess] celery@ryan-LOQ-15IRH8 ready.
