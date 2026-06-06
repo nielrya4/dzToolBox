@@ -71,6 +71,26 @@
                 margin: 5px;
             }
         }
+		.gsa-citation {
+            margin-left: 36px; /* Adjusts the indentation */
+            text-indent: -36px; /* Pulls the first line back to the left margin */
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.5;
+        }
+		.works-cited {
+			font-family: "Times New Roman", Times, serif;
+			font-size: 12pt;
+			line-height: 1.6;
+			color: white;
+			margin-top: 20px;
+		}
+		.citation {
+			margin-left: 36px; /* Hanging indent */
+			text-indent: -36px; /* Pulls the first line back */
+			margin-bottom: 12px;
+			color: white;
+		}
     </style>
 </head>
 <body>
@@ -88,6 +108,7 @@
             <a href="#mds">Multidimensional Scaling Models (MDS)</a>
             <a href="#unmixing">Unmixing Models</a>
             <a href="#hafnium">Hafnium Plotter</a>
+			<a href="#multivariate">Multivariate Data</a>
             <a href="#future-steps">Future Steps</a>
         </nav>
         <main class="content">
@@ -248,6 +269,38 @@
                     important features, and then click the small camera icon to save the image. The heatmap is similar
                     to all other dzToolBox graphs in the way that it is downloaded.
                 </p>
+            </section>
+            <br />
+			<section id="multivariate">
+                <h3>Multivariate Data</h3>
+                <p>
+                    The functions formerly packaged as DZ Grainalyzer are now available on dzToolBox. This suite of
+					tools is defined by their authors as follows:
+					<br />
+					"DZ Grainalyzer implements the third-order constrained Tucker-1 tensor decomposition algorithm
+					developed by Graham et al. (in review). The algorithm accepts as inputs an unlimited number of
+					variables measured from individual grains or bulk aliquots in mixed samples. It couples a kernel
+					density estimation technique with a matrix-tensor factorization to determine the distributions of
+					those variables in latent sources and their mixing proportions in the empirical mixed samples."
+					<br />
+    				"It also implements the numerical test for rank estimation to define the optimum number of latent
+					sources outlined by Graham et al. (in review)."
+					<br />
+    				"It uses the maximum-likelihood approach developed by Graham et al. (in review) to correlate the
+					individual detrital grains to latent sources based on an unlimited number of features."
+				</p>
+				<div class="works-cited">
+					<!-- Citation 1 -->
+					<p class="citation">
+						Graham, N., et al. &ldquo;Tracing Sedimentary Origins in Multivariate Geochronology via Constrained Tensor Factorization.&rdquo;
+						<em>Mathematical Geosciences</em>, in review.
+					</p>
+					<!-- Citation 2 -->
+					<p class="citation">
+						Saylor, J. E., et al. &ldquo;Multivariate Petrochronological Mixture Modelling: Application to Characterizing Sediment Source Cu Fertility.&rdquo;
+						<em>Geology</em>, in preparation.
+					</p>
+				</div>
             </section>
             <br />
             <section id="future-steps">
