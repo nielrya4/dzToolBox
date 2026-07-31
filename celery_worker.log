@@ -19,7 +19,9 @@
   . celery_tasks.tensor_factorization_task
   . celery_tasks.view_empirical_kdes_task
 
-[2026-02-25 01:30:28,408: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+
+worker: Warm shutdown (MainProcess)
+nProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
 whether broker connection retries are made during startup in Celery 6.0 and above.
 If you wish to retain the existing behavior for retrying connections on startup,
 you should set broker_connection_retry_on_startup to True.
@@ -35,3 +37,230 @@ you should set broker_connection_retry_on_startup to True.
 [2026-02-25 01:30:28,417: INFO/MainProcess] mingle: searching for neighbors
 [2026-02-25 01:30:29,434: INFO/MainProcess] mingle: all alone
 [2026-02-25 01:30:29,466: INFO/MainProcess] celery@ryan-LOQ-15IRH8 ready.
+[2026-02-26 00:00:00,844: WARNING/MainProcess] No guest accounts to clean up
+[2026-02-27 08:59:06,903: WARNING/MainProcess] Error during cleanup: (psycopg2.OperationalError) could not translate host name "ep-lucky-boat-a44k24rd.us-east-1.pg.koyeb.app" to address: Temporary failure in name resolution
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[2026-02-27 08:59:06,904: WARNING/MainProcess] Exception in thread 
+[2026-02-27 08:59:06,904: WARNING/MainProcess] Thread-1 (run_scheduler)
+[2026-02-27 08:59:06,904: WARNING/MainProcess] :
+[2026-02-27 08:59:06,904: WARNING/MainProcess] Traceback (most recent call last):
+[2026-02-27 08:59:06,904: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 145, in __init__
+[2026-02-27 08:59:06,908: WARNING/MainProcess]     
+[2026-02-27 08:59:06,908: WARNING/MainProcess] self._dbapi_connection = engine.raw_connection()
+[2026-02-27 08:59:06,908: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 3303, in raw_connection
+[2026-02-27 08:59:06,908: WARNING/MainProcess]     
+[2026-02-27 08:59:06,908: WARNING/MainProcess] return self.pool.connect()
+[2026-02-27 08:59:06,909: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+[2026-02-27 08:59:06,909: WARNING/MainProcess]     
+[2026-02-27 08:59:06,909: WARNING/MainProcess] return _ConnectionFairy._checkout(self)
+[2026-02-27 08:59:06,909: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+[2026-02-27 08:59:06,909: WARNING/MainProcess]     
+[2026-02-27 08:59:06,909: WARNING/MainProcess] fairy = _ConnectionRecord.checkout(pool)
+[2026-02-27 08:59:06,909: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 717, in checkout
+[2026-02-27 08:59:06,910: WARNING/MainProcess]     
+[2026-02-27 08:59:06,910: WARNING/MainProcess] with util.safe_reraise():
+[2026-02-27 08:59:06,910: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+[2026-02-27 08:59:06,910: WARNING/MainProcess]     
+[2026-02-27 08:59:06,910: WARNING/MainProcess] raise exc_value.with_traceback(exc_tb)
+[2026-02-27 08:59:06,910: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 715, in checkout
+[2026-02-27 08:59:06,910: WARNING/MainProcess]     
+[2026-02-27 08:59:06,910: WARNING/MainProcess] dbapi_connection = rec.get_connection()
+[2026-02-27 08:59:06,910: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 866, in get_connection
+[2026-02-27 08:59:06,910: WARNING/MainProcess]     
+[2026-02-27 08:59:06,910: WARNING/MainProcess] self.__connect()
+[2026-02-27 08:59:06,910: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+[2026-02-27 08:59:06,911: WARNING/MainProcess]     
+[2026-02-27 08:59:06,911: WARNING/MainProcess] with util.safe_reraise():
+[2026-02-27 08:59:06,911: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+[2026-02-27 08:59:06,911: WARNING/MainProcess]     
+[2026-02-27 08:59:06,911: WARNING/MainProcess] raise exc_value.with_traceback(exc_tb)
+[2026-02-27 08:59:06,911: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+[2026-02-27 08:59:06,911: WARNING/MainProcess]     
+[2026-02-27 08:59:06,911: WARNING/MainProcess] self.dbapi_connection = connection = pool._invoke_creator(self)
+[2026-02-27 08:59:06,911: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+[2026-02-27 08:59:06,912: WARNING/MainProcess]     
+[2026-02-27 08:59:06,912: WARNING/MainProcess] return dialect.connect(*cargs, **cparams)
+[2026-02-27 08:59:06,912: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 616, in connect
+[2026-02-27 08:59:06,912: WARNING/MainProcess]     
+[2026-02-27 08:59:06,912: WARNING/MainProcess] return self.loaded_dbapi.connect(*cargs, **cparams)
+[2026-02-27 08:59:06,912: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/psycopg2/__init__.py", line 122, in connect
+[2026-02-27 08:59:06,913: WARNING/MainProcess]     
+[2026-02-27 08:59:06,913: WARNING/MainProcess] conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+[2026-02-27 08:59:06,913: WARNING/MainProcess] psycopg2
+[2026-02-27 08:59:06,913: WARNING/MainProcess] .
+[2026-02-27 08:59:06,913: WARNING/MainProcess] OperationalError
+[2026-02-27 08:59:06,913: WARNING/MainProcess] : 
+[2026-02-27 08:59:06,913: WARNING/MainProcess] could not translate host name "ep-lucky-boat-a44k24rd.us-east-1.pg.koyeb.app" to address: Temporary failure in name resolution
+[2026-02-27 08:59:06,913: WARNING/MainProcess] 
+The above exception was the direct cause of the following exception:
+[2026-02-27 08:59:06,913: WARNING/MainProcess] Traceback (most recent call last):
+[2026-02-27 08:59:06,913: WARNING/MainProcess]   File "/usr/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+[2026-02-27 08:59:06,913: WARNING/MainProcess]     
+[2026-02-27 08:59:06,914: WARNING/MainProcess] self.run()
+[2026-02-27 08:59:06,914: WARNING/MainProcess]   File "/usr/lib/python3.10/threading.py", line 953, in run
+[2026-02-27 08:59:06,914: WARNING/MainProcess]     
+[2026-02-27 08:59:06,914: WARNING/MainProcess] self._target(*self._args, **self._kwargs)
+[2026-02-27 08:59:06,914: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/server/cleanup.py", line 50, in run_scheduler
+[2026-02-27 08:59:06,914: WARNING/MainProcess]     
+[2026-02-27 08:59:06,914: WARNING/MainProcess] schedule.run_pending()
+[2026-02-27 08:59:06,914: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/schedule/__init__.py", line 822, in run_pending
+[2026-02-27 08:59:06,918: WARNING/MainProcess]     
+[2026-02-27 08:59:06,918: WARNING/MainProcess] default_scheduler.run_pending()
+[2026-02-27 08:59:06,918: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/schedule/__init__.py", line 100, in run_pending
+[2026-02-27 08:59:06,918: WARNING/MainProcess]     
+[2026-02-27 08:59:06,918: WARNING/MainProcess] self._run_job(job)
+[2026-02-27 08:59:06,918: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/schedule/__init__.py", line 172, in _run_job
+[2026-02-27 08:59:06,918: WARNING/MainProcess]     
+[2026-02-27 08:59:06,918: WARNING/MainProcess] ret = job.run()
+[2026-02-27 08:59:06,918: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/schedule/__init__.py", line 693, in run
+[2026-02-27 08:59:06,919: WARNING/MainProcess]     
+[2026-02-27 08:59:06,919: WARNING/MainProcess] ret = self.job_func()
+[2026-02-27 08:59:06,919: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/server/cleanup.py", line 20, in cleanup_job
+[2026-02-27 08:59:06,919: WARNING/MainProcess]     
+[2026-02-27 08:59:06,919: WARNING/MainProcess] guest_users = APP.User.query.filter(APP.User.username.endswith("_guest")).all()
+[2026-02-27 08:59:06,919: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2673, in all
+[2026-02-27 08:59:06,920: WARNING/MainProcess]     
+[2026-02-27 08:59:06,920: WARNING/MainProcess] return self._iter().all()  # type: ignore
+[2026-02-27 08:59:06,920: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+[2026-02-27 08:59:06,920: WARNING/MainProcess]     
+[2026-02-27 08:59:06,920: WARNING/MainProcess] result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+[2026-02-27 08:59:06,920: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+[2026-02-27 08:59:06,921: WARNING/MainProcess]     
+[2026-02-27 08:59:06,921: WARNING/MainProcess] return self._execute_internal(
+[2026-02-27 08:59:06,921: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2181, in _execute_internal
+[2026-02-27 08:59:06,921: WARNING/MainProcess]     
+[2026-02-27 08:59:06,922: WARNING/MainProcess] conn = self._connection_for_bind(bind)
+[2026-02-27 08:59:06,922: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2050, in _connection_for_bind
+[2026-02-27 08:59:06,922: WARNING/MainProcess]     
+[2026-02-27 08:59:06,922: WARNING/MainProcess] return trans._connection_for_bind(engine, execution_options)
+[2026-02-27 08:59:06,922: WARNING/MainProcess]   File "<string>", line 2, in _connection_for_bind
+[2026-02-27 08:59:06,922: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+[2026-02-27 08:59:06,922: WARNING/MainProcess]     
+[2026-02-27 08:59:06,922: WARNING/MainProcess] ret_value = fn(self, *arg, **kw)
+[2026-02-27 08:59:06,922: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 1144, in _connection_for_bind
+[2026-02-27 08:59:06,923: WARNING/MainProcess]     
+[2026-02-27 08:59:06,923: WARNING/MainProcess] conn = bind.connect()
+[2026-02-27 08:59:06,923: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 3279, in connect
+[2026-02-27 08:59:06,923: WARNING/MainProcess]     
+[2026-02-27 08:59:06,923: WARNING/MainProcess] return self._connection_cls(self)
+[2026-02-27 08:59:06,923: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 147, in __init__
+[2026-02-27 08:59:06,923: WARNING/MainProcess]     
+[2026-02-27 08:59:06,923: WARNING/MainProcess] Connection._handle_dbapi_exception_noconnection(
+[2026-02-27 08:59:06,924: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 2443, in _handle_dbapi_exception_noconnection
+[2026-02-27 08:59:06,924: WARNING/MainProcess]     
+[2026-02-27 08:59:06,924: WARNING/MainProcess] raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+[2026-02-27 08:59:06,924: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 145, in __init__
+[2026-02-27 08:59:06,924: WARNING/MainProcess]     
+[2026-02-27 08:59:06,924: WARNING/MainProcess] self._dbapi_connection = engine.raw_connection()
+[2026-02-27 08:59:06,924: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 3303, in raw_connection
+[2026-02-27 08:59:06,925: WARNING/MainProcess]     
+[2026-02-27 08:59:06,925: WARNING/MainProcess] return self.pool.connect()
+[2026-02-27 08:59:06,925: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+[2026-02-27 08:59:06,925: WARNING/MainProcess]     
+[2026-02-27 08:59:06,925: WARNING/MainProcess] return _ConnectionFairy._checkout(self)
+[2026-02-27 08:59:06,925: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1263, in _checkout
+[2026-02-27 08:59:06,925: WARNING/MainProcess]     
+[2026-02-27 08:59:06,925: WARNING/MainProcess] fairy = _ConnectionRecord.checkout(pool)
+[2026-02-27 08:59:06,925: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 717, in checkout
+[2026-02-27 08:59:06,925: WARNING/MainProcess]     
+[2026-02-27 08:59:06,925: WARNING/MainProcess] with util.safe_reraise():
+[2026-02-27 08:59:06,926: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+[2026-02-27 08:59:06,926: WARNING/MainProcess]     
+[2026-02-27 08:59:06,926: WARNING/MainProcess] raise exc_value.with_traceback(exc_tb)
+[2026-02-27 08:59:06,926: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 715, in checkout
+[2026-02-27 08:59:06,926: WARNING/MainProcess]     
+[2026-02-27 08:59:06,926: WARNING/MainProcess] dbapi_connection = rec.get_connection()
+[2026-02-27 08:59:06,926: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 866, in get_connection
+[2026-02-27 08:59:06,926: WARNING/MainProcess]     
+[2026-02-27 08:59:06,926: WARNING/MainProcess] self.__connect()
+[2026-02-27 08:59:06,926: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 900, in __connect
+[2026-02-27 08:59:06,926: WARNING/MainProcess]     
+[2026-02-27 08:59:06,926: WARNING/MainProcess] with util.safe_reraise():
+[2026-02-27 08:59:06,926: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+[2026-02-27 08:59:06,926: WARNING/MainProcess]     
+[2026-02-27 08:59:06,927: WARNING/MainProcess] raise exc_value.with_traceback(exc_tb)
+[2026-02-27 08:59:06,927: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 896, in __connect
+[2026-02-27 08:59:06,927: WARNING/MainProcess]     
+[2026-02-27 08:59:06,927: WARNING/MainProcess] self.dbapi_connection = connection = pool._invoke_creator(self)
+[2026-02-27 08:59:06,927: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/create.py", line 643, in connect
+[2026-02-27 08:59:06,927: WARNING/MainProcess]     
+[2026-02-27 08:59:06,927: WARNING/MainProcess] return dialect.connect(*cargs, **cparams)
+[2026-02-27 08:59:06,927: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 616, in connect
+[2026-02-27 08:59:06,927: WARNING/MainProcess]     
+[2026-02-27 08:59:06,927: WARNING/MainProcess] return self.loaded_dbapi.connect(*cargs, **cparams)
+[2026-02-27 08:59:06,927: WARNING/MainProcess]   File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/psycopg2/__init__.py", line 122, in connect
+[2026-02-27 08:59:06,927: WARNING/MainProcess]     
+[2026-02-27 08:59:06,927: WARNING/MainProcess] conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+[2026-02-27 08:59:06,927: WARNING/MainProcess] sqlalchemy.exc
+[2026-02-27 08:59:06,927: WARNING/MainProcess] .
+[2026-02-27 08:59:06,927: WARNING/MainProcess] OperationalError
+[2026-02-27 08:59:06,928: WARNING/MainProcess] : 
+[2026-02-27 08:59:06,928: WARNING/MainProcess] (psycopg2.OperationalError) could not translate host name "ep-lucky-boat-a44k24rd.us-east-1.pg.koyeb.app" to address: Temporary failure in name resolution
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[2026-03-07 12:29:26,434: WARNING/MainProcess] consumer: Connection to broker lost. Trying to re-establish the connection...
+Traceback (most recent call last):
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py", line 340, in start
+    blueprint.start(self)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/bootsteps.py", line 116, in start
+    step.start(parent)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py", line 746, in start
+    c.loop(*c.loop_args())
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/loops.py", line 97, in asynloop
+    next(loop)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/kombu/asynchronous/hub.py", line 373, in create_loop
+    cb(*cbargs)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/kombu/transport/redis.py", line 1352, in on_readable
+    self.cycle.on_readable(fileno)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/kombu/transport/redis.py", line 569, in on_readable
+    chan.handlers[type]()
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/kombu/transport/redis.py", line 918, in _receive
+    ret.append(self._receive_one(c))
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/kombu/transport/redis.py", line 928, in _receive_one
+    response = c.parse_response()
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/client.py", line 865, in parse_response
+    response = self._execute(conn, try_read)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/client.py", line 841, in _execute
+    return conn.retry.call_with_retry(
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/retry.py", line 65, in call_with_retry
+    fail(error)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/client.py", line 843, in <lambda>
+    lambda error: self._disconnect_raise_connect(conn, error),
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/client.py", line 830, in _disconnect_raise_connect
+    raise error
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/retry.py", line 62, in call_with_retry
+    return do()
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/client.py", line 842, in <lambda>
+    lambda: command(*args, **kwargs),
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/client.py", line 863, in try_read
+    return conn.read_response(disconnect_on_error=False, push_request=True)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/connection.py", line 592, in read_response
+    response = self._parser.read_response(disable_decoding=disable_decoding)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/_parsers/resp2.py", line 15, in read_response
+    result = self._read_response(disable_decoding=disable_decoding)
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/_parsers/resp2.py", line 25, in _read_response
+    raw = self._buffer.readline()
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/_parsers/socket.py", line 115, in readline
+    self._read_from_socket()
+  File "/home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/redis/_parsers/socket.py", line 68, in _read_from_socket
+    raise ConnectionError(SERVER_CLOSED_CONNECTION_ERROR)
+redis.exceptions.ConnectionError: Connection closed by server.
+[2026-03-07 12:29:26,664: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:391: CPendingDeprecationWarning: 
+In Celery 5.1 we introduced an optional breaking change which
+on connection loss cancels all currently executed tasks with late acknowledgement enabled.
+These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered
+back to the queue. You can enable this behavior using the worker_cancel_long_running_tasks_on_connection_loss
+setting. In Celery 5.1 it is set to False by default. The setting will be set to True by default in Celery 6.0.
+
+  warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
+
+[2026-03-07 12:29:26,745: WARNING/MainProcess] /home/ryan/PycharmProjects/dzToolBox/.venv/lib/python3.10/site-packages/celery/worker/consumer/consumer.py:508: CPendingDeprecationWarning: The broker_connection_retry configuration setting will no longer determine
+whether broker connection retries are made during startup in Celery 6.0 and above.
+If you wish to retain the existing behavior for retrying connections on startup,
+you should set broker_connection_retry_on_startup to True.
+  warnings.warn(
+
+[2026-03-07 12:29:26,802: ERROR/MainProcess] consumer: Cannot connect to redis://localhost:6379/0: Error 111 connecting to localhost:6379. Connection refused..
+Trying again in 2.00 seconds... (1/100)
+

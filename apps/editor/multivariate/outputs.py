@@ -283,6 +283,10 @@ def register(app):
 
                 output_title = request.args.get("outputTitle", "Empirical KDEs")
                 sample_names = request.args.getlist("sampleNames")
+                output_types = request.args.getlist("outputType")
+                # Default to kde_plots if no output types specified
+                if not output_types:
+                    output_types = ['kde_plots']
 
                 from celery_tasks import view_empirical_kdes_task
                 task = view_empirical_kdes_task.delay(
@@ -290,6 +294,7 @@ def register(app):
                     user_id=current_user.id,
                     output_title=output_title,
                     sample_names=sample_names,
+                    output_types=output_types,
                     font_name=project.settings.graph_settings.font_name,
                     font_size=project.settings.graph_settings.font_size,
                     fig_width=project.settings.graph_settings.figure_width,

@@ -183,7 +183,25 @@ def tensor_factorization_task(
         # - learned_coefficients: C matrix coefficient data
         # - source_identification_per_sink: grain-level source attribution
 
-        sample_names_list = [s.replace("sink ", "") for s in julia_results.get('sinks', [])]
+        # Julia returns numerical indices as sink names (1, 2, 3...)
+        # Map them to actual sample names from active_samples
+        julia_sink_indices = [s.replace("sink ", "") for s in julia_results.get('sinks', [])]
+
+        # Create mapping from Julia index to actual sample name
+        # Julia uses 1-based indexing, so "sink 1" corresponds to active_samples[0]
+        julia_to_actual_name = {}
+        actual_sample_names_list = []
+        for i, julia_idx in enumerate(julia_sink_indices):
+            actual_name = active_samples[i].name
+            julia_to_actual_name[julia_idx] = actual_name
+            actual_sample_names_list.append(actual_name)
+
+        # Build grain ID lists per sample (for attribution table)
+        grain_ids_per_sample = {}
+        for sample in active_samples:
+            grain_ids_per_sample[sample.name] = [grain.grain_id for grain in sample.grains]
+
+        sample_names_list = actual_sample_names_list  # Use actual names
         feature_names_from_julia = [md['name'] for md in julia_results.get('measurement_data', [])]
         r2 = 0.0  # Julia doesn't return R² in this function
 
@@ -206,22 +224,23 @@ def tensor_factorization_task(
 
             # Transform Julia format to Python visualization format
             # Julia: {name: "sink 1", data: {sources: [1,2,1,...], loglikelihood_ratios: [0.9,...]}}
-            # Python: {sample_name: "1", grain_attributions: [1,2,1,...], grain_confidences: [0.9,...]}
+            # Python: {sample_name: "actual_name", grain_attributions: [1,2,1,...], grain_confidences: [0.9,...]}
             # Note: Keep 1-indexed sources to match visualization Y-axis ticks
 
             attribution_results = []
             all_sources_seen = set()
             for sink_data in julia_results.get('source_identification_per_sink', []):
-                sample_name = sink_data['name'].replace('sink ', '')  # "sink 1" -> "1"
+                julia_idx = sink_data['name'].replace('sink ', '')  # "sink 1" -> "1"
+                actual_name = julia_to_actual_name.get(julia_idx, julia_idx)  # Use actual sample name
                 sources = sink_data['data']['sources']
                 confidences = sink_data['data']['loglikelihood_ratios']
 
                 # DEBUG: Check what sources Julia is returning
                 unique_sources = set(sources)
                 all_sources_seen.update(unique_sources)
-                print(f"DEBUG: Sample {sample_name} has {len(sources)} grains, sources: {sorted(unique_sources)} (Julia 1-indexed)")
+                print(f"DEBUG: Sample {actual_name} has {len(sources)} grains, sources: {sorted(unique_sources)} (Julia 1-indexed)")
                 if len(sources) >= 5:
-                    print(f"DEBUG: Sample {sample_name} first 5 sources: {sources[:5]}")
+                    print(f"DEBUG: Sample {actual_name} first 5 sources: {sources[:5]}")
 
                 # Keep Julia's 1-indexed sources (don't convert to 0-indexed)
                 # The visualization expects 1-indexed sources to match the Y-axis ticks
@@ -238,7 +257,7 @@ def tensor_factorization_task(
                         grain_confidences.append(float(conf))
 
                 attribution_results.append({
-                    'sample_name': sample_name,
+                    'sample_name': actual_name,
                     'grain_attributions': grain_attributions,
                     'grain_confidences': grain_confidences
                 })
@@ -285,9 +304,13 @@ def tensor_factorization_task(
             import pandas as pd
             matrix_tabs = []
             for sink_data in julia_results.get('source_identification_per_sink', []):
-                sample_name = sink_data['name'].replace('sink ', '')
+                julia_idx = sink_data['name'].replace('sink ', '')
+                actual_name = julia_to_actual_name.get(julia_idx, julia_idx)  # Use actual sample name
                 sources = sink_data['data']['sources']
                 confidences = sink_data['data']['loglikelihood_ratios']
+
+                # Get grain IDs for this sample
+                grain_ids = grain_ids_per_sample.get(actual_name, [])
 
                 # Convert confidences to floats
                 clean_confidences = []
@@ -297,14 +320,15 @@ def tensor_factorization_task(
                     else:
                         clean_confidences.append(float(conf))
 
-                # Create DataFrame for this sample
+                # Create DataFrame for this sample with grain IDs
                 df = pd.DataFrame({
-                    'loglikelihood_ratios': clean_confidences,
-                    'sources': sources
+                    'grain_id': grain_ids[:len(sources)] if grain_ids else list(range(1, len(sources) + 1)),
+                    'source': sources,
+                    'confidence': clean_confidences
                 })
 
                 matrix_tabs.append({
-                    'name': sample_name,
+                    'name': actual_name,
                     'dataframe': df
                 })
 
@@ -434,8 +458,9 @@ def tensor_factorization_task(
             source_cols = {f'source {i+1}': [] for i in range(rank)}
             row_labels = []
             for coef_dict in coefficients_data:
-                sample_name = coef_dict['name'].replace('sink ', '')
-                row_labels.append(sample_name)
+                julia_idx = coef_dict['name'].replace('sink ', '')
+                actual_name = julia_to_actual_name.get(julia_idx, julia_idx)  # Use actual sample name
+                row_labels.append(actual_name)
                 for i in range(rank):
                     source_cols[f'source {i+1}'].append(coef_dict['data'][i])
 
@@ -457,6 +482,96 @@ def tensor_factorization_task(
                 "output_data": output_data
             })
             print(f"DEBUG: Learned coefficients matrix added. Total outputs: {len(pending_outputs)}")
+
+        # Generate empirical KDE data table if requested
+        if "empirical_kde_data" in output_types:
+            print(f"DEBUG: Generating empirical KDE data table from Julia data...")
+
+            import pandas as pd
+            measurement_data = julia_results.get('measurement_data', [])
+
+            # Create tabbed output: one tab per feature
+            kde_tabs = []
+            for feature_data in measurement_data:
+                feature_name = feature_data['name']
+                data_points = feature_data['data']
+
+                # Build DataFrame: domain column + one column per sample
+                rows = []
+                for point in data_points:
+                    row = {'domain': point['domain']}
+                    # Add each sample's density value using actual sample names
+                    for julia_key in point.keys():
+                        if julia_key.startswith('sink '):
+                            julia_idx = julia_key.replace('sink ', '')
+                            actual_name = julia_to_actual_name.get(julia_idx, julia_idx)
+                            row[actual_name] = point[julia_key]
+                    rows.append(row)
+
+                df = pd.DataFrame(rows)
+                kde_tabs.append({
+                    'name': feature_name,
+                    'dataframe': df
+                })
+
+            output_id = secrets.token_hex(15)
+            output_data = embedding.embed_tabbed_matrices(
+                tabs=kde_tabs,
+                output_id=output_id,
+                project_id=project_id,
+                download_formats=['xlsx', 'csv'],
+                is_grainalyzer=True
+            )
+            pending_outputs.append({
+                "output_id": output_id,
+                "output_type": "tabbed_matrix",
+                "output_data": output_data
+            })
+            print(f"DEBUG: Empirical KDE data table added. Total outputs: {len(pending_outputs)}")
+
+        # Generate learned source KDE data table if requested
+        if "learned_kde_data" in output_types:
+            print(f"DEBUG: Generating learned source KDE data table from Julia data...")
+
+            import pandas as pd
+            learned_densities = julia_results.get('learned_densities', [])
+
+            # Create tabbed output: one tab per feature
+            kde_tabs = []
+            for feature_data in learned_densities:
+                feature_name = feature_data['name']
+                data_points = feature_data['data']
+
+                # Build DataFrame: domain column + one column per source
+                rows = []
+                for point in data_points:
+                    row = {'domain': point['domain']}
+                    # Add each source's density value
+                    for key in point.keys():
+                        if key.startswith('source '):
+                            row[key] = point[key]
+                    rows.append(row)
+
+                df = pd.DataFrame(rows)
+                kde_tabs.append({
+                    'name': feature_name,
+                    'dataframe': df
+                })
+
+            output_id = secrets.token_hex(15)
+            output_data = embedding.embed_tabbed_matrices(
+                tabs=kde_tabs,
+                output_id=output_id,
+                project_id=project_id,
+                download_formats=['xlsx', 'csv'],
+                is_grainalyzer=True
+            )
+            pending_outputs.append({
+                "output_id": output_id,
+                "output_type": "tabbed_matrix",
+                "output_data": output_data
+            })
+            print(f"DEBUG: Learned source KDE data table added. Total outputs: {len(pending_outputs)}")
 
         # Return outputs for preview (don't auto-save)
         print(f"DEBUG: Returning {len(pending_outputs)} outputs for preview")
@@ -492,6 +607,7 @@ def view_empirical_kdes_task(
     user_id,
     output_title,
     sample_names,
+    output_types=None,
     font_name='Ubuntu',
     font_size=12,
     fig_width=10,
@@ -502,7 +618,15 @@ def view_empirical_kdes_task(
     View empirical KDEs without running factorization
 
     This is a lightweight task that just visualizes the raw input data.
+
+    Parameters:
+        output_types: List of output types to generate. Options:
+            - 'kde_plots': Generate KDE visualizations (default if None)
+            - 'kde_data': Generate downloadable KDE data table
     """
+    # Default output types if none specified
+    if output_types is None:
+        output_types = ['kde_plots']
     try:
         # Import tensor_factorization here to avoid Julia import at module load time
         from utils import tensor_factorization
@@ -558,49 +682,129 @@ def view_empirical_kdes_task(
         # Check if fill is enabled
         fill = project.settings.graph_settings.fill == "true"
 
-        output_id = secrets.token_hex(15)
+        pending_outputs = []
 
-        # Generate empirical KDEs visualization (one figure per feature for tabs)
-        # stack_samples=True means overlay, stack_samples=False means separate subplots
-        feature_figures = tensor_factorization.visualize_empirical_kdes_tabbed(
-            tensor=tensor,
-            feature_names=metadata['feature_names'],
-            sample_names=metadata['sample_names'],
-            grain_counts=metadata['grain_counts'],
-            title=f"{output_title}",
-            font_path=f'static/global/fonts/{font_name}.ttf',
-            font_size=font_size,
-            fig_width=fig_width,
-            fig_height=fig_height,
-            color_map=color_map,
-            stack_samples=stack_samples,
-            fill=fill
-        )
+        # Generate empirical KDEs visualization if requested
+        if 'kde_plots' in output_types:
+            output_id = secrets.token_hex(15)
 
-        # Create tabs - one per feature
-        tabs = []
-        for feature_name, fig in zip(metadata['feature_names'], feature_figures):
-            tabs.append({
-                "name": feature_name,
-                "fig": fig
+            # Generate empirical KDEs visualization (one figure per feature for tabs)
+            # stack_samples=True means overlay, stack_samples=False means separate subplots
+            feature_figures = tensor_factorization.visualize_empirical_kdes_tabbed(
+                tensor=tensor,
+                feature_names=metadata['feature_names'],
+                sample_names=metadata['sample_names'],
+                grain_counts=metadata['grain_counts'],
+                title=f"{output_title}",
+                font_path=f'static/global/fonts/{font_name}.ttf',
+                font_size=font_size,
+                fig_width=fig_width,
+                fig_height=fig_height,
+                color_map=color_map,
+                stack_samples=stack_samples,
+                fill=fill
+            )
+
+            # Create tabs - one per feature
+            tabs = []
+            for feature_name, fig in zip(metadata['feature_names'], feature_figures):
+                tabs.append({
+                    "name": feature_name,
+                    "fig": fig
+                })
+
+            # Embed as tabbed output
+            output_data = embedding.embed_tabbed_graphs(
+                tabs=tabs,
+                output_id=output_id,
+                project_id=project_id,
+                fig_type="matplotlib",
+                img_format='svg',
+                download_formats=['svg', 'png'],
+                is_grainalyzer=True
+            )
+
+            pending_outputs.append({
+                "output_id": output_id,
+                "output_type": "tabbed_graph",
+                "output_data": output_data
             })
 
-        # Embed as tabbed output
-        output_data = embedding.embed_tabbed_graphs(
-            tabs=tabs,
-            output_id=output_id,
-            project_id=project_id,
-            fig_type="matplotlib",
-            img_format='svg',
-            download_formats=['svg', 'png'],
-            is_grainalyzer=True
-        )
+        # Generate empirical KDE data table if requested
+        if 'kde_data' in output_types:
+            import pandas as pd
+            from scipy.stats import gaussian_kde
+            import numpy as np
 
-        pending_outputs = [{
-            "output_id": output_id,
-            "output_type": "tabbed_graph",
-            "output_data": output_data
-        }]
+            kde_tabs = []
+            n_samples, max_grains, n_features = tensor.shape
+
+            for feat_idx, feature_name in enumerate(metadata['feature_names']):
+                # Compute global x range across all samples
+                all_feat_values = []
+                for s_idx in range(n_samples):
+                    grain_count = metadata['grain_counts'][s_idx]
+                    fv = tensor[s_idx, :grain_count, feat_idx]
+                    fv = fv[~np.isnan(fv)]
+                    if len(fv) >= 2:
+                        all_feat_values.append(fv)
+
+                if all_feat_values:
+                    all_vals = np.concatenate(all_feat_values)
+                    global_x_min = np.min(all_vals)
+                    global_x_max = np.max(all_vals)
+                    global_x_range = global_x_max - global_x_min
+                    global_x_min -= global_x_range * 0.1
+                    global_x_max += global_x_range * 0.1
+                else:
+                    global_x_min, global_x_max = 0.0, 1.0
+
+                # Create domain points
+                x_domain = np.linspace(global_x_min, global_x_max, 200)
+
+                # Build data rows
+                rows = [{'domain': x} for x in x_domain]
+
+                # Compute KDE for each sample and add to rows
+                for s_idx in range(n_samples):
+                    sample_name = metadata['sample_names'][s_idx]
+                    grain_count = metadata['grain_counts'][s_idx]
+                    feature_values = tensor[s_idx, :grain_count, feat_idx]
+                    feature_values = feature_values[~np.isnan(feature_values)]
+
+                    if len(feature_values) >= 2:
+                        try:
+                            kde = gaussian_kde(feature_values)
+                            density = kde(x_domain)
+                            for i, d in enumerate(density):
+                                rows[i][sample_name] = d
+                        except Exception:
+                            # If KDE fails, use None
+                            for i in range(len(x_domain)):
+                                rows[i][sample_name] = None
+                    else:
+                        for i in range(len(x_domain)):
+                            rows[i][sample_name] = None
+
+                df = pd.DataFrame(rows)
+                kde_tabs.append({
+                    'name': feature_name,
+                    'dataframe': df
+                })
+
+            output_id = secrets.token_hex(15)
+            output_data = embedding.embed_tabbed_matrices(
+                tabs=kde_tabs,
+                output_id=output_id,
+                project_id=project_id,
+                download_formats=['xlsx', 'csv'],
+                is_grainalyzer=True
+            )
+            pending_outputs.append({
+                "output_id": output_id,
+                "output_type": "tabbed_matrix",
+                "output_data": output_data
+            })
 
         # Return outputs for preview (don't auto-save)
         return {
@@ -758,7 +962,7 @@ def find_optimal_rank_task(
 
             ranks = julia_results['ranks']
             errors = julia_results['relative_errors']
-            curvatures = julia_results['curvatures']
+            breakpoint_scores = julia_results['breakpoint_scores']
             best_rank = julia_results['best_rank']
             max_r2 = julia_results.get('r2', 0.0)
 
@@ -773,8 +977,8 @@ def find_optimal_rank_task(
 
         self.update_state(state='PROGRESS', meta={'status': 'Creating visualizations...'})
 
-        # Julia already calculated curvatures and selected best rank
-        print(f"Rank selection: Best rank is {best_rank} (from Julia analysis)")
+        # Julia used linear breakpoint analysis to select best rank
+        print(f"Rank selection: Best rank is {best_rank} (from linear breakpoint analysis)")
         print(f"Generating outputs: {output_types}")
 
         pending_outputs = []
@@ -811,11 +1015,12 @@ def find_optimal_rank_task(
                 "output_data": output_data
             })
 
-        # Generate curvature plot if requested
-        if "curvature_plot" in output_types:
-            graph_fig = tensor_factorization.visualize_curvature_plot(
+        # Generate breakpoint analysis plot if requested
+        # (Also accepts legacy "curvature_plot" for backwards compatibility)
+        if "curvature_plot" in output_types or "breakpoint_plot" in output_types:
+            graph_fig = tensor_factorization.visualize_breakpoint_plot(
                 ranks=ranks,
-                curvatures=curvatures,
+                breakpoint_scores=breakpoint_scores,
                 best_rank=best_rank,
                 title=f"{output_title}\nOptimum Rank (R²={max_r2:.3f})",
                 font_path=f'static/global/fonts/{font_name}.ttf',

@@ -16,6 +16,21 @@
                         <br />
                         {{ sample_select(id="view_empirical_kdes_sample_select", sender="view_empirical_kdes_link", event='click', multi_select=True, endpoint='tensor-sample-names') }}
                         <br />
+                        <div class="mb-3">
+                            <label class="form-label">Output Options:</label>
+                            <div class="form-check">
+                                <input class="form-check-input view-empirical-kdes-output-checkbox" type="checkbox" value="kde_plots" id="view_empirical_kde_plots" checked>
+                                <label class="form-check-label" for="view_empirical_kde_plots">
+                                    KDE Visualizations
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input view-empirical-kdes-output-checkbox" type="checkbox" value="kde_data" id="view_empirical_kde_data">
+                                <label class="form-check-label" for="view_empirical_kde_data">
+                                    KDE Data Table (downloadable)
+                                </label>
+                            </div>
+                        </div>
                         <div class="d-flex justify-content-end">
                             <button class="btn btn-primary" type="button" onclick="viewEmpiricalKdesSendArgs()">Generate</button>
                         </div>
@@ -44,10 +59,29 @@
             return;
         }
 
+        // Get selected output types
+        var outputTypes = [];
+        var outputCheckboxes = document.querySelectorAll('.view-empirical-kdes-output-checkbox');
+        outputCheckboxes.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                outputTypes.push(checkbox.value);
+            }
+        });
+
+        if (outputTypes.length === 0) {
+            alert("Please select at least one output type");
+            return;
+        }
+
         var outputTitle = document.getElementById("view_empirical_kdes_output_name").value;
 
         var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
         var queryString = "/projects/{{ project_id }}/multivariate/view-data?sampleNames=" + encodedSamples.join("&sampleNames=");
+
+        // Add output types
+        outputTypes.forEach(function(outputType) {
+            queryString += "&outputType=" + encodeURIComponent(outputType);
+        });
 
         if (outputTitle !== "") {
             queryString += "&outputTitle=" + encodeURIComponent(outputTitle);

@@ -2102,6 +2102,80 @@ def visualize_curvature_plot(
     return fig
 
 
+def visualize_breakpoint_plot(
+    ranks: List[int],
+    breakpoint_scores: List[float],
+    best_rank: int,
+    title: str = "Optimum Rank",
+    font_path: str = None,
+    font_size: int = 12,
+    fig_width: float = 10,
+    fig_height: float = 6
+):
+    """
+    Create linear breakpoint analysis plot for optimal rank selection
+
+    The breakpoint score represents the improvement in fit when using two
+    linear segments instead of one. Higher scores indicate better breakpoints
+    (i.e., where the error curve changes from steep descent to plateau).
+
+    Parameters
+    ----------
+    ranks : List[int]
+        List of ranks tested
+    breakpoint_scores : List[float]
+        Breakpoint improvement scores at each rank
+    best_rank : int
+        Optimal rank identified by breakpoint analysis
+    title : str
+        Plot title
+    font_path : str
+        Path to font file
+    font_size : int
+        Font size
+    fig_width : float
+        Figure width
+    fig_height : float
+        Figure height
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure with breakpoint analysis plot
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+
+    # Set up font
+    if font_path:
+        prop = fm.FontProperties(fname=font_path, size=font_size)
+        plt.rcParams['font.family'] = prop.get_name()
+        plt.rcParams['font.size'] = font_size
+
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+
+    # Plot breakpoint scores
+    ax.plot(ranks, breakpoint_scores, 'o-', color='black', linewidth=2, markersize=6)
+    ax.axvline(x=best_rank, color='red', linestyle='--', linewidth=1.5, alpha=0.7)
+
+    # Highlight the best rank point
+    best_idx = ranks.index(best_rank) if best_rank in ranks else -1
+    if best_idx >= 0:
+        ax.plot(best_rank, breakpoint_scores[best_idx], 'o', color='red', markersize=10, zorder=5)
+
+    ax.set_xlabel('Rank', fontsize=font_size)
+    ax.set_ylabel('Breakpoint Score', fontsize=font_size)
+    ax.set_title(f'Optimum rank identified by linear breakpoint analysis. Selected Rank: {best_rank}',
+                 fontsize=font_size)
+    ax.grid(True, alpha=0.3)
+    ax.set_xticks(ranks)
+
+    plt.suptitle(title, fontsize=font_size + 2)
+    plt.tight_layout()
+
+    return fig
+
+
 def visualize_learned_source_kdes(
     reconstruction: np.ndarray,
     factors: List[np.ndarray],
