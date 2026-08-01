@@ -1,20 +1,42 @@
 <div id="import_modal" class="modal">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="frame" id="content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Import Data</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background: #ffffff; overflow: hidden; border-radius: 12px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #2c3e50, #3498db); color: white; border: none; padding: 1rem 1.5rem;">
+                <h5 class="modal-title" style="color: white; font-weight: 600;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; vertical-align: text-bottom;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Import Data
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background: #ffffff; padding: 1.5rem;">
+                <!-- File Input -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Select File</label>
+                    <input type="file" class="form-control" id="import_file" accept=".xlsx,.csv,.ods" />
+                    <small class="text-muted mt-1 d-block">Supported formats: Excel (.xlsx), CSV (.csv), OpenDocument (.ods)</small>
                 </div>
-                <br />
-                <div class="container-sm">
-                    <input type="file" class="form-control btn-primary" id="import_file" accept=".xlsx,.csv,.ods" />
-                    <br />
-                    <div id="import_table"></div>
-                    <br />
-                    <h6>Copy and paste data from this table into the main project spreadsheet</h6>
-                    <br />
+
+                <!-- Import Table -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Preview Data</label>
+                    <div id="import_table" style="border: 1px solid #dee2e6; border-radius: 6px;"></div>
                 </div>
+
+                <div class="alert alert-info mb-0" role="alert" style="background: #e7f3ff; border: 1px solid #b6d4fe; color: #084298;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: text-bottom;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <strong>Tip:</strong> Select cells in the preview table above and copy (Ctrl+C), then paste (Ctrl+V) into the main project spreadsheet.
+                </div>
+            </div>
+            <div class="modal-footer" style="background: #f8f9fa; border-top: 1px solid #e9ecef; padding: 1rem 1.5rem;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -43,7 +65,7 @@
 
     // Initialize Tabulator
     var importTable = new Tabulator("#import_table", {
-        height: "450px",
+        height: "400px",
         spreadsheet: true,
         spreadsheetData: sheets,
         spreadsheetRows: 50,
@@ -56,7 +78,7 @@
         columns: [{ title: "", field: "rowNum", width: 50, hozAlign: "center", headerSort: false, frozen: true }],
 
         editTriggerEvent: "dblclick",
-        editorEmptyValue: undefined, // Ensure empty values are treated properly
+        editorEmptyValue: undefined,
 
         // Enable range selection
         selectableRange: 1,
@@ -64,7 +86,7 @@
         selectableRangeRows: true,
         selectableRangeClearCells: true,
 
-        // Configure clipboard to allow copy and paste of range format data
+        // Configure clipboard
         clipboard: true,
         clipboardCopyStyled: false,
         clipboardCopyConfig: {
@@ -82,39 +104,36 @@
         if (file) {
             let data = await file.arrayBuffer();
             let workbook = XLSX.read(data, { type: "array" });
-            let sheetName = workbook.SheetNames[0]; // Get the first sheet
+            let sheetName = workbook.SheetNames[0];
             let jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false });
 
             if (jsonData.length > 0) {
-                let numColumns = jsonData[0].length; // Count columns in the first row
-                let headers = generateColumnLabels(numColumns); // Generate "A, B, C..." headers
+                let numColumns = jsonData[0].length;
+                let headers = generateColumnLabels(numColumns);
 
-                // Convert rows into data while maintaining row index
                 let tableData = jsonData.map((row, index) => {
-                    let obj = { rowNum: index + 1 }; // Row index starts from 1
+                    let obj = { rowNum: index + 1 };
                     headers.forEach((col, i) => {
-                        obj[col] = row[i] || ""; // Fill with data
+                        obj[col] = row[i] || "";
                     });
                     return obj;
                 });
 
-                // Define columns dynamically with a minimum width of 100px
                 let columns = [{
-                        title: "",
-                        field: "rowNum",
-                        width: 50,
-                        hozAlign: "center",
-                        headerSort: false,
-                        frozen: true
-                    }].concat(headers.map(col => ({
-                        title: col,
-                        field: col,
-                        editor: "input",
-                        headerSort: false,
-                        minWidth: 100 // Ensure each column is at least 100 pixels wide
-                    })));
+                    title: "",
+                    field: "rowNum",
+                    width: 50,
+                    hozAlign: "center",
+                    headerSort: false,
+                    frozen: true
+                }].concat(headers.map(col => ({
+                    title: col,
+                    field: col,
+                    editor: "input",
+                    headerSort: false,
+                    minWidth: 100
+                })));
 
-                // Set table data with headers
                 importTable.setColumns(columns);
                 importTable.setData(tableData);
             }

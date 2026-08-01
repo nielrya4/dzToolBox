@@ -483,52 +483,6 @@ def tensor_factorization_task(
             })
             print(f"DEBUG: Learned coefficients matrix added. Total outputs: {len(pending_outputs)}")
 
-        # Generate empirical KDE data table if requested
-        if "empirical_kde_data" in output_types:
-            print(f"DEBUG: Generating empirical KDE data table from Julia data...")
-
-            import pandas as pd
-            measurement_data = julia_results.get('measurement_data', [])
-
-            # Create tabbed output: one tab per feature
-            kde_tabs = []
-            for feature_data in measurement_data:
-                feature_name = feature_data['name']
-                data_points = feature_data['data']
-
-                # Build DataFrame: domain column + one column per sample
-                rows = []
-                for point in data_points:
-                    row = {'domain': point['domain']}
-                    # Add each sample's density value using actual sample names
-                    for julia_key in point.keys():
-                        if julia_key.startswith('sink '):
-                            julia_idx = julia_key.replace('sink ', '')
-                            actual_name = julia_to_actual_name.get(julia_idx, julia_idx)
-                            row[actual_name] = point[julia_key]
-                    rows.append(row)
-
-                df = pd.DataFrame(rows)
-                kde_tabs.append({
-                    'name': feature_name,
-                    'dataframe': df
-                })
-
-            output_id = secrets.token_hex(15)
-            output_data = embedding.embed_tabbed_matrices(
-                tabs=kde_tabs,
-                output_id=output_id,
-                project_id=project_id,
-                download_formats=['xlsx', 'csv'],
-                is_grainalyzer=True
-            )
-            pending_outputs.append({
-                "output_id": output_id,
-                "output_type": "tabbed_matrix",
-                "output_data": output_data
-            })
-            print(f"DEBUG: Empirical KDE data table added. Total outputs: {len(pending_outputs)}")
-
         # Generate learned source KDE data table if requested
         if "learned_kde_data" in output_types:
             print(f"DEBUG: Generating learned source KDE data table from Julia data...")
@@ -617,7 +571,8 @@ def view_empirical_kdes_task(
     """
     View empirical KDEs without running factorization
 
-    This is a lightweight task that just visualizes the raw input data.
+    This task uses Julia's SedimentSourceAnalysis package to compute KDEs,
+    ensuring consistency with the tensor factorization workflow.
 
     Parameters:
         output_types: List of output types to generate. Options:
@@ -630,7 +585,7 @@ def view_empirical_kdes_task(
     try:
         # Import tensor_factorization here to avoid Julia import at module load time
         from utils import tensor_factorization
-        
+
         from dzToolBox import app as flask_app
 
         self.update_state(state='PROGRESS', meta={'status': 'Loading project...'})
@@ -663,14 +618,90 @@ def view_empirical_kdes_task(
         if len(active_samples) < 2:
             raise ValueError(f"At least 2 samples required, got {len(active_samples)}")
 
-        self.update_state(state='PROGRESS', meta={'status': 'Building tensor...'})
+        self.update_state(state='PROGRESS', meta={'status': 'Computing KDEs with Julia...'})
 
-        # Create tensor from multivariate samples
-        tensor, metadata = tensor_factorization.create_tensor_from_multivariate_samples(
-            samples=active_samples,
-            feature_names=feature_names,
-            padding_mode='zero'
-        )
+        # Call Julia to compute KDEs using SedimentSourceAnalysis package
+        import subprocess
+        import tempfile
+        import json
+
+        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+        temp_json = tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w')
+        temp_excel.close()
+        temp_json.close()
+
+        try:
+            # Transform to column-based format expected by Julia's read_raw_data()
+            # One sheet per feature, columns = samples, rows = grains
+            import openpyxl
+            wb = openpyxl.Workbook()
+
+            # Find max grain count
+            max_grains = max([len(sample.grains) for sample in active_samples])
+
+            # Create one sheet per feature
+            for feat_idx, feature_name in enumerate(feature_names):
+                if feat_idx == 0:
+                    ws = wb.active
+                    ws.title = feature_name
+                else:
+                    ws = wb.create_sheet(title=feature_name)
+
+                # Write data: rows = grains, columns = samples (no headers)
+                for grain_idx in range(max_grains):
+                    row = []
+                    for sample in active_samples:
+                        if grain_idx < len(sample.grains):
+                            val = sample.grains[grain_idx].features.get(feature_name, None)
+                            row.append(val)
+                        else:
+                            row.append(None)  # Pad with None for missing grains
+                    ws.append(row)
+
+            wb.save(temp_excel.name)
+            print(f"Temporary Excel created (column-based format): {temp_excel.name}")
+
+            # Get Julia executable path from juliapkg
+            import juliapkg
+            julia_exe = juliapkg.executable()
+            julia_project = juliapkg.project()
+
+            # Call Julia script
+            julia_script = os.path.join(os.path.dirname(__file__), 'julia_scripts', 'compute_kdes.jl')
+            cmd = [julia_exe, '--project=' + julia_project, julia_script, temp_excel.name, temp_json.name]
+
+            print(f"Running Julia command: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+
+            print(f"Julia stdout: {result.stdout}")
+            if result.stderr:
+                print(f"Julia stderr: {result.stderr}")
+
+            if result.returncode != 0:
+                raise RuntimeError(f"Julia script failed with code {result.returncode}: {result.stderr}")
+
+            # Read JSON results
+            with open(temp_json.name, 'r') as f:
+                julia_results = json.load(f)
+
+            if julia_results.get('status') == 'error':
+                raise RuntimeError(f"Julia script error: {julia_results.get('error')}")
+
+            print(f"Julia KDE computation complete")
+
+        finally:
+            # Clean up temp files
+            if os.path.exists(temp_excel.name):
+                os.unlink(temp_excel.name)
+            if os.path.exists(temp_json.name):
+                os.unlink(temp_json.name)
+
+        # Map Julia sink indices to actual sample names
+        julia_sink_indices = [s.replace("sink ", "") for s in julia_results.get('sinks', [])]
+        julia_to_actual_name = {}
+        for i, julia_idx in enumerate(julia_sink_indices):
+            actual_name = active_samples[i].name
+            julia_to_actual_name[julia_idx] = actual_name
 
         self.update_state(state='PROGRESS', meta={'status': 'Generating visualization...'})
 
@@ -688,13 +719,11 @@ def view_empirical_kdes_task(
         if 'kde_plots' in output_types:
             output_id = secrets.token_hex(15)
 
-            # Generate empirical KDEs visualization (one figure per feature for tabs)
-            # stack_samples=True means overlay, stack_samples=False means separate subplots
-            feature_figures = tensor_factorization.visualize_empirical_kdes_tabbed(
-                tensor=tensor,
-                feature_names=metadata['feature_names'],
-                sample_names=metadata['sample_names'],
-                grain_counts=metadata['grain_counts'],
+            # Generate empirical KDEs visualization from Julia-computed KDEs
+            measurement_data = julia_results.get('measurement_data', [])
+            feature_figures = tensor_factorization.visualize_empirical_kdes_from_julia(
+                measurement_data=measurement_data,
+                julia_to_actual_name=julia_to_actual_name,
                 title=f"{output_title}",
                 font_path=f'static/global/fonts/{font_name}.ttf',
                 font_size=font_size,
@@ -707,9 +736,9 @@ def view_empirical_kdes_task(
 
             # Create tabs - one per feature
             tabs = []
-            for feature_name, fig in zip(metadata['feature_names'], feature_figures):
+            for feature_data, fig in zip(measurement_data, feature_figures):
                 tabs.append({
-                    "name": feature_name,
+                    "name": feature_data['name'],
                     "fig": fig
                 })
 
@@ -733,58 +762,26 @@ def view_empirical_kdes_task(
         # Generate empirical KDE data table if requested
         if 'kde_data' in output_types:
             import pandas as pd
-            from scipy.stats import gaussian_kde
-            import numpy as np
 
+            measurement_data = julia_results.get('measurement_data', [])
+
+            # Create tabbed output: one tab per feature
             kde_tabs = []
-            n_samples, max_grains, n_features = tensor.shape
+            for feature_data in measurement_data:
+                feature_name = feature_data['name']
+                data_points = feature_data['data']
 
-            for feat_idx, feature_name in enumerate(metadata['feature_names']):
-                # Compute global x range across all samples
-                all_feat_values = []
-                for s_idx in range(n_samples):
-                    grain_count = metadata['grain_counts'][s_idx]
-                    fv = tensor[s_idx, :grain_count, feat_idx]
-                    fv = fv[~np.isnan(fv)]
-                    if len(fv) >= 2:
-                        all_feat_values.append(fv)
-
-                if all_feat_values:
-                    all_vals = np.concatenate(all_feat_values)
-                    global_x_min = np.min(all_vals)
-                    global_x_max = np.max(all_vals)
-                    global_x_range = global_x_max - global_x_min
-                    global_x_min -= global_x_range * 0.1
-                    global_x_max += global_x_range * 0.1
-                else:
-                    global_x_min, global_x_max = 0.0, 1.0
-
-                # Create domain points
-                x_domain = np.linspace(global_x_min, global_x_max, 200)
-
-                # Build data rows
-                rows = [{'domain': x} for x in x_domain]
-
-                # Compute KDE for each sample and add to rows
-                for s_idx in range(n_samples):
-                    sample_name = metadata['sample_names'][s_idx]
-                    grain_count = metadata['grain_counts'][s_idx]
-                    feature_values = tensor[s_idx, :grain_count, feat_idx]
-                    feature_values = feature_values[~np.isnan(feature_values)]
-
-                    if len(feature_values) >= 2:
-                        try:
-                            kde = gaussian_kde(feature_values)
-                            density = kde(x_domain)
-                            for i, d in enumerate(density):
-                                rows[i][sample_name] = d
-                        except Exception:
-                            # If KDE fails, use None
-                            for i in range(len(x_domain)):
-                                rows[i][sample_name] = None
-                    else:
-                        for i in range(len(x_domain)):
-                            rows[i][sample_name] = None
+                # Build DataFrame: domain column + one column per sample
+                rows = []
+                for point in data_points:
+                    row = {'domain': point['domain']}
+                    # Add each sample's density value using actual sample names
+                    for julia_key in point.keys():
+                        if julia_key.startswith('sink '):
+                            julia_idx = julia_key.replace('sink ', '')
+                            actual_name = julia_to_actual_name.get(julia_idx, julia_idx)
+                            row[actual_name] = point[julia_key]
+                    rows.append(row)
 
                 df = pd.DataFrame(rows)
                 kde_tabs.append({

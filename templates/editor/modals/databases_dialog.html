@@ -1,135 +1,78 @@
-<style>
-    #databases_modal .modal-dialog {
-        max-width: 90vw;
-        width: 90vw;
-        max-height: 90vh; /* Use max-height instead of fixed height */
-    }
-
-    #databases_modal .modal-content {
-        width: 100%;
-        height: 90vh;
-        max-height: 90vh;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #databases_modal .frame {
-        width: 100%;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        background: transparent !important;
-        overflow: hidden;
-    }
-
-    #databases_modal .container-lg {
-        background: transparent !important;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    #databases_modal {
-        background: transparent !important;
-    }
-
-    .hot-table {
-        overflow: auto;
-        width: 100%;
-        height: 100%;
-        color: black !important;
-    }
-
-    /* Tab styles */
-    .tab {
-        overflow: hidden;
-        border-bottom: 1px solid #ccc;
-        background-color: #f1f1f1;
-    }
-
-    .tab button {
-        background-color: inherit;
-        border: none;
-        outline: none;
-        cursor: pointer;
-        padding: 10px 15px;
-        transition: 0.3s;
-        font-size: 17px;
-    }
-
-    .tab button:hover {
-        background-color: #ddd;
-    }
-
-    .tab button.active-tab {
-        background-color: #ccc;
-    }
-
-    .tab-content {
-        display: none;
-        padding: 10px;
-        border-top: none;
-        position: relative;
-        flex: 1;
-        overflow: hidden;
-    }
-
-    .tab-content.active-tab {
-        display: block;
-    }
-
-    /* Loader styles */
-    .loader {
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #0090f5;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 10;
-    }
-
-    @keyframes spin {
-        0% { transform: translate(-50%, -50%) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-</style>
-
 <div id="databases_modal" class="modal fade" tabindex="-1" style="overflow-y: hidden">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="frame" id="content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Import Data from Database</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered databases-dialog">
+        <div class="modal-content" style="background: #ffffff !important; overflow: hidden; border-radius: 12px; border: none;">
+            <div class="frame" style="background: #ffffff !important; color: #212529 !important; display: flex; flex-direction: column; height: 100%;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #2c3e50, #3498db) !important; color: white !important; border-radius: 0; flex-shrink: 0;">
+                    <h5 class="modal-title" style="color: white !important;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; vertical-align: text-bottom;">
+                            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                        </svg>
+                        Import Data from Database
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="container-lg">
-                    <br />
-                    <h6>After the databases load, copy and paste data from these tables into the main project spreadsheet</h6>
-                    <br />
-                    <div class="tab">
-                        <button class="tablinks active-tab" onclick="openTab(event, 'world_dz')">World DZ</button>
-                        <button class="tablinks" onclick="openTab(event, 'world_ig')">World IG</button>
-                        <button class="tablinks" onclick="openTab(event, 'belt_dz')">Belt DZ</button>
-                    </div>
-                    <br />
-                    <div id="world_dz" class="tab-content active-tab">
-                        <div class="loader"></div>
-                        <div class="hot-table" style="display: none;"></div>
-                    </div>
-                    <div id="world_ig" class="tab-content">
-                        <div class="loader"></div>
-                        <div class="hot-table" style="display: none;"></div>
-                    </div>
-                    <div id="belt_dz" class="tab-content">
-                        <div class="loader"></div>
-                        <div class="hot-table" style="display: none;"></div>
+                <div class="modal-body p-0" style="background: #ffffff !important; flex: 1; overflow: hidden;">
+                    <div class="databases-container" style="background: #ffffff !important;">
+                        <!-- Sidebar Navigation -->
+                        <nav class="databases-sidebar" style="background: #f8f9fa !important;">
+                            <div class="databases-sidebar-header">
+                                <small class="text-muted">Select a database to view</small>
+                            </div>
+                            <ul class="databases-nav" style="background: #f8f9fa !important;">
+                                <li class="databases-nav-item active" data-database="world_dz">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    <span>World DZ</span>
+                                </li>
+                                <li class="databases-nav-item" data-database="world_ig">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    <span>World IG</span>
+                                </li>
+                                <li class="databases-nav-item" data-database="belt_dz">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                    </svg>
+                                    <span>Belt DZ</span>
+                                </li>
+                            </ul>
+                            <div class="databases-sidebar-footer">
+                                <small class="text-muted">Copy data from the table and paste into your spreadsheet</small>
+                            </div>
+                        </nav>
+
+                        <!-- Content Area -->
+                        <div class="databases-content" style="background: #ffffff !important;">
+                            <div id="world_dz" class="databases-panel active">
+                                <div class="databases-loader">
+                                    <div class="spinner"></div>
+                                    <span>Loading World DZ database...</span>
+                                </div>
+                                <div class="hot-table" style="display: none;"></div>
+                            </div>
+                            <div id="world_ig" class="databases-panel">
+                                <div class="databases-loader">
+                                    <div class="spinner"></div>
+                                    <span>Loading World IG database...</span>
+                                </div>
+                                <div class="hot-table" style="display: none;"></div>
+                            </div>
+                            <div id="belt_dz" class="databases-panel">
+                                <div class="databases-loader">
+                                    <div class="spinner"></div>
+                                    <span>Loading Belt DZ database...</span>
+                                </div>
+                                <div class="hot-table" style="display: none;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -137,80 +80,264 @@
     </div>
 </div>
 
+<style>
+/* Databases Modal Styles */
+.databases-dialog {
+    max-width: 90vw;
+    width: 90vw;
+    max-height: 90vh;
+}
+
+.databases-dialog .modal-content {
+    width: 100%;
+    height: 90vh;
+    max-height: 90vh;
+}
+
+.databases-container {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+}
+
+.databases-sidebar {
+    width: 180px;
+    border-right: 1px solid #e9ecef;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.databases-sidebar-header {
+    padding: 1rem 1rem 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.databases-sidebar-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #e9ecef;
+    margin-top: auto;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.databases-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.databases-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #495057 !important;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    font-size: 0.9rem;
+}
+
+.databases-nav-item:hover {
+    background: #f1f3f4;
+    color: #212529 !important;
+}
+
+.databases-nav-item.active {
+    background: #ffffff;
+    color: #212529 !important;
+    border-left-color: #3498db;
+    font-weight: 600;
+}
+
+.databases-nav-item svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.databases-nav-item.active svg {
+    opacity: 1;
+    stroke: #3498db;
+}
+
+.databases-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.databases-panel {
+    display: none;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.databases-panel.active {
+    display: block;
+}
+
+.databases-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #6c757d;
+}
+
+.databases-loader .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e9ecef;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: databasesSpin 1s linear infinite;
+}
+
+@keyframes databasesSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hot-table {
+    width: 100%;
+    height: 100%;
+    color: #212529 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .databases-dialog {
+        max-width: 95vw;
+        width: 95vw;
+    }
+
+    .databases-container {
+        flex-direction: column;
+    }
+
+    .databases-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e9ecef;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .databases-sidebar-header,
+    .databases-sidebar-footer {
+        display: none;
+    }
+
+    .databases-nav {
+        display: flex;
+        overflow-x: auto;
+        padding: 0.5rem;
+        flex: 1;
+    }
+
+    .databases-nav-item {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 12px;
+        white-space: nowrap;
+        font-size: 0.8rem;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+    }
+
+    .databases-nav-item.active {
+        border-left-color: transparent;
+        border-bottom-color: #3498db;
+    }
+}
+</style>
+
 <script>
-    function createHandsontable(containerId, dataUrl) {
-        var container = document.querySelector("#" + containerId + " .hot-table");
-        var loader = document.querySelector("#" + containerId + " .loader");
+// Databases panel navigation
+document.querySelectorAll('.databases-nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+        const databaseId = this.dataset.database;
 
-        // Show loader, hide table initially
-        loader.style.display = "block";
-        container.style.display = "none";
+        // Update navigation
+        document.querySelectorAll('.databases-nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
 
-        fetch(dataUrl)
-            .then(response => response.json())
-            .then(data => {
-                if (!container.handsontableInstance) {
-                    container.handsontableInstance = new Handsontable(container, {
-                        data: data,
-                        rowHeaders: true,
-                        colHeaders: true,
-                        contextMenu: false, // Disable right-click menu
-                        readOnly: true, // Make all cells non-editable
-                        licenseKey: 'non-commercial-and-evaluation', // Required for Handsontable
-                        autoWrapRow: true, // Expand rows to fit content
-                        autoWrapCol: true, // Expand columns to fit content
-                        stretchH: "all", // Stretch columns to fit container width
-                        wordWrap: false, // Prevent text from being cut off
-                    });
-                } else {
-                    container.handsontableInstance.loadData(data);
-                }
+        // Update panels
+        document.querySelectorAll('.databases-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(databaseId).classList.add('active');
 
-                // Hide loader, show table after data loads
-                loader.style.display = "none";
-                container.style.display = "block";
-            })
-            .catch(error => {
-                console.error('Error loading data:', error);
-                loader.style.display = "none"; // Hide loader on error
-            });
-    }
-
-    function openTab(evt, tabName) {
-        var i, tabcontent, tablinks;
-        tabcontent = document.getElementsByClassName("tab-content");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].classList.remove("active-tab");
-        }
-
-        tablinks = document.getElementsByClassName("tablinks");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].classList.remove("active-tab");
-        }
-
-        document.getElementById(tabName).classList.add("active-tab");
-        evt.currentTarget.classList.add("active-tab");
-        
         // Load database data only when tab is clicked (lazy loading)
-        if (!document.querySelector("#" + tabName + " .hot-table").handsontableInstance) {
-            createHandsontable(tabName, "/databases/" + tabName.replace('_', '-'));
+        if (!document.querySelector("#" + databaseId + " .hot-table").handsontableInstance) {
+            createHandsontable(databaseId, "/databases/" + databaseId.replace('_', '-'));
         }
-    }
-
-    // Initialize databases modal with lazy loading
-    document.addEventListener('DOMContentLoaded', function() {
-        const databasesModal = document.getElementById('databases_modal');
-        let databasesLoaded = false;
-        
-        // Load databases only when modal is opened for the first time
-        databasesModal.addEventListener('shown.bs.modal', function () {
-            if (!databasesLoaded) {
-                // Load only the active tab (world-dz) initially
-                createHandsontable("world_dz", "/databases/world-dz");
-                databasesLoaded = true;
-            }
-            // Focus on the modal for ESC key functionality
-            databasesModal.focus();
-        });
     });
+});
+
+function createHandsontable(containerId, dataUrl) {
+    var container = document.querySelector("#" + containerId + " .hot-table");
+    var loader = document.querySelector("#" + containerId + " .databases-loader");
+
+    // Show loader, hide table initially
+    if (loader) loader.style.display = "flex";
+    container.style.display = "none";
+
+    fetch(dataUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (!container.handsontableInstance) {
+                container.handsontableInstance = new Handsontable(container, {
+                    data: data,
+                    rowHeaders: true,
+                    colHeaders: true,
+                    contextMenu: false,
+                    readOnly: true,
+                    licenseKey: 'non-commercial-and-evaluation',
+                    autoWrapRow: true,
+                    autoWrapCol: true,
+                    stretchH: "all",
+                    wordWrap: false,
+                });
+            } else {
+                container.handsontableInstance.loadData(data);
+            }
+
+            // Hide loader, show table after data loads
+            if (loader) loader.style.display = "none";
+            container.style.display = "block";
+        })
+        .catch(error => {
+            console.error('Error loading data:', error);
+            if (loader) {
+                loader.innerHTML = '<span style="color: #dc3545;">Error loading database</span>';
+            }
+        });
+}
+
+// Initialize databases modal with lazy loading
+document.addEventListener('DOMContentLoaded', function() {
+    const databasesModal = document.getElementById('databases_modal');
+    let databasesLoaded = false;
+
+    // Load databases only when modal is opened for the first time
+    databasesModal.addEventListener('shown.bs.modal', function () {
+        if (!databasesLoaded) {
+            // Load only the active tab (world_dz) initially
+            createHandsontable("world_dz", "/databases/world-dz");
+            databasesLoaded = true;
+        }
+        // Focus on the modal for ESC key functionality
+        databasesModal.focus();
+    });
+});
 </script>

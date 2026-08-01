@@ -1815,6 +1815,187 @@ def visualize_empirical_kdes_tabbed(
     return figures
 
 
+def visualize_empirical_kdes_from_julia(
+    measurement_data: List[dict],
+    julia_to_actual_name: dict,
+    title: str = "Empirical Kernel Density Estimates",
+    font_path: str = None,
+    font_size: int = 12,
+    fig_width: float = 14,
+    fig_height: float = 6,
+    color_map: str = 'tab20',
+    stack_samples: bool = True,
+    fill: bool = False
+):
+    """
+    Create individual KDE plots from Julia-computed KDE data (for tabbed display).
+
+    Each feature gets its own figure showing distribution across all samples.
+    Uses pre-computed KDEs from Julia's SedimentSourceAnalysis package.
+
+    Parameters
+    ----------
+    measurement_data : List[dict]
+        Julia format: [{name: "Age", data: [{domain: 100, "sink 1": 0.01, ...}, ...]}, ...]
+    julia_to_actual_name : dict
+        Mapping from Julia sink indices to actual sample names
+    title : str
+        Base title for plots
+    font_path : str
+        Path to font file
+    font_size : int
+        Font size
+    fig_width : float
+        Figure width for each tab
+    fig_height : float
+        Figure height for each tab
+    color_map : str
+        Colormap name
+    stack_samples : bool
+        If True, overlay all samples on one plot per feature (non-stacked).
+        If False, create separate subplots for each sample stacked vertically.
+    fill : bool
+        If True, fill the area under each KDE curve.
+        If False, just plot the KDE line.
+
+    Returns
+    -------
+    List[matplotlib.figure.Figure]
+        List of figures, one per feature
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from matplotlib import cm
+    from matplotlib import gridspec
+
+    # Set up font
+    prop = None
+    if font_path:
+        prop = fm.FontProperties(fname=font_path, size=font_size)
+        plt.rcParams['font.family'] = prop.get_name()
+        plt.rcParams['font.size'] = font_size
+
+    # Get sample names from the first feature's data
+    sample_names = []
+    if measurement_data and measurement_data[0]['data']:
+        first_point = measurement_data[0]['data'][0]
+        for key in first_point.keys():
+            if key.startswith('sink '):
+                julia_idx = key.replace('sink ', '')
+                actual_name = julia_to_actual_name.get(julia_idx, key)
+                sample_names.append(actual_name)
+
+    n_samples = len(sample_names)
+
+    # Get colormap
+    cmap = cm.get_cmap(color_map, max(n_samples, 1))
+    colors = [cmap(i) for i in range(n_samples)]
+
+    figures = []
+
+    # Create one figure per feature
+    for feature_data in measurement_data:
+        feature_name = feature_data['name']
+        data_points = feature_data['data']
+
+        if not data_points:
+            continue
+
+        if stack_samples:
+            # Overlaid mode: all samples on one plot
+            fig, ax = plt.subplots(1, 1, figsize=(fig_width, fig_height))
+            axes = [ax]
+        else:
+            # Stacked mode: one subplot per sample (stacked vertically)
+            fig = plt.figure(figsize=(fig_width, fig_height))
+            gs = gridspec.GridSpec(n_samples, 1, figure=fig)
+            axes = []
+            for i in range(n_samples):
+                ax = fig.add_subplot(gs[i])
+                axes.append(ax)
+
+        # Extract domain and density values
+        domain = np.array([point['domain'] for point in data_points])
+        global_x_min = np.min(domain)
+        global_x_max = np.max(domain)
+
+        # Plot each sample's KDE
+        for s_idx, actual_name in enumerate(sample_names):
+            # Find the Julia key for this sample
+            julia_key = None
+            for jidx, aname in julia_to_actual_name.items():
+                if aname == actual_name:
+                    julia_key = f'sink {jidx}'
+                    break
+
+            if julia_key is None:
+                continue
+
+            # Extract density values
+            density = np.array([point.get(julia_key, 0) for point in data_points])
+
+            # Select appropriate axis
+            if stack_samples:
+                ax = axes[0]
+                # Plot with label for legend
+                if fill:
+                    ax.fill_between(domain, density, alpha=0.25, color=colors[s_idx],
+                                   linewidth=0)
+                    ax.plot(domain, density, color=colors[s_idx], label=actual_name)
+                else:
+                    ax.plot(domain, density, color=colors[s_idx], label=actual_name)
+            else:
+                ax = axes[s_idx]
+                # Plot with label (for legend on the right)
+                if fill:
+                    ax.fill_between(domain, density, alpha=0.25, color=colors[s_idx],
+                                   linewidth=0)
+                    ax.plot(domain, density, color=colors[s_idx], label=actual_name)
+                else:
+                    ax.plot(domain, density, color=colors[s_idx], label=actual_name)
+
+                # Add legend on the right side
+                ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=font_size)
+
+        # Format axes
+        for i, ax in enumerate(axes):
+            ax.tick_params(axis='both', which='major', labelsize=font_size)
+
+            # Remove x-tick labels for all but the last subplot in stacked mode
+            if not stack_samples and i < len(axes) - 1:
+                ax.tick_params(axis='x', labelbottom=False)
+
+            ax.set_facecolor('white')
+            ax.tick_params(axis='x', colors='black', width=2)
+            ax.tick_params(axis='y', colors='black', width=2)
+            ax.set_xlim(global_x_min, global_x_max)
+
+        if stack_samples:
+            # Format overlaid plot
+            ax = axes[0]
+            ax.set_xlabel('value', fontsize=font_size)
+            ax.set_ylabel('density', fontsize=font_size)
+            ax.set_title(f'{feature_name}\n{title}', fontsize=font_size + 1)
+            ax.legend(loc='upper right', fontsize=font_size - 2, ncol=min(3, n_samples))
+            plt.tight_layout()
+        else:
+            # Format stacked subplots
+            fig.suptitle(f'{feature_name}\n{title}', fontsize=font_size * 1.75, fontproperties=prop if font_path else None)
+
+            # Add figure-level axis labels
+            fig.text(0.5, 0.02, 'value', ha='center', va='center',
+                    fontsize=font_size, fontproperties=prop if font_path else None)
+            fig.text(0.01, 0.5, 'density', va='center', rotation='vertical',
+                    fontsize=font_size, fontproperties=prop if font_path else None)
+
+            # Use tight_layout with rect to leave space for labels
+            fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.96])
+
+        figures.append(fig)
+
+    return figures
+
+
 def visualize_learned_source_kdes_from_julia(
     learned_densities: List[dict],
     rank: int,

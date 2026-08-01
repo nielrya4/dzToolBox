@@ -13,11 +13,132 @@ from utils.output import Output
 from utils.project import project_from_json
 from utils import embedding
 from utils import monte_carlo_optimized
-from dz_lib import univariate, bivariate
+from dz_lib import univariate, bivariate, config as dz_config
 from dz_lib.bivariate.distributions import *
 from dz_lib.univariate import mds, unmix, distributions, mda, metrics, histograms
+from dz_lib.univariate.mda import core as mda_core
+from dz_lib.univariate.mda import mla as mda_mla
 from dz_lib.utils import data, matrices
 import numpy as np
+import pandas as pd
+
+
+def _configure_dz_lib(project):
+    """Configure dz_lib with project's sigma settings."""
+    sigma_in = project.settings.uncertainty_settings.sigma_in
+    sigma_out = project.settings.uncertainty_settings.sigma_out
+    dz_config.set_sigma_in(sigma_in)
+    dz_config.set_sigma_out(sigma_out)
+
+
+def _grains_to_mda_sample(grains, sigma_in):
+    """Convert legacy Grain list to new MDA Sample object."""
+    ages = np.array([g.age for g in grains])
+    errs = np.abs(np.array([g.uncertainty for g in grains]))
+
+    # Filter out grains with non-finite values
+    valid_mask = np.isfinite(ages) & np.isfinite(errs)
+    ages = ages[valid_mask]
+    errs = errs[valid_mask]
+
+    if len(ages) == 0:
+        raise ValueError("No valid grains found")
+
+    # Replace zero uncertainties with a small default (1% of age or 1 Ma, whichever is larger)
+    zero_mask = errs <= 0
+    if np.any(zero_mask):
+        default_errs = np.maximum(ages[zero_mask] * 0.01, 1.0)
+        errs[zero_mask] = default_errs
+
+    return mda_core.Sample(ages, errs, sigma_in=sigma_in)
+
+
+def _mda_results_to_table(results, sigma_out):
+    """Create a comparison table from MDA results dict."""
+    rows = []
+    for metric_name, result in results.items():
+        if np.isfinite(result.mda):
+            # Convert 1-sigma uncertainty to requested sigma level
+            unc_1s = result.unc_1s if np.isfinite(result.unc_1s) else float('nan')
+            unc_out = unc_1s * sigma_out if np.isfinite(unc_1s) else float('nan')
+            rows.append({
+                'Metric': metric_name,
+                'MDA (Ma)': round(result.mda, 2) if np.isfinite(result.mda) else '',
+                f'{sigma_out}σ (Myr)': round(unc_out, 2) if np.isfinite(unc_out) else '',
+                'n': result.n_used,
+                'MSWD': round(result.mswd, 2) if np.isfinite(result.mswd) else '',
+            })
+        else:
+            rows.append({
+                'Metric': metric_name,
+                'MDA (Ma)': '',
+                f'{sigma_out}σ (Myr)': '',
+                'n': '',
+                'MSWD': '',
+            })
+    df = pd.DataFrame(rows)
+    df = df.set_index('Metric')
+    df.index.name = None  # Remove index name so "Metric" doesn't appear on separate row
+    return df
+
+
+def _mda_results_to_graph(results, sigma_out, title, font_path, font_size, fig_width, fig_height):
+    """Create a comparison graph from MDA results dict."""
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from matplotlib.lines import Line2D
+
+    methods = list(results.keys())
+    ages = []
+    uncertainties = []
+
+    for metric_name, result in results.items():
+        if np.isfinite(result.mda):
+            ages.append(result.mda)
+            unc_1s = result.unc_1s if np.isfinite(result.unc_1s) else float('nan')
+            uncertainties.append(unc_1s)
+        else:
+            ages.append(float('nan'))
+            uncertainties.append(float('nan'))
+
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=100)
+    x = np.arange(len(methods))
+
+    color_1s = "black"
+    color_2s = "cornflowerblue"
+
+    for i in range(len(methods)):
+        if np.isfinite(uncertainties[i]):
+            ax.vlines(x[i], ages[i] - uncertainties[i] * 2, ages[i] + uncertainties[i] * 2,
+                      color=color_2s, linewidth=5)
+            ax.vlines(x[i], ages[i] - uncertainties[i], ages[i] + uncertainties[i],
+                      color=color_1s, linewidth=5)
+
+    ax.scatter(x, ages, color='white', edgecolor='black', s=100, zorder=3, marker='s')
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(methods, rotation=45, ha='right')
+    ax.set_xlabel('Method', fontsize=font_size)
+    ax.set_ylabel('Age (Ma)', fontsize=font_size)
+
+    if title:
+        if font_path:
+            font_prop = fm.FontProperties(fname=font_path)
+        else:
+            font_prop = None
+        ax.set_title(title, fontsize=font_size * 1.5, fontproperties=font_prop)
+
+    legend_elements = [
+        Line2D([0], [0], color=color_2s, lw=5, label='2σ'),
+        Line2D([0], [0], color=color_1s, lw=5, label='1σ')
+    ]
+    ax.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(1, 1), fontsize=font_size)
+
+    fig.tight_layout()
+    plt.close()
+
+    return fig
+
 
 try:
     from celery_app import celery_app
@@ -146,6 +267,7 @@ def register(app):
     def new_distro(project_id):
         if session.get("open_project", 0) == project_id:
             project = __get_project(project_id)
+            _configure_dz_lib(project)  # Apply project sigma settings
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", None)
                 output_type = request.args.get("outputType", "kde")
@@ -324,7 +446,7 @@ def register(app):
                     adjusted_samples.append(sample)
                 adjusted_samples.reverse()
 
-                points, stress, dissimilarity_matrix, scaled_mds_result, mds_result = mds.mds_function(
+                points, kruskal_stress, dissimilarity_matrix, mds_embedding, mds_result = mds.mds_function(
                     samples=adjusted_samples,
                     metric='similarity',
                     non_metric=non_metric
@@ -333,7 +455,7 @@ def register(app):
                 if "mds_plot" in output_types:
                     graph_fig = mds.mds_graph(
                         points=points,
-                        title=f"{output_title} (metric='similarity', stress={round(stress, 2)})",
+                        title=f"{output_title} (metric='similarity', stress={round(kruskal_stress, 2)})",
                         font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
                         font_size=project.settings.graph_settings.font_size,
                         fig_width=project.settings.graph_settings.figure_width,
@@ -349,10 +471,11 @@ def register(app):
                 if "shepard_plot" in output_types:
                     graph_fig = mds.shepard_plot(
                         dissimilarity_matrix=dissimilarity_matrix,
-                        scaled_mds_result=scaled_mds_result,
+                        embedding=mds_embedding,
                         mds_result=mds_result,
+                        kruskal_stress=kruskal_stress,
                         non_metric=non_metric,
-                        title=f"{output_title} (metric='similarity', stress={round(stress, 2)})",
+                        title=f"{output_title} (metric='similarity', stress={round(kruskal_stress, 2)})",
                         font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
                         font_size=project.settings.graph_settings.font_size,
                         fig_width=project.settings.graph_settings.figure_width,
@@ -375,6 +498,7 @@ def register(app):
     def new_unmix(project_id):
         if session.get("open_project", 0) == project_id:
             project = __get_project(project_id)
+            _configure_dz_lib(project)  # Apply project sigma settings
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", "")
                 metric = request.args.get("metric", "cross_correlation")
@@ -560,10 +684,20 @@ def register(app):
     def new_mda(project_id):
         if session.get("open_project", 0) == project_id:
             project = __get_project(project_id)
+            _configure_dz_lib(project)  # Apply project sigma settings
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", "")
                 output_types = request.args.getlist("outputType")
                 sample_names = request.args.getlist("sampleNames")
+
+                # Parse new MDA parameters
+                selected_metrics = request.args.getlist("metrics")
+                preset = request.args.get("preset", "harmonized")
+                rank_by = request.args.get("rank_by", "age+1s")
+                yc_min_n = int(request.args.get("yc_min_n", 2))
+                ysp_target_mswd = float(request.args.get("ysp_target_mswd", 1.0))
+                ysp_entry_rule = request.args.get("ysp_entry_rule", "global")
+
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
                 loaded_samples = data.read_1d_samples(spreadsheet_data)
                 active_samples = []
@@ -573,18 +707,51 @@ def register(app):
                         if sample.name == sample_name:
                             active_samples.append(sample)
                 sample = active_samples[0]
+
+                sigma_in = project.settings.uncertainty_settings.sigma_in
+                sigma_out = project.settings.uncertainty_settings.sigma_out
+
+                # Build overrides for custom options
+                overrides = {}
+                if rank_by:
+                    overrides['ysg'] = {'rank_by': rank_by}
+                    overrides['y3za'] = {'rank_by': rank_by}
+                if yc_min_n:
+                    overrides['yc1s'] = {'min_n': yc_min_n, 'rank_by': rank_by}
+                    overrides['yc2s'] = {'min_n': max(yc_min_n, 3), 'rank_by': rank_by}
+                if ysp_target_mswd or ysp_entry_rule:
+                    overrides['ysp'] = {
+                        'target_mswd': ysp_target_mswd,
+                        'entry_rule': ysp_entry_rule,
+                        'rank_by': rank_by
+                    }
+
+                # Convert grains to MDA Sample and run all metrics
+                try:
+                    mda_sample = _grains_to_mda_sample(sample.grains, sigma_in)
+                    mda_results = mda_core.all_metrics(
+                        mda_sample,
+                        preset=preset,
+                        overrides=overrides,
+                        include=selected_metrics if selected_metrics else None
+                    )
+                except Exception as e:
+                    return jsonify({"error": str(e)}), 400
+
                 pending_outputs = []
+
                 if "mda_table" in output_types:
-                    matrix_df = univariate.mda.comparison_table(sample.grains)
+                    matrix_df = _mda_results_to_table(mda_results, sigma_out)
                     output_id = secrets.token_hex(15)
                     output_data = embedding.embed_matrix(
                         dataframe=matrix_df, output_id=output_id, project_id=project_id,
                         download_formats=['xlsx', 'xls', 'csv']
                     )
                     pending_outputs.append({"output_id": output_id, "output_type": "matrix", "output_data": output_data})
+
                 if "mda_graph" in output_types:
-                    graph_fig = univariate.mda.comparison_graph(
-                        grains=sample.grains, title=output_title,
+                    graph_fig = _mda_results_to_graph(
+                        mda_results, sigma_out, output_title,
                         font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
                         font_size=project.settings.graph_settings.font_size,
                         fig_width=project.settings.graph_settings.figure_width,
@@ -596,6 +763,7 @@ def register(app):
                         fig_type="matplotlib", img_format='svg', download_formats=['svg', 'png']
                     )
                     pending_outputs.append({"output_id": output_id, "output_type": "graph", "output_data": output_data})
+
                 if "rank_plot" in output_types:
                     graph_fig = univariate.mda.ranked_ages_plot(
                         grains=sample.grains, title=output_title,
@@ -612,6 +780,7 @@ def register(app):
                         fig_type="matplotlib", img_format='svg', download_formats=['svg', 'png']
                     )
                     pending_outputs.append({"output_id": output_id, "output_type": "graph", "output_data": output_data})
+
                 if "ygf_graph" in output_types:
                     distro = distributions.pdp_function(sample)
                     fitted_grain, fitted_distro = mda.youngest_gaussian_fit(sample.grains)
@@ -631,6 +800,31 @@ def register(app):
                         fig_type="matplotlib", img_format='svg', download_formats=['svg', 'png']
                     )
                     pending_outputs.append({"output_id": output_id, "output_type": "graph", "output_data": output_data})
+
+                if "radial_plot" in output_types:
+                    # Get MLA result for radial plot
+                    mla_result = mda_results.get('MLA')
+                    mla_grain = None
+                    if mla_result and np.isfinite(mla_result.mda):
+                        from dz_lib.univariate.data import Grain
+                        mla_grain = Grain(mla_result.mda, mla_result.unc_1s * sigma_out)
+
+                    graph_fig = mda_mla.radial_plot(
+                        grains=sample.grains,
+                        mla_result=mla_grain,
+                        title=output_title,
+                        font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
+                        font_size=project.settings.graph_settings.font_size,
+                        fig_width=project.settings.graph_settings.figure_width,
+                        fig_height=project.settings.graph_settings.figure_height
+                    )
+                    output_id = secrets.token_hex(15)
+                    output_data = embedding.embed_graph(
+                        fig=graph_fig, output_id=output_id, project_id=project_id,
+                        fig_type="matplotlib", img_format='svg', download_formats=['svg', 'png']
+                    )
+                    pending_outputs.append({"output_id": output_id, "output_type": "graph", "output_data": output_data})
+
                 return jsonify({"outputs": pending_outputs})
             else:
                 return jsonify({"outputs": "method not allowed"})

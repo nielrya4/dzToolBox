@@ -76,14 +76,32 @@ class GraphSettings:
 class MappingSettings:
     def __init__(self, map_points: list = None):
         self.map_points = map_points if map_points is not None else []
-    
+
     def from_json(self, json_data):
         self.map_points = json_data.get("map_points", [])
-    
+
     def to_json(self):
         return {
             "map_points": self.map_points
         }
+
+
+class UncertaintySettings:
+    """Settings for uncertainty/sigma level handling."""
+    def __init__(self, sigma_in: int = 1, sigma_out: int = 2):
+        self.sigma_in = sigma_in    # Input uncertainty level (1 or 2)
+        self.sigma_out = sigma_out  # Output uncertainty level (0, 1, 2, ...)
+
+    def from_json(self, json_data):
+        self.sigma_in = int(json_data.get("sigma_in", 1))
+        self.sigma_out = int(json_data.get("sigma_out", 2))
+
+    def to_json(self):
+        return {
+            "sigma_in": self.sigma_in,
+            "sigma_out": self.sigma_out
+        }
+
 
 class Settings:
     def __init__(self):
@@ -91,12 +109,14 @@ class Settings:
         self.statistical_settings = StatisticalSettings()
         self.graph_settings = GraphSettings()
         self.mapping_settings = MappingSettings()
+        self.uncertainty_settings = UncertaintySettings()
 
     def from_json(self, json_string):
         self.age_settings.from_json(json_string)
         self.statistical_settings.from_json(json_string)
         self.graph_settings.from_json(json_string)
         self.mapping_settings.from_json(json_string)
+        self.uncertainty_settings.from_json(json_string)
 
     def to_json(self):
         json_data = {}
@@ -104,6 +124,7 @@ class Settings:
         json_data.update(self.statistical_settings.to_json())
         json_data.update(self.graph_settings.to_json())
         json_data.update(self.mapping_settings.to_json())
+        json_data.update(self.uncertainty_settings.to_json())
         return json_data
 
 class Project:

@@ -1,31 +1,48 @@
 <div id="export_spreadsheet_modal" class="modal">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="frame" id="content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Export Data</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <br />
-                <div class="container-sm">
-                    <form id="export_spreadsheet_form" data-hx-trigger="click">
-                        <label for="export_filename">Filename</label>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background: #ffffff; overflow: hidden; border-radius: 12px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #2c3e50, #3498db); color: white; border: none; padding: 1rem 1.5rem;">
+                <h5 class="modal-title" style="color: white; font-weight: 600;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; vertical-align: text-bottom;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export Data
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background: #ffffff; padding: 1.5rem;">
+                <form id="export_spreadsheet_form">
+                    <!-- Filename -->
+                    <div class="mb-4">
+                        <label for="export_filename" class="form-label fw-semibold">Filename</label>
                         <input type="text" class="form-control" id="export_filename" name="export_filename" required value="{{ project_name }}">
-                        <br />
-                        <br />
-                        <label for="export_file_format">Choose File Format</label>
-                        <select name="export_file_format" id="export_file_format" class="form-control" required>
-                            <option value="xlsx">Excel (.xlsx)</option>
-                            <option value="xls">Old Excel (.xls)</option>
-                            <option value="csv">CSV (.csv)</option>
+                    </div>
+
+                    <!-- File Format -->
+                    <div class="mb-4">
+                        <label for="export_file_format" class="form-label fw-semibold">File Format</label>
+                        <select name="export_file_format" id="export_file_format" class="form-select" required>
+                            <option value="xlsx">Excel Workbook (.xlsx)</option>
+                            <option value="xls">Excel 97-2003 (.xls)</option>
+                            <option value="csv">Comma Separated Values (.csv)</option>
                             <option value="json">JSON (.json)</option>
                         </select>
-                        <br />
-                        <br />
-                        <button data-bs-toggle="modal" data-bs-target="#export_spreadsheet_modal" class="btn btn-primary" type="button" onclick="export_spreadsheet_send_args()">Download</button>
-                    </form>
-                    <br />
-                </div>
+                        <small class="text-muted mt-1 d-block">Choose the format for your exported data</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="background: #f8f9fa; border-top: 1px solid #e9ecef; padding: 1rem 1.5rem;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" type="button" onclick="export_spreadsheet_send_args()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download
+                </button>
             </div>
         </div>
     </div>
@@ -41,7 +58,7 @@
             return;
         }
 
-        var queryString = `/projects/{{ project_id }}/data/export?filename=${filename}&format=${fileFormat}`;
+        var queryString = `/projects/{{ project_id }}/data/export?filename=${encodeURIComponent(filename)}&format=${fileFormat}`;
 
         try {
             const response = await fetch(queryString, {
@@ -60,14 +77,18 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
+            // Close modal after successful download
+            var exportModal = bootstrap.Modal.getInstance(document.getElementById('export_spreadsheet_modal'));
+            if (exportModal) {
+                exportModal.hide();
+            }
         } catch (error) {
             console.error("Error downloading the file:", error);
             alert("Failed to download the file. Please try again.");
         }
     }
-</script>
 
-<script>
     document.getElementById("export_spreadsheet_modal").addEventListener("shown.bs.modal", function() {
         document.getElementById("export_filename").focus();
     });

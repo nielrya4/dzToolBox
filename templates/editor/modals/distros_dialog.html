@@ -1,75 +1,282 @@
 {% from "global/sample_select.html" import sample_select with context %}
 
 <div id="distro_modal" class="modal">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="frame" id="content">
-                <div class="modal-header">
-                    <h5 class="modal-title">New Distribution</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background: #ffffff !important; overflow: hidden; border-radius: 12px; border: none;">
+            <div class="frame" style="background: #ffffff !important; color: #212529 !important;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #2c3e50, #3498db) !important; color: white !important; border-radius: 0;">
+                    <h5 class="modal-title" style="color: white !important;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; vertical-align: text-bottom;">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path>
+                        </svg>
+                        New Distribution
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <br />
-                <div class="container-sm">
-                    <form id="distro_form" data-hx-trigger="click">
-                        <label for="distro_output_name" class="form-label">Output Title</label>
-                        <input type="text" id="distro_output_name" name="distro_output_name" class="form-control" required>
-                        <br />
-                        <br />
-                        {{ sample_select(id="distro_sample_select", sender="distro_link", event='click', multi_select=True) }}
-                        <br />
-                        <div class="table_list">
-                            <table style="width: 100%;">
-                                <tr>
-                                    <td>
-                                        <label for="distro_select" class="form-label">Select a distribution type...</label>
-                                        <select name="distro_select" id="distro_select" class="form-select">
-                                            <option value="kde" selected>Kernel Density Estimate</option>
-                                            <option value="pdp">Probability Density Plot</option>
-                                            <option value="cdf">Cumulative Distribution Function</option>
-                                        </select>
-                                    </td>
-                                    <td style="text-align: right; vertical-align: bottom;">
-                                        <button class="btn btn-primary" type="button" onclick="distro_send_args()">Plot</button>
-                                    </td>
-                                </tr>
-                            </table>
+                <div class="modal-body p-0" style="background: #ffffff !important;">
+                    <div class="distro-container" style="background: #ffffff !important;">
+                        <!-- Sidebar Navigation -->
+                        <nav class="distro-sidebar" style="background: #f8f9fa !important;">
+                            <ul class="distro-nav" style="background: #f8f9fa !important;">
+                                <li class="distro-nav-item active" data-panel="samples">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    <span>Samples</span>
+                                </li>
+                                <li class="distro-nav-item" data-panel="options">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                    </svg>
+                                    <span>Options</span>
+                                </li>
+                            </ul>
+                        </nav>
+
+                        <!-- Content Panels -->
+                        <div class="distro-content" style="background: #ffffff !important; color: #212529 !important;">
+                            <!-- Samples Panel -->
+                            <div class="distro-panel active" id="distro-panel-samples" style="background: #ffffff !important; color: #212529 !important;">
+                                <h6 class="distro-panel-title" style="color: #212529 !important;">Select Samples</h6>
+                                <p class="distro-panel-description">Choose which samples to include in the distribution plot.</p>
+
+                                <div class="distro-group">
+                                    <label class="distro-label">Output Title</label>
+                                    <input type="text" id="distro_output_name" name="distro_output_name" class="form-control distro-input" placeholder="e.g., Sample Age Distribution">
+                                </div>
+
+                                <div class="distro-group">
+                                    <label class="distro-label">Samples</label>
+                                    {{ sample_select(id="distro_sample_select", sender="distro_link", event='click', multi_select=True) }}
+                                </div>
+                            </div>
+
+                            <!-- Options Panel -->
+                            <div class="distro-panel" id="distro-panel-options" style="background: #ffffff !important; color: #212529 !important;">
+                                <h6 class="distro-panel-title" style="color: #212529 !important;">Distribution Options</h6>
+                                <p class="distro-panel-description">Configure the type of distribution plot.</p>
+
+                                <div class="distro-group">
+                                    <label class="distro-label">Distribution Type</label>
+                                    <select name="distro_select" id="distro_select" class="form-select distro-input">
+                                        <option value="kde" selected>Kernel Density Estimate (KDE)</option>
+                                        <option value="pdp">Probability Density Plot (PDP)</option>
+                                        <option value="cdf">Cumulative Distribution Function (CDF)</option>
+                                    </select>
+                                    <small class="distro-hint">KDE uses adaptive bandwidths; PDP uses reported uncertainties; CDF shows cumulative probability</small>
+                                </div>
+                            </div>
                         </div>
-                    </form>
-                    <br />
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: #ffffff !important;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="distro_send_args();">Plot Distribution</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    const distroSampleList = document.getElementById("distro_sample_select")
-    function distro_send_args() {
-        var selectedSamples = [];
-        var distro_checkboxes = distroSampleList.querySelectorAll(".sample-checkbox");
-        for (var i = 0; i < distro_checkboxes.length; i++) {
-            if (distro_checkboxes[i].checked) {
-                selectedSamples.push(distro_checkboxes[i].value);
-            }
-        }
-        var distro_type = document.getElementById("distro_select").value;
-        var distro_outputName = document.getElementById("distro_output_name").value;
-        var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
-        var queryString = "/projects/{{ project_id }}/outputs/new/distribution?sampleNames=" + encodedSamples.join("&sampleNames=") + "&outputType=" + distro_type;
-        if (distro_outputName !== "") {
-            queryString += "&outputTitle=" + distro_outputName;
-        }
-        var distroModal = bootstrap.Modal.getInstance(document.getElementById('distro_modal'));
-        if (distroModal) {
-            distroModal.hide();
-        }
-        generateOutput(queryString);
+<style>
+/* Distribution Modal Styles */
+.distro-container {
+    display: flex;
+    height: 500px;
+}
+
+.distro-sidebar {
+    width: 160px;
+    border-right: 1px solid #e9ecef;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+.distro-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+}
+
+.distro-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    color: #495057 !important;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    font-size: 0.9rem;
+}
+
+.distro-nav-item:hover {
+    background: #f1f3f4;
+    color: #212529 !important;
+}
+
+.distro-nav-item.active {
+    background: #ffffff;
+    color: #212529 !important;
+    border-left-color: #495057;
+    font-weight: 600;
+}
+
+.distro-nav-item svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.distro-nav-item.active svg {
+    opacity: 1;
+}
+
+.distro-content {
+    flex: 1;
+    padding: 1.25rem;
+    overflow-y: auto;
+    max-height: 500px;
+}
+
+.distro-panel {
+    display: none;
+}
+
+.distro-panel.active {
+    display: block;
+    animation: distroFadeIn 0.2s ease;
+}
+
+@keyframes distroFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.distro-panel-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.distro-panel-description {
+    color: #6c757d !important;
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+}
+
+.distro-group {
+    margin-bottom: 1rem;
+}
+
+.distro-label {
+    display: block;
+    font-weight: 500;
+    color: #212529 !important;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.distro-input {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+    background: #ffffff !important;
+    color: #212529 !important;
+}
+
+.distro-hint {
+    display: block;
+    color: #6c757d !important;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .distro-container {
+        flex-direction: column;
+        height: auto;
     }
-</script>
+
+    .distro-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .distro-nav {
+        display: flex;
+        overflow-x: auto;
+        padding: 0.5rem;
+    }
+
+    .distro-nav-item {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 12px;
+        white-space: nowrap;
+        font-size: 0.8rem;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+    }
+
+    .distro-nav-item.active {
+        border-left-color: transparent;
+        border-bottom-color: #495057;
+    }
+}
+</style>
 
 <script>
-    // Focus on input when modal opens
-    document.getElementById('distro_modal').addEventListener('shown.bs.modal', function() {
-        document.getElementById('distro_output_name').focus();
+// Distribution panel navigation
+document.querySelectorAll('.distro-nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+        document.querySelectorAll('.distro-nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+
+        const panelId = 'distro-panel-' + this.dataset.panel;
+        document.querySelectorAll('.distro-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(panelId).classList.add('active');
     });
+});
+
+// Send Distribution arguments
+const distroSampleList = document.getElementById("distro_sample_select");
+
+function distro_send_args() {
+    var selectedSamples = [];
+    var distro_checkboxes = distroSampleList.querySelectorAll(".sample-checkbox");
+    for (var i = 0; i < distro_checkboxes.length; i++) {
+        if (distro_checkboxes[i].checked) {
+            selectedSamples.push(distro_checkboxes[i].value);
+        }
+    }
+
+    if (selectedSamples.length === 0) {
+        alert('Please select at least one sample.');
+        return;
+    }
+
+    var distro_type = document.getElementById("distro_select").value;
+    var distro_outputName = document.getElementById("distro_output_name").value;
+    var encodedSamples = selectedSamples.map(s => encodeURIComponent(s));
+    var queryString = "/projects/{{ project_id }}/outputs/new/distribution?sampleNames=" + encodedSamples.join("&sampleNames=") + "&outputType=" + distro_type;
+    if (distro_outputName !== "") {
+        queryString += "&outputTitle=" + encodeURIComponent(distro_outputName);
+    }
+    var distroModal = bootstrap.Modal.getInstance(document.getElementById('distro_modal'));
+    if (distroModal) {
+        distroModal.hide();
+    }
+    generateOutput(queryString);
+}
+
+// Focus on input when modal opens
+document.getElementById('distro_modal').addEventListener('shown.bs.modal', function() {
+    document.getElementById('distro_output_name').focus();
+});
 </script>

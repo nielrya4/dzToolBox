@@ -1,185 +1,668 @@
 <div id="project_settings_modal" class="modal">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="frame" id="content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Project Settings</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background: #ffffff !important; overflow: hidden; border-radius: 12px; border: none;">
+            <div class="frame" style="background: #ffffff !important; color: #212529 !important;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #2c3e50, #3498db) !important; color: white !important; border-radius: 0;">
+                    <h5 class="modal-title" style="color: white !important;">Project Settings</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <br />
-                <div class="container-sm">
-                    <form id="settings_form">
-						<button type="button" class="collapsible active_collapsible">Age Settings</button>
-						<div class="content" style="max-height: 200px;">
-							<br />
-							<label for="min_age">Minimum Age</label>
-							<input type="number" class="form-control" id="min_age" name="min_age" value="0" required>
-							<label for="max_age">Maximum Age</label>
-							<input type="number" class="form-control" id="max_age" name="max_age" value="4500" required>
-							<br />
-						</div>
-						<br />
-						<button type="button" class="collapsible active_collapsible">Data Settings</button>
-						<div class="content" style="max-height: 300px;">
-							<br />
-                        <label for="kde_bandwidth">Default KDE Bandwidth</label>
-                        <input type="number" class="form-control" id="kde_bandwidth" name="kde_bandwidth" value="10" required>
-                        <label for="n_trials">Default Unmixing Trials</label>
-                        <input type="number" class="form-control" id="n_trials" name="n_trials" required>
-                        <label for="matrix_function_type">Function To Use While Generating Matrices</label>
-                        <select id="matrix_function_type" name="matrix_function_type" class="form-select" aria-label="Default select example">
-                            <option value="kde">KDE (Recommended)</option>
-                            <option value="pdp">PDP</option>
-                        </select>
-                        <br />
-						</div>
-						<br />
-						<button type="button" class="collapsible active_collapsible">Graph Settings</button>
-						<div class="content" style="max-height: 600px;">
-							<br />
-							<label for="stack_graphs">Stack Graph Subplots?</label>
-							<select id="stack_graphs" name="stack_graphs" class="form-select" aria-label="Default select example">
-								<option selected value="true">Yes</option>
-								<option value="false">No</option>
-							</select>
-							<label for="show_legend_select">Show Graph Legend?</label>
-							<select id="show_legend_select" name="show_legend_select" class="form-select" aria-label="Default select example">
-								<option selected value="true">Yes</option>
-								<option value="false">No</option>
-							</select>
-							<label for="fill_lines_select">Fill Area Underneath Lines?</label>
-							<select id="fill_lines_select" name="fill_lines_select" class="form-select" aria-label="Default select example">
-								<option value="true">Yes</option>
-								<option selected value="false">No</option>
-							</select>
-							<label for="modes_labeled">Number of Modes to Label</label>
-							<input type="number" class="form-control" id="modes_labeled" name="modes_labeled" value="0" required>
+                <div class="modal-body settings-body p-0" style="background: #ffffff !important;">
+                <div class="settings-container" style="background: #ffffff !important;">
+                    <!-- Sidebar Navigation -->
+                    <nav class="settings-sidebar" style="background: #f8f9fa !important;">
+                        <ul class="settings-nav" style="background: #f8f9fa !important;">
+                            <li class="settings-nav-item active" data-panel="age">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                <span>Age Range</span>
+                            </li>
+                            <li class="settings-nav-item" data-panel="uncertainty">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20V10"></path>
+                                    <path d="M18 20V4"></path>
+                                    <path d="M6 20v-4"></path>
+                                </svg>
+                                <span>Uncertainty</span>
+                            </li>
+                            <li class="settings-nav-item" data-panel="data">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                                </svg>
+                                <span>Data</span>
+                            </li>
+                            <li class="settings-nav-item" data-panel="graphs">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                                </svg>
+                                <span>Graphs</span>
+                            </li>
+                        </ul>
+                    </nav>
 
-							<label for="graph_color_map">Graph Colormap</label>
-							<select id="graph_color_map" name="graph_color_map" class="form-select" aria-label="Default select example">
-								<option value="jet">Jet</option>
-								<option value="plasma">Plasma</option>
-								<option value="viridis">Viridis</option>
-								<option value="inferno">Inferno</option>
-								<option value="magma">Magma</option>
-								<option value="cividis">Cividis</option>
-								<option value="ocean">Ocean</option>
-								<option value="terrain">Terrain</option>
-								<option value="gnuplot">GNU Plot</option>
-								<option value="gist_ncar">Gist NCAR</option>
-								<option value="winter">Winter</option>
-								<option value="cool">Cool</option>
-    							<option name="custom" value="custom">Custom</option>
-							</select>
-							<input type="text" id="custom_colormap" name="custom_colormap" class="form-control mt-2" placeholder="Enter a valid matplotlib colormap name" style="display: none">
+                    <!-- Content Panels -->
+                    <div class="settings-content" style="background: #ffffff !important; color: #212529 !important;">
+                        <form id="settings_form" style="background: #ffffff !important; color: #212529 !important;">
+                            <!-- Age Range Panel -->
+                            <div class="settings-panel active" id="panel-age" style="background: #ffffff !important; color: #212529 !important;">
+                                <h6 class="settings-panel-title" style="color: #212529 !important;">Age Range</h6>
+                                <p class="settings-panel-description">Configure the age range for analyses and visualizations.</p>
 
-							<label for="graph_font">Graph Font</label>
-							<select id="graph_font" name="graph_font" class="form-select" aria-label="Default select example">
-								<option value="ubuntu" style="font-family: 'ubuntu', sans-serif">Ubuntu</option>
-								<option value="ibm_plex_mono" style="font-family: 'ibm_plex_mono', sans-serif">IBM Plex Mono</option>
-								<option value="geologica" style="font-family: 'geologica', sans-serif">Geologica</option>
-								<option value="proza_libre" style="font-family: 'proza_libre', sans-serif">Proza Libre</option>
-								<option value="open_sans" style="font-family: 'open_sans', sans-serif">Open Sans</option>
-								<option value="public_sans" style="font-family: 'public_sans', sans-serif">Public Sans</option>
-								<option value="source_sans" style="font-family: 'source_sans', sans-serif">Source Sans</option>
-								<option value="halant" style="font-family: 'halant', sans-serif">Halant</option>
-							</select>
-							<label for="font_size">Font Size</label>
-							<input type="number" class="form-control" id="font_size" name="font_size" value="12" required>
-							<label for="figure_width">Figure Width</label>
-							<input type="number" class="form-control" id="figure_width" name="figure_width" value="9" required>
-							<label for="figure_height">Figure Height</label>
-							<input type="number" class="form-control" id="figure_height" name="figure_height" value="7" required>
-							<br />
-						</div>
-						<br />
-                        <button
-                                type="button"
-                                class = "btn btn-primary"
-                                name="update_settings"
-                                id="update_settings"
-                        >Update Settings</button>
-                    </form>
-                    <br />
+                                <div class="settings-group">
+                                    <label for="min_age" class="settings-label">Minimum Age (Ma)</label>
+                                    <input type="number" class="form-control settings-input" id="min_age" name="min_age" value="0" required>
+                                    <small class="settings-hint">Lower bound for age distributions and plots</small>
+                                </div>
+
+                                <div class="settings-group">
+                                    <label for="max_age" class="settings-label">Maximum Age (Ma)</label>
+                                    <input type="number" class="form-control settings-input" id="max_age" name="max_age" value="4500" required>
+                                    <small class="settings-hint">Upper bound for age distributions and plots</small>
+                                </div>
+                            </div>
+
+                            <!-- Uncertainty Panel -->
+                            <div class="settings-panel" id="panel-uncertainty" style="background: #ffffff !important; color: #212529 !important;">
+                                <h6 class="settings-panel-title" style="color: #212529 !important;">Uncertainty Settings</h6>
+                                <p class="settings-panel-description">Configure how uncertainties (sigma levels) are handled throughout the application.</p>
+
+                                <div class="settings-group">
+                                    <label for="sigma_in" class="settings-label">Input Sigma Level</label>
+                                    <select id="sigma_in" name="sigma_in" class="form-select settings-input">
+                                        <option value="1">1-sigma (1s)</option>
+                                        <option value="2">2-sigma (2s)</option>
+                                    </select>
+                                    <small class="settings-hint">The sigma level of your input uncertainty data</small>
+                                </div>
+
+                                <div class="settings-group">
+                                    <label for="sigma_out" class="settings-label">Output Sigma Level</label>
+                                    <select id="sigma_out" name="sigma_out" class="form-select settings-input">
+                                        <option value="1">1-sigma (1s)</option>
+                                        <option value="2">2-sigma (2s) - 95% confidence</option>
+                                        <option value="3">3-sigma (3s) - 99.7% confidence</option>
+                                    </select>
+                                    <small class="settings-hint">The sigma level for reported uncertainties in results</small>
+                                </div>
+
+                                <div class="settings-info-box">
+                                    <strong>About Sigma Levels</strong>
+                                    <p>Sigma (s) represents the standard deviation of measurement uncertainty. 1-sigma covers ~68% of the probability distribution, while 2-sigma covers ~95%.</p>
+                                </div>
+                            </div>
+
+                            <!-- Data Panel -->
+                            <div class="settings-panel" id="panel-data" style="background: #ffffff !important; color: #212529 !important;">
+                                <h6 class="settings-panel-title" style="color: #212529 !important;">Data Settings</h6>
+                                <p class="settings-panel-description">Configure parameters for data processing and analysis.</p>
+
+                                <div class="settings-group">
+                                    <label for="kde_bandwidth" class="settings-label">Default KDE Bandwidth</label>
+                                    <input type="number" class="form-control settings-input" id="kde_bandwidth" name="kde_bandwidth" value="10" required>
+                                    <small class="settings-hint">Bandwidth for Kernel Density Estimation (in Ma)</small>
+                                </div>
+
+                                <div class="settings-group">
+                                    <label for="n_trials" class="settings-label">Unmixing Trials</label>
+                                    <input type="number" class="form-control settings-input" id="n_trials" name="n_trials" required>
+                                    <small class="settings-hint">Number of Monte Carlo trials for unmixing calculations</small>
+                                </div>
+
+                                <div class="settings-group">
+                                    <label for="matrix_function_type" class="settings-label">Matrix Function Type</label>
+                                    <select id="matrix_function_type" name="matrix_function_type" class="form-select settings-input">
+                                        <option value="kde">KDE (Recommended)</option>
+                                        <option value="pdp">PDP</option>
+                                    </select>
+                                    <small class="settings-hint">Function used when generating similarity matrices</small>
+                                </div>
+                            </div>
+
+                            <!-- Graphs Panel -->
+                            <div class="settings-panel" id="panel-graphs" style="background: #ffffff !important; color: #212529 !important;">
+                                <h6 class="settings-panel-title" style="color: #212529 !important;">Graph Settings</h6>
+                                <p class="settings-panel-description">Customize the appearance of generated graphs and visualizations.</p>
+
+                                <div class="settings-row">
+                                    <div class="settings-group half">
+                                        <label for="figure_width" class="settings-label">Figure Width</label>
+                                        <input type="number" class="form-control settings-input" id="figure_width" name="figure_width" value="9" required>
+                                    </div>
+                                    <div class="settings-group half">
+                                        <label for="figure_height" class="settings-label">Figure Height</label>
+                                        <input type="number" class="form-control settings-input" id="figure_height" name="figure_height" value="7" required>
+                                    </div>
+                                </div>
+
+                                <div class="settings-row">
+                                    <div class="settings-group half">
+                                        <label for="graph_font" class="settings-label">Font</label>
+                                        <select id="graph_font" name="graph_font" class="form-select settings-input">
+                                            <option value="ubuntu">Ubuntu</option>
+                                            <option value="ibm_plex_mono">IBM Plex Mono</option>
+                                            <option value="geologica">Geologica</option>
+                                            <option value="proza_libre">Proza Libre</option>
+                                            <option value="open_sans">Open Sans</option>
+                                            <option value="public_sans">Public Sans</option>
+                                            <option value="source_sans">Source Sans</option>
+                                            <option value="halant">Halant</option>
+                                        </select>
+                                    </div>
+                                    <div class="settings-group half">
+                                        <label for="font_size" class="settings-label">Font Size</label>
+                                        <input type="number" class="form-control settings-input" id="font_size" name="font_size" value="12" required>
+                                    </div>
+                                </div>
+
+                                <div class="settings-group">
+                                    <label for="graph_color_map" class="settings-label">Color Map</label>
+                                    <select id="graph_color_map" name="graph_color_map" class="form-select settings-input">
+                                        <option value="jet">Jet</option>
+                                        <option value="plasma">Plasma</option>
+                                        <option value="viridis">Viridis</option>
+                                        <option value="inferno">Inferno</option>
+                                        <option value="magma">Magma</option>
+                                        <option value="cividis">Cividis</option>
+                                        <option value="ocean">Ocean</option>
+                                        <option value="terrain">Terrain</option>
+                                        <option value="gnuplot">GNU Plot</option>
+                                        <option value="gist_ncar">Gist NCAR</option>
+                                        <option value="winter">Winter</option>
+                                        <option value="cool">Cool</option>
+                                        <option value="custom">Custom...</option>
+                                    </select>
+                                    <input type="text" id="custom_colormap" name="custom_colormap" class="form-control settings-input mt-2" placeholder="Enter matplotlib colormap name" style="display: none">
+                                </div>
+
+                                <div class="settings-group">
+                                    <label for="modes_labeled" class="settings-label">Modes to Label</label>
+                                    <input type="number" class="form-control settings-input" id="modes_labeled" name="modes_labeled" value="0" required>
+                                    <small class="settings-hint">Number of peak modes to label on distribution plots</small>
+                                </div>
+
+                                <div class="settings-toggles">
+                                    <div class="settings-toggle">
+                                        <label class="settings-toggle-label">
+                                            <span>Stack Graph Subplots</span>
+                                            <input type="checkbox" id="stack_graphs" name="stack_graphs" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="settings-toggle">
+                                        <label class="settings-toggle-label">
+                                            <span>Show Legend</span>
+                                            <input type="checkbox" id="show_legend_select" name="show_legend_select" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="settings-toggle">
+                                        <label class="settings-toggle-label">
+                                            <span>Fill Under Lines</span>
+                                            <input type="checkbox" id="fill_lines_select" name="fill_lines_select">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                </div>  <!-- closes modal-body -->
+                <div class="modal-footer settings-footer" style="background: #ffffff !important;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="update_settings">Save Changes</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+/* Settings Modal Styles */
+.settings-modal-content {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.settings-body {
+    background: #f8f9fa;
+    padding: 0;
+}
+
+.settings-container {
+    display: flex;
+    height: 500px;  /* Fixed height */
+}
+
+.settings-sidebar {
+    width: 200px;
+    background: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+.settings-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+}
+
+.settings-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    cursor: pointer;
+    color: #495057;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.settings-nav-item:hover {
+    background: #f1f3f4;
+    color: #212529;
+}
+
+.settings-nav-item.active {
+    background: #ffffff;
+    color: #212529;
+    border-left-color: #495057;
+    font-weight: 600;
+}
+
+.settings-nav-item svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.settings-nav-item.active svg {
+    opacity: 1;
+}
+
+.settings-content {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    background: #ffffff !important;
+    max-height: 500px;  /* Match container height */
+}
+
+/* Override any inherited blue backgrounds */
+#project_settings_modal .modal-content,
+#project_settings_modal .frame,
+#project_settings_modal .modal-body,
+#project_settings_modal .settings-container,
+#project_settings_modal .settings-content {
+    background: #ffffff !important;
+    color: #212529 !important;
+}
+
+#project_settings_modal .settings-sidebar {
+    background: #f8f9fa !important;
+}
+
+#project_settings_modal .modal-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#project_settings_modal .modal-footer {
+    background: #ffffff !important;
+}
+
+.settings-panel {
+    display: none;
+}
+
+.settings-panel.active {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.settings-panel-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529 !important;
+    margin-bottom: 0.25rem;
+}
+
+.settings-panel-description {
+    color: #6c757d !important;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings-group {
+    margin-bottom: 1.25rem;
+}
+
+.settings-group.half {
+    flex: 1;
+}
+
+.settings-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.settings-label {
+    display: block;
+    font-weight: 500;
+    color: #212529 !important;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.settings-input {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #ffffff !important;
+    color: #212529 !important;
+}
+
+.settings-input:focus {
+    border-color: #6c757d;
+    box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.15);
+}
+
+.settings-hint {
+    display: block;
+    color: #6c757d !important;
+    font-size: 0.8rem;
+    margin-top: 0.35rem;
+}
+
+.settings-info-box {
+    background: #f8f9fa !important;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    border-left: 4px solid #6c757d;
+}
+
+.settings-info-box strong {
+    display: block;
+    color: #495057 !important;
+    margin-bottom: 0.5rem;
+}
+
+.settings-info-box p {
+    margin: 0;
+    color: #495057 !important;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Toggle Switches */
+.settings-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.settings-toggle-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 0.5rem 0;
+}
+
+.settings-toggle-label span:first-child {
+    font-weight: 500;
+    color: #212529 !important;
+}
+
+.settings-toggle-label input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-slider {
+    width: 44px;
+    height: 24px;
+    background: #ced4da;
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.2s;
+}
+
+.toggle-slider::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.settings-toggle-label input:checked + .toggle-slider {
+    background: #198754;
+}
+
+.settings-toggle-label input:checked + .toggle-slider::after {
+    transform: translateX(20px);
+}
+
+.settings-footer {
+    border-top: 1px solid #e9ecef;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .settings-container {
+        flex-direction: column;
+        max-height: none;
+    }
+
+    .settings-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .settings-nav {
+        display: flex;
+        overflow-x: auto;
+        padding: 0.5rem;
+    }
+
+    .settings-nav-item {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 16px;
+        white-space: nowrap;
+        font-size: 0.85rem;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+    }
+
+    .settings-nav-item.active {
+        border-left-color: transparent;
+        border-bottom-color: #495057;
+    }
+}
+</style>
+
 <script>
-    const update_btn = document.getElementById('update_settings')
+// Settings panel navigation
+document.querySelectorAll('.settings-nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+        // Update active nav item
+        document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
 
-    update_btn.addEventListener('click', function () {
-        const kde_bandwidth_textbox = document.getElementById('kde_bandwidth');
-        const matrix_function_type_select = document.getElementById('matrix_function_type');
-        const stack_graphs_select = document.getElementById('stack_graphs');
-        const n_trials_textbox = document.getElementById('n_trials');
-        const graph_color_map = document.getElementById('graph_color_map')
-        const font_select = document.getElementById('graph_font')
-        const font_size = document.getElementById('font_size')
-        const figure_width = document.getElementById('figure_width')
-        const figure_height = document.getElementById('figure_height')
-        const min_age = document.getElementById('min_age')
-        const max_age = document.getElementById('max_age')
-        const showLegendSelect = document.getElementById('show_legend_select')
-		const modesLabeled = document.getElementById('modes_labeled')
-		const fillLinesSelect=document.getElementById('fill_lines_select')
-
-        // Basic validation
-        if (!kde_bandwidth_textbox.value || !n_trials_textbox.value || !min_age.value || !max_age.value || !font_size.value || !figure_width.value || !figure_height.value) {
-            alert('Please fill in all required fields.');
-            return;
-        }
-		let colorMapValue = graph_color_map.value;
-		if (graph_color_map.value === 'custom') {
-			colorMapValue = custom_colormap.value;
-		}
-        // Close modal immediately after validation
-        const modal = bootstrap.Modal.getInstance(document.getElementById('project_settings_modal'));
-        if (modal) {
-            modal.hide();
-        }
-
-        var settingsData = {
-            "min_age": parseFloat(min_age.value),
-            "max_age": parseFloat(max_age.value),
-            "kde_bandwidth" : parseFloat(kde_bandwidth_textbox.value),
-            "matrix_function_type" : matrix_function_type_select.value,
-            "stack_graphs" : stack_graphs_select.value,
-            "n_unmix_trials" : parseInt(n_trials_textbox.value),
-            "font_size": parseFloat(font_size.value),
-            "font_name": font_select.value,
-            "figure_width": parseInt(figure_width.value),
-            "figure_height": parseInt(figure_height.value),
-            "color_map": colorMapValue,
-            "show_legend": showLegendSelect.value,
-			"modes_labeled": parseInt(modesLabeled.value),
-			"fill": fillLinesSelect.value,
-        };
-        fetch('/projects/{{ project_id }}/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settingsData)
-        }).then(response => {
-            document.getElementById("update_settings_spinner").classList.remove("visible");
-            document.getElementById("update_settings_spinner").classList.add("hidden");
-            if (response.ok) {
-                console.log('Settings updated successfully!');
-            } else {
-                console.error('Error updating settings');
-            }
-        }).catch(error => {
-            console.error('Error updating settings', error);
-        });
+        // Show corresponding panel
+        const panelId = 'panel-' + this.dataset.panel;
+        document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(panelId).classList.add('active');
     });
-</script>
-<script>
-	document.getElementById('graph_color_map').addEventListener('change', function() {
-		const customInput = document.getElementById('custom_colormap');
-		if (this.value === 'custom') {
-			customInput.style.display = 'block';
-		} else {
-			customInput.style.display = 'none';
-		}
-	});
+});
+
+// Custom colormap toggle
+document.getElementById('graph_color_map').addEventListener('change', function() {
+    const customInput = document.getElementById('custom_colormap');
+    customInput.style.display = this.value === 'custom' ? 'block' : 'none';
+});
+
+// Load settings when modal opens
+document.getElementById('project_settings_modal').addEventListener('show.bs.modal', function() {
+    fetch('/projects/{{ project_id }}/settings')
+        .then(response => response.json())
+        .then(data => {
+            const settings = data.settings;
+
+            // Age settings
+            document.getElementById('min_age').value = settings.min_age || 0;
+            document.getElementById('max_age').value = settings.max_age || 4500;
+
+            // Uncertainty settings
+            document.getElementById('sigma_in').value = settings.sigma_in || 1;
+            document.getElementById('sigma_out').value = settings.sigma_out || 2;
+
+            // Data settings
+            document.getElementById('kde_bandwidth').value = settings.kde_bandwidth || 10;
+            document.getElementById('n_trials').value = settings.n_unmix_trials || 10000;
+            document.getElementById('matrix_function_type').value = settings.matrix_function_type || 'kde';
+
+            // Graph settings
+            document.getElementById('figure_width').value = settings.figure_width || 9;
+            document.getElementById('figure_height').value = settings.figure_height || 7;
+            document.getElementById('graph_font').value = settings.font_name || 'ubuntu';
+            document.getElementById('font_size').value = settings.font_size || 12;
+            document.getElementById('modes_labeled').value = settings.modes_labeled || 0;
+
+            // Color map
+            const colorMap = settings.color_map || 'jet';
+            const predefinedMaps = ['jet', 'plasma', 'viridis', 'inferno', 'magma', 'cividis', 'ocean', 'terrain', 'gnuplot', 'gist_ncar', 'winter', 'cool'];
+            if (predefinedMaps.includes(colorMap)) {
+                document.getElementById('graph_color_map').value = colorMap;
+                document.getElementById('custom_colormap').style.display = 'none';
+            } else {
+                document.getElementById('graph_color_map').value = 'custom';
+                document.getElementById('custom_colormap').value = colorMap;
+                document.getElementById('custom_colormap').style.display = 'block';
+            }
+
+            // Toggle settings
+            document.getElementById('stack_graphs').checked = settings.stack_graphs === 'true' || settings.stack_graphs === true;
+            document.getElementById('show_legend_select').checked = settings.show_legend === 'true' || settings.show_legend === true;
+            document.getElementById('fill_lines_select').checked = settings.fill === 'true' || settings.fill === true;
+        })
+        .catch(error => {
+            console.error('Error loading settings:', error);
+        });
+});
+
+// Save settings
+document.getElementById('update_settings').addEventListener('click', function() {
+    const form = document.getElementById('settings_form');
+
+    // Get all values
+    const minAge = document.getElementById('min_age').value;
+    const maxAge = document.getElementById('max_age').value;
+    const sigmaIn = document.getElementById('sigma_in').value;
+    const sigmaOut = document.getElementById('sigma_out').value;
+    const kdeBandwidth = document.getElementById('kde_bandwidth').value;
+    const nTrials = document.getElementById('n_trials').value;
+    const matrixFunctionType = document.getElementById('matrix_function_type').value;
+    const figureWidth = document.getElementById('figure_width').value;
+    const figureHeight = document.getElementById('figure_height').value;
+    const graphFont = document.getElementById('graph_font').value;
+    const fontSize = document.getElementById('font_size').value;
+    const modesLabeled = document.getElementById('modes_labeled').value;
+
+    let colorMap = document.getElementById('graph_color_map').value;
+    if (colorMap === 'custom') {
+        colorMap = document.getElementById('custom_colormap').value;
+    }
+
+    const stackGraphs = document.getElementById('stack_graphs').checked ? 'true' : 'false';
+    const showLegend = document.getElementById('show_legend_select').checked ? 'true' : 'false';
+    const fillLines = document.getElementById('fill_lines_select').checked ? 'true' : 'false';
+
+    // Validate required fields
+    if (!minAge || !maxAge || !kdeBandwidth || !nTrials || !fontSize || !figureWidth || !figureHeight) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('project_settings_modal'));
+    if (modal) {
+        modal.hide();
+    }
+
+    // Build settings object
+    const settingsData = {
+        "min_age": parseFloat(minAge),
+        "max_age": parseFloat(maxAge),
+        "sigma_in": parseInt(sigmaIn),
+        "sigma_out": parseInt(sigmaOut),
+        "kde_bandwidth": parseFloat(kdeBandwidth),
+        "matrix_function_type": matrixFunctionType,
+        "stack_graphs": stackGraphs,
+        "n_unmix_trials": parseInt(nTrials),
+        "font_size": parseFloat(fontSize),
+        "font_name": graphFont,
+        "figure_width": parseInt(figureWidth),
+        "figure_height": parseInt(figureHeight),
+        "color_map": colorMap,
+        "show_legend": showLegend,
+        "modes_labeled": parseInt(modesLabeled),
+        "fill": fillLines,
+    };
+
+    // Show spinner
+    const spinner = document.getElementById("update_settings_spinner");
+    if (spinner) {
+        spinner.classList.remove("hidden");
+        spinner.classList.add("visible");
+    }
+
+    // Send to server
+    fetch('/projects/{{ project_id }}/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settingsData)
+    }).then(response => {
+        // Hide spinner
+        if (spinner) {
+            spinner.classList.remove("visible");
+            spinner.classList.add("hidden");
+        }
+        if (response.ok) {
+            console.log('Settings updated successfully!');
+        } else {
+            console.error('Error updating settings');
+        }
+    }).catch(error => {
+        // Hide spinner on error too
+        if (spinner) {
+            spinner.classList.remove("visible");
+            spinner.classList.add("hidden");
+        }
+        console.error('Error updating settings', error);
+    });
+});
 </script>
