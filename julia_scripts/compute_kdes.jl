@@ -42,7 +42,7 @@ function main()
         println("Computing empirical KDEs for $input_file")
 
         # Call the create_input_viz_data function to compute KDEs
-        results = SourceAnalysisHelpers.create_input_viz_data(input_file)
+        results = Dict{String, Any}(SourceAnalysisHelpers.create_input_viz_data(input_file))
 
         # Add status field
         results["status"] = "success"
