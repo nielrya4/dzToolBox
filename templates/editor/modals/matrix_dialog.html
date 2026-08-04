@@ -1,4 +1,5 @@
 {% from "global/sample_select.html" import sample_select with context %}
+{% from "global/citations.html" import citation_info %}
 
 <div id="matrix_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -13,6 +14,14 @@
                             <rect x="3" y="14" width="7" height="7"></rect>
                         </svg>
                         Intersample Comparison Matrix
+                        {{ citation_info(
+                            description="Statistical methods for comparing detrital zircon age distributions.",
+                            citations=[
+                                "Saylor, J.E., and Sundell, K.E., 2016, Quantifying comparison of large detrital geochronology data sets: Geosphere, v. 12, p. 203–220, doi:10.1130/GES01237.1.",
+                                "Vermeesch, P., 2013, Multi-sample comparison of detrital age distributions: Chemical Geology, v. 341, p. 140–146, doi:10.1016/j.chemgeo.2013.01.010.",
+                                "Gehrels, G.E., 2000, Introduction to detrital zircon studies of Paleozoic and Triassic strata in western Nevada and northern California, in Soreghan, M.J., and Gehrels, G.E., eds., Paleozoic and Triassic paleogeography and tectonics of western Nevada and northern California: Geological Society of America Special Paper 347, p. 1–17."
+                            ]
+                        ) }}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

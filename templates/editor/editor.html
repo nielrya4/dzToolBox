@@ -138,6 +138,27 @@
     document.addEventListener('DOMContentLoaded', function() {
         showTab('univariate');
         checkForActiveJobs();
+
+        // Initialize citation popovers
+        var citationPopovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+        citationPopovers.forEach(function(popover) {
+            new bootstrap.Popover(popover, {
+                container: 'body',
+                sanitize: false
+            });
+        });
+
+        // Close popovers when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.citation-info-btn') && !e.target.closest('.popover')) {
+                citationPopovers.forEach(function(popover) {
+                    var popoverInstance = bootstrap.Popover.getInstance(popover);
+                    if (popoverInstance) {
+                        popoverInstance.hide();
+                    }
+                });
+            }
+        });
     });
 
     // Global functions for managing background jobs

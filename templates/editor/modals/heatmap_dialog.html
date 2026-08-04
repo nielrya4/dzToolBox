@@ -1,4 +1,5 @@
 {% from "global/sample_select.html" import sample_select with context %}
+{% from "global/citations.html" import citation_info %}
 
 <div id="heatmap_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -14,6 +15,12 @@
                             <rect x="14" y="14" width="3" height="3" fill="currentColor" opacity="0.8"></rect>
                         </svg>
                         Heatmap Plotter
+                        {{ citation_info(
+                            description="2D kernel density estimation for visualizing bivariate relationships in detrital data.",
+                            citations=[
+                                "Vermeesch, P., 2012, On the visualisation of detrital age distributions: Chemical Geology, v. 312–313, p. 190–194, doi:10.1016/j.chemgeo.2012.04.021."
+                            ]
+                        ) }}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

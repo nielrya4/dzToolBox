@@ -1,4 +1,5 @@
 {% from "global/sample_select.html" import sample_select with context %}
+{% from "global/citations.html" import citation_info %}
 
 <div id="tensor_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -12,6 +13,13 @@
                             <line x1="12" y1="22.08" x2="12" y2="12"></line>
                         </svg>
                         Tensor Factorization Analysis
+                        {{ citation_info(
+                            description="Non-negative matrix-tensor factorization for multivariate detrital data analysis.",
+                            citations=[
+                                "Sharman, G.R., and Johnstone, S.A., 2017, Sediment unmixing using detrital geochronology: Geology, v. 45, p. 259–262, doi:10.1130/G38672.1.",
+                                "Richardson, N.J., 2024, MatrixTensorFactor.jl: A Julia package for non-negative matrix and tensor factorization: GitHub repository, https://github.com/MPF-Optimization-Laboratory/MatrixTensorFactor.jl."
+                            ]
+                        ) }}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

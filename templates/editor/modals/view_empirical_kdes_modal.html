@@ -1,4 +1,5 @@
 {% from "global/sample_select.html" import sample_select with context %}
+{% from "global/citations.html" import citation_info %}
 
 <div id="view_empirical_kdes_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -13,6 +14,12 @@
                             <path d="M8 17v-3"></path>
                         </svg>
                         View Empirical KDEs
+                        {{ citation_info(
+                            description="Kernel density estimation for visualizing detrital geochronology data.",
+                            citations=[
+                                "Vermeesch, P., 2012, On the visualisation of detrital age distributions: Chemical Geology, v. 312–313, p. 190–194, doi:10.1016/j.chemgeo.2012.04.021."
+                            ]
+                        ) }}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

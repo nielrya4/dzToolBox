@@ -1,0 +1,30 @@
+{#
+    Citation Info Component for Modal Headers
+
+    Usage:
+    {% from "global/citations.html" import citation_info %}
+    {{ citation_info(
+        description="MDA methods for determining maximum depositional ages from detrital zircon data.",
+        citations=[
+            "Dickinson, W.R., and Gehrels, G.E., 2009, Use of U-Pb ages of detrital zircons to infer maximum depositional ages of strata: A test against a Colorado Plateau Mesozoic database: Earth and Planetary Science Letters, v. 288, p. 115-125, doi:10.1016/j.epsl.2009.09.013."
+        ]
+    ) }}
+#}
+
+{% macro citation_info(citations, description="") %}
+<button type="button"
+        class="citation-info-btn"
+        data-bs-toggle="popover"
+        data-bs-placement="bottom"
+        data-bs-custom-class="citation-popover"
+        data-bs-html="true"
+        data-bs-trigger="click"
+        data-bs-content="<div class='citation-content'>{% if description %}<p class='citation-description'>{{ description }}</p>{% endif %}<div class='citation-header'>References</div><ul class='citation-list'>{% for cite in citations %}<li class='citation-item'>{{ cite }}</li>{% endfor %}</ul></div>"
+        aria-label="View citations">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+</button>
+{% endmacro %}

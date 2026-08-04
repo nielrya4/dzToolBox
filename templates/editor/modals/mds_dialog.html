@@ -1,4 +1,5 @@
 {% from "global/sample_select.html" import sample_select with context %}
+{% from "global/citations.html" import citation_info %}
 
 <div id="mds_modal" class="modal">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -13,6 +14,12 @@
                             <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
                         </svg>
                         Multidimensional Scaling (MDS)
+                        {{ citation_info(
+                            description="Multidimensional scaling for visualizing relationships between detrital age distributions.",
+                            citations=[
+                                "Vermeesch, P., 2013, Multi-sample comparison of detrital age distributions: Chemical Geology, v. 341, p. 140–146, doi:10.1016/j.chemgeo.2013.01.010."
+                            ]
+                        ) }}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
