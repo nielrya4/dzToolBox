@@ -5,6 +5,7 @@ Multivariate spreadsheet routes - save and sample names
 import base64
 import zlib
 import json
+import math
 from flask import request, jsonify, session
 from flask_login import login_required
 from server import database
@@ -69,7 +70,19 @@ def register(app):
                     max_age=4500
                 )
                 sample_names = [sample.name for sample in samples]
-                return jsonify({"sample_names": sample_names, "feature_names": feature_names})
+                # Per-sample [min, max] of each feature, so the wizards can show the data
+                # range of the selected samples next to the bandwidth overrides
+                feature_ranges = {}
+                for sample in samples:
+                    sample_ranges = {}
+                    for feature_name in feature_names:
+                        values = [grain.features[feature_name] for grain in sample.grains
+                                  if math.isfinite(grain.features.get(feature_name, math.nan))]
+                        if values:
+                            sample_ranges[feature_name] = [min(values), max(values)]
+                    feature_ranges[sample.name] = sample_ranges
+                return jsonify({"sample_names": sample_names, "feature_names": feature_names,
+                                "feature_ranges": feature_ranges})
             except Exception as e:
                 print(f"Error reading multivariate sample names: {e}")
                 import traceback

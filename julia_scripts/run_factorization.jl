@@ -2,7 +2,7 @@
 """
 Run tensor factorization with a custom rank using the original dzgrainalyzer code.
 
-Usage: julia run_factorization.jl <input_excel> <rank> <output_json>
+Usage: julia run_factorization.jl <input_excel> <rank> <output_json> [kde_options_json]
 
 This script calls rank_sources_custom_rank() from dzgrainalyzer_helpers.jl
 which matches the original dzgrainalyzer implementation exactly.
@@ -30,20 +30,21 @@ using .SourceAnalysisHelpers
 using JSON
 
 function main()
-    if length(ARGS) != 3
-        println(stderr, "Usage: julia run_factorization.jl <input_excel> <rank> <output_json>")
+    if !(3 <= length(ARGS) <= 4)
+        println(stderr, "Usage: julia run_factorization.jl <input_excel> <rank> <output_json> [kde_options_json]")
         exit(1)
     end
 
     input_file = ARGS[1]
     rank = parse(Int, ARGS[2])
     output_file = ARGS[3]
+    n_samples, bandwidth_overrides = SourceAnalysisHelpers.parse_kde_options(get(ARGS, 4, ""))
 
     try
         println("Running factorization with rank=$rank on $input_file")
 
         # Call the original dzgrainalyzer function
-        results = SourceAnalysisHelpers.rank_sources_custom_rank(input_file, rank)
+        results = SourceAnalysisHelpers.rank_sources_custom_rank(input_file, rank; n_samples, bandwidth_overrides)
 
         # Add status field
         results["status"] = "success"

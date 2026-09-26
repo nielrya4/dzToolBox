@@ -7,6 +7,8 @@ using JSON
 using Random
 using DataFrames
 
+include("kde_options.jl")
+
 function clean_inf(data)
     if isa(data, Array)
         return [clean_inf(x) for x in data]
@@ -63,16 +65,9 @@ function transform(input_file_path::AbstractString, transformed_file_path::Abstr
     end
 end
 
-function create_input_viz_data(path::String)
+function create_input_viz_data(path::String; n_samples=KDE_DEFAULT_N_SAMPLES, bandwidth_overrides=Union{Nothing,Float64}[])
     sinks = read_raw_data(path)::Vector{Sink}
-
-    sink1 = sinks[begin]
-    inner_percentile = 95
-    alpha_ = 0.9
-    bandwidths = default_bandwidth.(collect(eachmeasurement(sink1)), alpha_, inner_percentile)
-    raw_densities = make_densities.(sinks; bandwidths, inner_percentile)
-    densities, domains = standardize_KDEs(raw_densities) #Made it to here so far
-    densitytensor = DensityTensor(densities, domains, sinks)
+    densitytensor, domains, kde_parameters = build_density_tensor(sinks, n_samples, bandwidth_overrides)
     setsourcename!(densitytensor, "sink")
 
     measurements = getmeasurements(densitytensor)
@@ -93,18 +88,12 @@ function create_input_viz_data(path::String)
         mDict = Dict("name" => measurement, "data" => grouped_data)
         push!(measurement_data, mDict)
     end
-    Dict("measurement_data" => measurement_data, "sinks" => ["sink $sink" for sink in sinks])
+    Dict("measurement_data" => measurement_data, "sinks" => ["sink $sink" for sink in sinks], "kde_parameters" => kde_parameters)
 end
 
-function rank_sources(path::String)
+function rank_sources(path::String; n_samples=KDE_DEFAULT_N_SAMPLES, bandwidth_overrides=Union{Nothing,Float64}[])
     sinks = read_raw_data(path)::Vector{Sink}
-    sink1 = sinks[begin]
-    inner_percentile = 95
-    alpha_ = 0.9
-    bandwidths = default_bandwidth.(collect(eachmeasurement(sink1)), alpha_, inner_percentile)
-    raw_densities = make_densities.(sinks; bandwidths, inner_percentile)
-    densities, domains = standardize_KDEs(raw_densities)
-    densitytensor = DensityTensor(densities, domains, sinks)
+    densitytensor, domains, kde_parameters = build_density_tensor(sinks, n_samples, bandwidth_overrides)
 
     # Input Viz Graph Data
     measurements = getmeasurements(densitytensor)
@@ -214,19 +203,14 @@ function rank_sources(path::String)
         "learned_densities_sources" => ["source $source" for source in sources],
         "learned_coefficients" => learned_coefficients,
         "source_identification_per_sink" => source_identification_per_sink,
-        "learned_coefficients_sources" => learned_sources))
+        "learned_coefficients_sources" => learned_sources,
+        "kde_parameters" => kde_parameters))
 end
 
 
-function rank_sources_custom_rank(path::String, rank::Int)
+function rank_sources_custom_rank(path::String, rank::Int; n_samples=KDE_DEFAULT_N_SAMPLES, bandwidth_overrides=Union{Nothing,Float64}[])
     sinks = read_raw_data(path)::Vector{Sink}
-    sink1 = sinks[begin]
-    inner_percentile = 95
-    alpha_ = 0.9
-    bandwidths = default_bandwidth.(collect(eachmeasurement(sink1)), alpha_, inner_percentile)
-    raw_densities = make_densities.(sinks; bandwidths, inner_percentile)
-    densities, domains = standardize_KDEs(raw_densities)
-    densitytensor = DensityTensor(densities, domains, sinks)
+    densitytensor, domains, kde_parameters = build_density_tensor(sinks, n_samples, bandwidth_overrides)
 
     # Input Viz Graph Data
     measurements = getmeasurements(densitytensor)
@@ -306,7 +290,8 @@ function rank_sources_custom_rank(path::String, rank::Int)
         "learned_densities_sources" => ["source $source" for source in sources],
         "learned_coefficients" => learned_coefficients,
         "source_identification_per_sink" => source_identification_per_sink,
-        "learned_coefficients_sources" => learned_sources))
+        "learned_coefficients_sources" => learned_sources,
+        "kde_parameters" => kde_parameters))
 end
 
 end

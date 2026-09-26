@@ -26,6 +26,18 @@ def clean_sample_name(sample_name):
     return str(sample_name)
 
 
+def kde_options_arg(kde_points, bandwidths, feature_names):
+    """Build the KDE options JSON argument for the Julia scripts.
+
+    bandwidths maps feature name -> bandwidth; features left out use Julia's
+    default_bandwidth. Julia expects the overrides in sheet (feature) order.
+    """
+    import json
+    bandwidths = bandwidths or {}
+    overrides = [bandwidths.get(name) for name in feature_names]
+    return json.dumps({"n_samples": int(kde_points), "bandwidths": overrides})
+
+
 @celery_app.task(bind=True)
 def tensor_factorization_task(
     self,
@@ -44,7 +56,9 @@ def tensor_factorization_task(
     fig_height=8,
     color_map='viridis',
     stack_graphs='true',
-    fill='false'
+    fill='false',
+    kde_points=128,
+    bandwidths=None
 ):
     """
     Run multivariate tensor factorization as a Celery task
@@ -147,7 +161,8 @@ def tensor_factorization_task(
 
             # Call Julia script with environment set to use juliacall packages
             julia_script = os.path.join(os.path.dirname(__file__), 'julia_scripts', 'run_factorization.jl')
-            cmd = [julia_exe, '--project=' + julia_project, julia_script, temp_excel.name, str(rank), temp_json.name]
+            cmd = [julia_exe, '--project=' + julia_project, julia_script, temp_excel.name, str(rank), temp_json.name,
+                   kde_options_arg(kde_points, bandwidths, feature_names)]
 
             print(f"Running Julia command: {' '.join(cmd)}")
             print(f"Julia project: {julia_project}")
@@ -512,6 +527,20 @@ def tensor_factorization_task(
                     'dataframe': df
                 })
 
+            # Record the bandwidth and K actually used so users can tune them
+            kde_parameters = julia_results.get('kde_parameters')
+            if kde_parameters:
+                kde_tabs.append({
+                    'name': 'KDE Parameters',
+                    'dataframe': pd.DataFrame({
+                        'Variable': feature_names[:len(kde_parameters['bandwidths'])],
+                        'Bandwidth': kde_parameters['bandwidths'],
+                        'Bandwidth Source': ['Automatic' if is_default else 'User'
+                                             for is_default in kde_parameters['bandwidth_is_default']],
+                        'KDE Points (K)': kde_parameters['n_samples'],
+                    })
+                })
+
             output_id = secrets.token_hex(15)
             output_data = embedding.embed_tabbed_matrices(
                 tabs=kde_tabs,
@@ -566,7 +595,9 @@ def view_empirical_kdes_task(
     font_size=12,
     fig_width=10,
     fig_height=8,
-    color_map='tab20'
+    color_map='tab20',
+    kde_points=128,
+    bandwidths=None
 ):
     """
     View empirical KDEs without running factorization
@@ -668,7 +699,8 @@ def view_empirical_kdes_task(
 
             # Call Julia script
             julia_script = os.path.join(os.path.dirname(__file__), 'julia_scripts', 'compute_kdes.jl')
-            cmd = [julia_exe, '--project=' + julia_project, julia_script, temp_excel.name, temp_json.name]
+            cmd = [julia_exe, '--project=' + julia_project, julia_script, temp_excel.name, temp_json.name,
+                   kde_options_arg(kde_points, bandwidths, feature_names)]
 
             print(f"Running Julia command: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
@@ -789,6 +821,20 @@ def view_empirical_kdes_task(
                     'dataframe': df
                 })
 
+            # Record the bandwidth and K actually used so users can tune them
+            kde_parameters = julia_results.get('kde_parameters')
+            if kde_parameters:
+                kde_tabs.append({
+                    'name': 'KDE Parameters',
+                    'dataframe': pd.DataFrame({
+                        'Variable': feature_names[:len(kde_parameters['bandwidths'])],
+                        'Bandwidth': kde_parameters['bandwidths'],
+                        'Bandwidth Source': ['Automatic' if is_default else 'User'
+                                             for is_default in kde_parameters['bandwidth_is_default']],
+                        'KDE Points (K)': kde_parameters['n_samples'],
+                    })
+                })
+
             output_id = secrets.token_hex(15)
             output_data = embedding.embed_tabbed_matrices(
                 tabs=kde_tabs,
@@ -842,7 +888,9 @@ def find_optimal_rank_task(
     font_size=12,
     fig_width=10,
     fig_height=8,
-    color_map='viridis'
+    color_map='viridis',
+    kde_points=128,
+    bandwidths=None
 ):
     """
     Find optimal rank by testing multiple ranks
@@ -937,7 +985,8 @@ def find_optimal_rank_task(
 
             # Call Julia script with environment set to use juliacall packages
             julia_script = os.path.join(os.path.dirname(__file__), 'julia_scripts', 'rank_selection.jl')
-            cmd = [julia_exe, '--project=' + julia_project, julia_script, temp_excel.name, str(min_rank), str(max_rank), temp_json.name]
+            cmd = [julia_exe, '--project=' + julia_project, julia_script, temp_excel.name, str(min_rank), str(max_rank), temp_json.name,
+                   kde_options_arg(kde_points, bandwidths, feature_names)]
 
             print(f"Running Julia command: {' '.join(cmd)}")
             print(f"Julia project: {julia_project}")
