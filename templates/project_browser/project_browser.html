@@ -30,7 +30,7 @@
                                         <form method="GET" action="/projects/{{ project.id }}" class="d-inline">
                                             <button class="btn btn-primary btn-sm" type="submit" onclick="show_open_spinner()">Open</button>
                                         </form>
-                                        <button class="btn btn-outline-danger btn-sm delete-project-btn" hx-post="/delete_project/{{ project.id }}" type="button" hx-target="#project_list" hx-swap="outerHTML" onclick="show_del_spinner()">Delete</button>
+                                        <button class="btn btn-outline-danger btn-sm delete-project-btn" type="button" data-bs-toggle="modal" data-bs-target="#delete_project_modal" data-project-id="{{ project.id }}" data-project-title="{{ project.title }}">Delete</button>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -52,6 +52,7 @@
 	{% from "global/spinner.html" import spinner with context %}
 	{% include "project_browser/modals/new_project_dialog.html" %}
 	{% include "project_browser/modals/account_settings_dialog.html" %}
+	{% include "project_browser/modals/delete_project_dialog.html" %}
 	{% include 'global/footer.html' %}
 
 	{{ spinner(id="new_proj_spinner", message="Creating New Project...") }}

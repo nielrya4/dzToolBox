@@ -1,0 +1,45 @@
+<div id="delete_project_modal" class="modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="color: black;">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure you want to delete <strong id="delete_project_title"></strong>?</p>
+                <p class="text-danger mb-0">This cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm_delete_project">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    (function() {
+        const delete_modal_el = document.getElementById("delete_project_modal");
+        const confirm_btn = document.getElementById("confirm_delete_project");
+        let pending_project_id = null;
+
+        // Fill in the project being deleted from the button that opened the modal
+        delete_modal_el.addEventListener("show.bs.modal", function(event) {
+            const trigger = event.relatedTarget;
+            pending_project_id = trigger.getAttribute("data-project-id");
+            document.getElementById("delete_project_title").textContent = trigger.getAttribute("data-project-title");
+        });
+
+        // Cancel is the safe default, so focus it
+        delete_modal_el.addEventListener("shown.bs.modal", function() {
+            delete_modal_el.querySelector('[data-bs-dismiss="modal"].btn-secondary').focus();
+        });
+
+        confirm_btn.addEventListener("click", function() {
+            if (pending_project_id === null) return;
+            bootstrap.Modal.getInstance(delete_modal_el).hide();
+            show_del_spinner();
+            htmx.ajax("POST", "/delete_project/" + pending_project_id, {target: "#project_list", swap: "outerHTML"});
+            pending_project_id = null;
+        });
+    })();
+</script>
