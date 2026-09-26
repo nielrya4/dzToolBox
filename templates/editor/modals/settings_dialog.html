@@ -121,6 +121,12 @@
                                     </select>
                                     <small class="settings-hint">Function used when generating similarity matrices</small>
                                 </div>
+
+                                <div class="settings-group">
+                                    <label for="multivariate_kde_points" class="settings-label">Multivariate KDE Points (K)</label>
+                                    <input type="number" class="form-control settings-input" id="multivariate_kde_points" name="multivariate_kde_points" min="16" max="1024" step="1" value="128" required>
+                                    <small class="settings-hint">Number of points each multivariate KDE is discretized over (16&ndash;1024). Higher values capture more detail but make factorization slower.</small>
+                                </div>
                             </div>
 
                             <!-- Graphs Panel -->
@@ -544,6 +550,7 @@ document.getElementById('project_settings_modal').addEventListener('show.bs.moda
             document.getElementById('kde_bandwidth').value = settings.kde_bandwidth || 10;
             document.getElementById('n_trials').value = settings.n_unmix_trials || 10000;
             document.getElementById('matrix_function_type').value = settings.matrix_function_type || 'kde';
+            document.getElementById('multivariate_kde_points').value = settings.multivariate_kde_points || 128;
 
             // Graph settings
             document.getElementById('figure_width').value = settings.figure_width || 9;
@@ -586,6 +593,7 @@ document.getElementById('update_settings').addEventListener('click', function() 
     const kdeBandwidth = document.getElementById('kde_bandwidth').value;
     const nTrials = document.getElementById('n_trials').value;
     const matrixFunctionType = document.getElementById('matrix_function_type').value;
+    const kdePoints = parseInt(document.getElementById('multivariate_kde_points').value);
     const figureWidth = document.getElementById('figure_width').value;
     const figureHeight = document.getElementById('figure_height').value;
     const graphFont = document.getElementById('graph_font').value;
@@ -607,6 +615,11 @@ document.getElementById('update_settings').addEventListener('click', function() 
         return;
     }
 
+    if (isNaN(kdePoints) || kdePoints < 16 || kdePoints > 1024) {
+        alert('Multivariate KDE Points (K) must be a whole number between 16 and 1024.');
+        return;
+    }
+
     // Close modal
     const modal = bootstrap.Modal.getInstance(document.getElementById('project_settings_modal'));
     if (modal) {
@@ -621,6 +634,7 @@ document.getElementById('update_settings').addEventListener('click', function() 
         "sigma_out": parseInt(sigmaOut),
         "kde_bandwidth": parseFloat(kdeBandwidth),
         "matrix_function_type": matrixFunctionType,
+        "multivariate_kde_points": kdePoints,
         "stack_graphs": stackGraphs,
         "n_unmix_trials": parseInt(nTrials),
         "font_size": parseFloat(fontSize),

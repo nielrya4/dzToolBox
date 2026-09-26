@@ -16,22 +16,32 @@ class AgeSettings:
             "max_age": self.max_age
         }
 
+MIN_KDE_POINTS = 16
+MAX_KDE_POINTS = 1024
+
+
 class StatisticalSettings:
-    def __init__(self, kde_bandwidth: float = 10, matrix_function_type: str = "kde", n_unmix_trials: int = 10000):
+    def __init__(self, kde_bandwidth: float = 10, matrix_function_type: str = "kde", n_unmix_trials: int = 10000,
+                 multivariate_kde_points: int = 128):
         self.kde_bandwidth = kde_bandwidth
         self.matrix_function_type = matrix_function_type
         self.n_unmix_trials = n_unmix_trials
+        # Number of points (K) each multivariate KDE is discretized over
+        self.multivariate_kde_points = multivariate_kde_points
 
     def from_json(self, json_data):
         self.kde_bandwidth = float(json_data.get("kde_bandwidth", 10))
         self.matrix_function_type = json_data.get("matrix_function_type", "kde")
         self.n_unmix_trials = int(json_data.get("n_unmix_trials", 10000))
+        self.multivariate_kde_points = min(max(int(json_data.get("multivariate_kde_points", 128)),
+                                               MIN_KDE_POINTS), MAX_KDE_POINTS)
     
     def to_json(self):
         return {
             "kde_bandwidth": self.kde_bandwidth,
             "matrix_function_type": self.matrix_function_type,
-            "n_unmix_trials": self.n_unmix_trials
+            "n_unmix_trials": self.n_unmix_trials,
+            "multivariate_kde_points": self.multivariate_kde_points
         }
 
 class GraphSettings:

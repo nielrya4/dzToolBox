@@ -6,7 +6,7 @@ Call original DZ Grainalyzer rank selection using SedimentSourceAnalysis
 Uses linear breakpoint analysis (elbow method) to find optimal rank.
 
 Usage:
-    julia rank_selection.jl <input_excel> <min_rank> <max_rank> <output_json>
+    julia rank_selection.jl <input_excel> <min_rank> <max_rank> <output_json> [kde_options_json]
 """
 
 # All using statements must be at top level
@@ -14,9 +14,12 @@ using MatrixTensorFactor
 using SedimentSourceAnalysis
 using Statistics
 using LinearAlgebra
+using JSON
+
+include("kde_options.jl")
 
 # Simple JSON writer - no external package needed
-function write_json(io::IO, obj::Dict)
+function write_json(io::IO, obj::AbstractDict)
     print(io, "{")
     first_item = true
     for (k, v) in obj
@@ -48,6 +51,8 @@ function write_json_value(io::IO, v::AbstractArray)
     end
     print(io, "]")
 end
+
+write_json_value(io::IO, v::AbstractDict) = write_json(io, v)
 
 function write_json_value(io::IO, v::Any)
     print(io, "\"", string(v), "\"")
@@ -131,7 +136,7 @@ end
 # Main execution
 function main()
     if length(ARGS) < 4
-        println("Usage: julia rank_selection.jl <input_excel> <min_rank> <max_rank> <output_json>")
+        println("Usage: julia rank_selection.jl <input_excel> <min_rank> <max_rank> <output_json> [kde_options_json]")
         exit(1)
     end
 
@@ -139,6 +144,7 @@ function main()
     min_rank = parse(Int, ARGS[2])
     max_rank = parse(Int, ARGS[3])
     output_path = ARGS[4]
+    n_samples, bandwidth_overrides = parse_kde_options(get(ARGS, 5, ""))
 
     try
         println("Reading data from $input_path...")
@@ -147,17 +153,7 @@ function main()
 
         println("Preparing KDEs...")
         # Use exact same parameters as original
-        sink1 = sinks[begin]
-        inner_percentile = 95
-        alpha_ = 0.9
-
-        # Calculate bandwidths using original method
-        bandwidths = default_bandwidth.(collect(eachmeasurement(sink1)), alpha_, inner_percentile)
-
-        # Generate KDEs
-        raw_densities = make_densities.(sinks; bandwidths, inner_percentile)
-        densities, domains = standardize_KDEs(raw_densities)
-        densitytensor = DensityTensor(densities, domains, sinks)
+        densitytensor, domains, kde_parameters = build_density_tensor(sinks, n_samples, bandwidth_overrides)
 
         println("Running factorization...")
         # Build tensor array
@@ -239,7 +235,8 @@ function main()
             "best_rank" => best_rank,
             "r2" => r2,
             "sink_names" => [string(s) for s in getsourcenames(densitytensor)],
-            "measurement_names" => [string(m) for m in getmeasurements(densitytensor)]
+            "measurement_names" => [string(m) for m in getmeasurements(densitytensor)],
+            "kde_parameters" => kde_parameters
         )
 
         # Write JSON

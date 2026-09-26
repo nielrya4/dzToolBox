@@ -30,19 +30,20 @@ using .SourceAnalysisHelpers
 using JSON
 
 function main()
-    if length(ARGS) != 2
-        println(stderr, "Usage: julia compute_kdes.jl <input_excel> <output_json>")
+    if !(2 <= length(ARGS) <= 3)
+        println(stderr, "Usage: julia compute_kdes.jl <input_excel> <output_json> [kde_options_json]")
         exit(1)
     end
 
     input_file = ARGS[1]
     output_file = ARGS[2]
+    n_samples, bandwidth_overrides = SourceAnalysisHelpers.parse_kde_options(get(ARGS, 3, ""))
 
     try
         println("Computing empirical KDEs for $input_file")
 
         # Call the create_input_viz_data function to compute KDEs
-        results = Dict{String, Any}(SourceAnalysisHelpers.create_input_viz_data(input_file))
+        results = Dict{String, Any}(SourceAnalysisHelpers.create_input_viz_data(input_file; n_samples, bandwidth_overrides))
 
         # Add status field
         results["status"] = "success"

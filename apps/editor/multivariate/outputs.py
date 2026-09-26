@@ -8,6 +8,8 @@ from server import database
 from utils import compression
 from utils.project import project_from_json
 from utils.output import Output
+import json
+import math
 
 try:
     from celery_app import celery_app
@@ -25,6 +27,25 @@ def __get_project(project_id):
         return project_from_json(project_content)
     else:
         return None
+
+
+def __parse_bandwidths(raw):
+    """Parse the per-variable bandwidth overrides sent by the multivariate wizards.
+
+    Expects a JSON object of {feature name: bandwidth}; returns {} when absent.
+    """
+    if not raw:
+        return {}
+    parsed = json.loads(raw)
+    if not isinstance(parsed, dict):
+        raise ValueError("bandwidths must be an object of {variable: bandwidth}")
+    bandwidths = {}
+    for name, value in parsed.items():
+        value = float(value)
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError(f"Bandwidth for '{name}' must be a positive number")
+        bandwidths[str(name)] = value
+    return bandwidths
 
 
 def register(app):
@@ -299,7 +320,9 @@ def register(app):
                     font_size=project.settings.graph_settings.font_size,
                     fig_width=project.settings.graph_settings.figure_width,
                     fig_height=project.settings.graph_settings.figure_height,
-                    color_map=project.settings.graph_settings.color_map
+                    color_map=project.settings.graph_settings.color_map,
+                    kde_points=project.settings.statistical_settings.multivariate_kde_points,
+                    bandwidths=__parse_bandwidths(request.args.get("bandwidths"))
                 )
                 return jsonify({"job_id": task.id, "status": "started"})
             except Exception as e:
@@ -341,7 +364,9 @@ def register(app):
                     font_size=project.settings.graph_settings.font_size,
                     fig_width=project.settings.graph_settings.figure_width,
                     fig_height=project.settings.graph_settings.figure_height,
-                    color_map=project.settings.graph_settings.color_map
+                    color_map=project.settings.graph_settings.color_map,
+                    kde_points=project.settings.statistical_settings.multivariate_kde_points,
+                    bandwidths=__parse_bandwidths(request.args.get("bandwidths"))
                 )
                 return jsonify({"job_id": task.id, "status": "started"})
             except Exception as e:
@@ -385,7 +410,9 @@ def register(app):
                     fig_height=project.settings.graph_settings.figure_height,
                     color_map=project.settings.graph_settings.color_map,
                     stack_graphs=project.settings.graph_settings.stack_graphs,
-                    fill=project.settings.graph_settings.fill
+                    fill=project.settings.graph_settings.fill,
+                    kde_points=project.settings.statistical_settings.multivariate_kde_points,
+                    bandwidths=__parse_bandwidths(request.args.get("bandwidths"))
                 )
                 return jsonify({"job_id": task.id, "status": "started"})
             except Exception as e:
@@ -429,7 +456,9 @@ def register(app):
                     fig_height=project.settings.graph_settings.figure_height,
                     color_map=project.settings.graph_settings.color_map,
                     stack_graphs=project.settings.graph_settings.stack_graphs,
-                    fill=project.settings.graph_settings.fill
+                    fill=project.settings.graph_settings.fill,
+                    kde_points=project.settings.statistical_settings.multivariate_kde_points,
+                    bandwidths=__parse_bandwidths(request.args.get("bandwidths"))
                 )
                 return jsonify({"job_id": task.id, "status": "started"})
             except Exception as e:

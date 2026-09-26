@@ -1,0 +1,167 @@
+{#
+    Advanced per-variable KDE bandwidth overrides for the multivariate wizards.
+
+    id:     unique prefix for element ids and JS functions
+    modal:  id of the wizard's modal (variables are refreshed each time it opens)
+    prefix: the wizard's CSS class prefix (e.g. "optrank") so the panel matches its styling
+
+    Call {{ id }}GetBandwidths() when submitting: it returns {variable: bandwidth} for the
+    filled-in fields (blank = automatic), or null after alerting if a value is invalid.
+#}
+{% macro kde_bandwidth_options(id, modal, prefix) %}
+    <h6 class="{{ prefix }}-panel-title" style="color: #212529 !important;">Advanced KDE Options</h6>
+    <p class="{{ prefix }}-panel-description">
+        Override the KDE bandwidth for individual variables. Leave a field blank to use the
+        automatic bandwidth. Values are in each variable's own units (e.g. Ma for Age).
+        Smaller bandwidths give less smoothing. The data range of each variable across the
+        selected samples is shown for reference.
+    </p>
+
+    <div class="{{ prefix }}-group">
+        <div id="{{ id }}_rows" class="kde-bw-rows"></div>
+        <p id="{{ id }}_empty" class="{{ prefix }}-panel-description" style="display: none;">
+            No variables found. Add multivariate data to the spreadsheet first.
+        </p>
+    </div>
+
+    <small class="{{ prefix }}-hint" style="display: block; color: #6c757d !important;">
+        To see the automatic bandwidths, run <b>View Empirical KDEs</b> with the <b>KDE Data Table</b>
+        output and open its <b>KDE Parameters</b> tab. The number of points each KDE is discretized
+        over (K) is set in <b>Project Settings &rarr; Data</b>.
+    </small>
+
+    <style>
+        .kde-bw-rows {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+            gap: 0.5rem 1rem;
+            align-items: center;
+        }
+        .kde-bw-rows label {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #212529 !important;
+            overflow-wrap: anywhere;
+        }
+        .kde-bw-rows .kde-bw-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #6c757d !important;
+        }
+        .kde-bw-rows .kde-bw-range {
+            font-size: 0.85rem;
+            color: #495057 !important;
+            font-variant-numeric: tabular-nums;
+            overflow-wrap: anywhere;
+        }
+    </style>
+
+    <script>
+        (function() {
+            // Values typed so far, kept by variable name so reopening the wizard doesn't lose them
+            const entered = {};
+            const rows = document.getElementById("{{ id }}_rows");
+            const empty = document.getElementById("{{ id }}_empty");
+            const modalEl = document.getElementById("{{ modal }}");
+            // {sample name: {variable: [min, max]}} from the server
+            let rangesBySample = {};
+            const numberFormat = new Intl.NumberFormat(undefined, {maximumSignificantDigits: 4});
+
+            function remember() {
+                rows.querySelectorAll("input").forEach(function(input) {
+                    entered[input.dataset.feature] = input.value;
+                });
+            }
+
+            function render(featureNames) {
+                remember();
+                rows.replaceChildren();
+                empty.style.display = featureNames.length ? "none" : "block";
+                if (featureNames.length) {
+                    ["Variable", "Data range", "Bandwidth"].forEach(function(text) {
+                        const header = document.createElement("div");
+                        header.className = "kde-bw-header";
+                        header.textContent = text;
+                        rows.append(header);
+                    });
+                }
+                featureNames.forEach(function(name, i) {
+                    const inputId = "{{ id }}_input_" + i;
+                    const label = document.createElement("label");
+                    label.htmlFor = inputId;
+                    label.textContent = name;
+                    const input = document.createElement("input");
+                    input.type = "number";
+                    input.min = "0";
+                    input.step = "any";
+                    input.placeholder = "Auto";
+                    input.id = inputId;
+                    input.className = "form-control {{ prefix }}-input";
+                    input.dataset.feature = name;
+                    input.value = entered[name] || "";
+                    const range = document.createElement("div");
+                    range.className = "kde-bw-range";
+                    range.dataset.feature = name;
+                    rows.append(label, range, input);
+                });
+                updateRanges();
+            }
+
+            // Selected samples in this wizard; before the sample list has loaded, use every sample
+            function selectedSamples() {
+                const checkboxes = modalEl.querySelectorAll(".sample-checkbox");
+                if (checkboxes.length === 0) return Object.keys(rangesBySample);
+                return Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+            }
+
+            function updateRanges() {
+                const samples = selectedSamples();
+                rows.querySelectorAll(".kde-bw-range").forEach(function(cell) {
+                    let lo = Infinity, hi = -Infinity;
+                    samples.forEach(function(sample) {
+                        const r = (rangesBySample[sample] || {})[cell.dataset.feature];
+                        if (r) {
+                            lo = Math.min(lo, r[0]);
+                            hi = Math.max(hi, r[1]);
+                        }
+                    });
+                    cell.textContent = Number.isFinite(lo)
+                        ? numberFormat.format(lo) + " \u2013 " + numberFormat.format(hi)
+                        : (samples.length ? "No data" : "No samples selected");
+                });
+            }
+
+            // The sample list lives on another panel, so refresh ranges whenever this one is opened
+            const advancedNav = modalEl.querySelector('[data-panel="advanced"]');
+            if (advancedNav) advancedNav.addEventListener("click", updateRanges);
+
+            modalEl.addEventListener("show.bs.modal", function() {
+                fetch('/projects/{{ project_id }}/tensor-sample-names')
+                    .then(response => response.json())
+                    .then(function(data) {
+                        rangesBySample = data.feature_ranges || {};
+                        render(data.feature_names || []);
+                    })
+                    .catch(error => console.error('Error fetching variable names:', error));
+            });
+
+            window["{{ id }}GetBandwidths"] = function() {
+                const bandwidths = {};
+                const inputs = rows.querySelectorAll("input");
+                for (const input of inputs) {
+                    const raw = input.value.trim();
+                    if (raw === "" && !input.validity.badInput) continue;
+                    const value = Number(raw);
+                    if (raw === "" || !Number.isFinite(value) || value <= 0) {
+                        alert("The bandwidth for '" + input.dataset.feature + "' must be a positive number (or blank for automatic).");
+                        return null;
+                    }
+                    bandwidths[input.dataset.feature] = value;
+                }
+                return bandwidths;
+            };
+        })();
+    </script>
+{% endmacro %}
