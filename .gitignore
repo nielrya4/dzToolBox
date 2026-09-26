@@ -1,6 +1,7 @@
 instance
 instance/site.db
 .idea
+.idea/*
 temp
 venv
 dztoolbox.sock
