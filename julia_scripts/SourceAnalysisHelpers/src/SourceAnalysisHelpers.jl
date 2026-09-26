@@ -6,8 +6,16 @@ using SedimentSourceAnalysis
 using JSON
 using Random
 using DataFrames
+using Statistics
+using LinearAlgebra
+using PrecompileTools
+using Logging: with_logger, NullLogger
+using KernelDensity: kde, UnivariateKDE
+
+export parse_kde_options, create_input_viz_data, rank_sources, rank_sources_custom_rank, select_rank
 
 include("kde_options.jl")
+include("rank_selection.jl")
 
 function clean_inf(data)
     if isa(data, Array)
@@ -65,6 +73,31 @@ function transform(input_file_path::AbstractString, transformed_file_path::Abstr
     end
 end
 
+# Most likely learned source (and log-likelihood ratio confidence) for every grain.
+# domains/stepsizes are computed once and passed in: estimate_which_source's defaults
+# recompute them on every call, which scales with n_samples and dominated runtime.
+# They come from build_density_tensor rather than getdomains(F), which splats all
+# n_samples domain points into a tuple and so recompiles for every n_samples.
+# Plain loops instead of zip(map(...)...) so Julia doesn't compile a new method per sink size.
+function attribute_grains(sink_names, sinks, F, domains)
+    domains = collect.(domains)
+    stepsizes = [x[begin+1] - x[begin] for x in domains]
+    source_identification_per_sink = []
+    for (sink_number, sink) in zip(sink_names, sinks)
+        source_indexes = Int[]
+        source_likelihoods = Vector{Float64}[]
+        for grain in sink
+            source_index, likelihoods = estimate_which_source(grain, F; all_likelihoods=true, domains, stepsizes)
+            push!(source_indexes, source_index)
+            push!(source_likelihoods, likelihoods)
+        end
+        loglikelihood_ratios = confidence_score(source_likelihoods)
+        source_identification = Dict("sources" => source_indexes, "loglikelihood_ratios" => loglikelihood_ratios)
+        push!(source_identification_per_sink, Dict("name" => "sink $sink_number", "data" => source_identification))
+    end
+    return source_identification_per_sink
+end
+
 function create_input_viz_data(path::String; n_samples=KDE_DEFAULT_N_SAMPLES, bandwidth_overrides=Union{Nothing,Float64}[])
     sinks = read_raw_data(path)::Vector{Sink}
     densitytensor, domains, kde_parameters = build_density_tensor(sinks, n_samples, bandwidth_overrides)
@@ -73,8 +106,7 @@ function create_input_viz_data(path::String; n_samples=KDE_DEFAULT_N_SAMPLES, ba
     measurements = getmeasurements(densitytensor)
     sinks = getsourcenames(densitytensor)
     measurement_data = []
-    for measurement in measurements
-        domain = getdomain(densitytensor, measurement)
+    for (measurement, domain) in zip(measurements, domains)
         densities = eachdensity(densitytensor, measurement)
         grouped_data = [] # TODO: use a Dict instead of an array
         # assumes each vector of densities have the same length
@@ -99,8 +131,7 @@ function rank_sources(path::String; n_samples=KDE_DEFAULT_N_SAMPLES, bandwidth_o
     measurements = getmeasurements(densitytensor)
     sinks_inp = getsourcenames(densitytensor)
     measurement_data = []
-    for measurement in measurements
-        domain = getdomain(densitytensor, measurement)
+    for (measurement, domain) in zip(measurements, domains)
         densities = eachdensity(densitytensor, measurement)
         grouped_data = []
         # assumes each vector of densities have the same length
@@ -170,7 +201,7 @@ function rank_sources(path::String; n_samples=KDE_DEFAULT_N_SAMPLES, bandwidth_o
     # No need to normalize since every distribution on the same plot has the same scale
     sources = getsourcenames(F)
     sourcename = getsourcename(F)
-    for (name, measurement, domain) in zip(getmeasurements(F), eachmeasurement(F), getdomains(F))
+    for (name, measurement, domain) in zip(getmeasurements(F), eachmeasurement(F), domains)
         learned_densities_per_measurement = []
         for (index, value) in enumerate(domain)
             point = Dict("domain" => value)
@@ -184,14 +215,7 @@ function rank_sources(path::String; n_samples=KDE_DEFAULT_N_SAMPLES, bandwidth_o
     end
 
     # Source Attribution Graph Data
-    source_identification_per_sink = []
-    for (sink_number, sink) in zip(sinks_inp, sinks)
-        source_indexes, source_likelihoods = zip(
-            map(g -> estimate_which_source(g, F, all_likelihoods=true), sink)...)
-        loglikelihood_ratios = confidence_score(source_likelihoods)
-        source_identification = Dict("sources" => collect(source_indexes), "loglikelihood_ratios" => loglikelihood_ratios)
-        push!(source_identification_per_sink, Dict("name" => "sink $sink_number", "data" => source_identification))
-    end
+    source_identification_per_sink = attribute_grains(sinks_inp, sinks, F, domains)
 
     clean_inf(Dict(
         "measurement_data" => measurement_data,
@@ -216,8 +240,7 @@ function rank_sources_custom_rank(path::String, rank::Int; n_samples=KDE_DEFAULT
     measurements = getmeasurements(densitytensor)
     sinks_inp = getsourcenames(densitytensor)
     measurement_data = []
-    for measurement in measurements
-        domain = getdomain(densitytensor, measurement)
+    for (measurement, domain) in zip(measurements, domains)
         densities = eachdensity(densitytensor, measurement)
         grouped_data = [] # TODO: use a Dict instead of an array
         # assumes each vector of densities have the same length
@@ -258,7 +281,7 @@ function rank_sources_custom_rank(path::String, rank::Int; n_samples=KDE_DEFAULT
     # No need to normalize since every distribution on the same plot has the same scale
     sources = getsourcenames(F)
     sourcename = getsourcename(F)
-    for (name, measurement, domain) in zip(getmeasurements(F), eachmeasurement(F), getdomains(F))
+    for (name, measurement, domain) in zip(getmeasurements(F), eachmeasurement(F), domains)
         learned_densities_per_measurement = []
         for (index, value) in enumerate(domain)
             point = Dict("domain" => value)
@@ -272,14 +295,7 @@ function rank_sources_custom_rank(path::String, rank::Int; n_samples=KDE_DEFAULT
     end
 
     # Source Attribution Graph Data
-    source_identification_per_sink = []
-    for (sink_number, sink) in zip(sinks_inp, sinks)
-        source_indexes, source_likelihoods = zip(
-            map(g -> estimate_which_source(g, F, all_likelihoods=true), sink)...)
-        loglikelihood_ratios = confidence_score(source_likelihoods)
-        source_identification = Dict("sources" => collect(source_indexes), "loglikelihood_ratios" => loglikelihood_ratios)
-        push!(source_identification_per_sink, Dict("name" => "sink $sink_number", "data" => source_identification))
-    end
+    source_identification_per_sink = attribute_grains(sinks_inp, sinks, F, domains)
 
 
     clean_inf(Dict(
@@ -293,5 +309,7 @@ function rank_sources_custom_rank(path::String, rank::Int; n_samples=KDE_DEFAULT
         "learned_coefficients_sources" => learned_sources,
         "kde_parameters" => kde_parameters))
 end
+
+include("precompile.jl")
 
 end

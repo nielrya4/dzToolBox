@@ -113,7 +113,7 @@ def tensor_factorization_task(
         self.update_state(state='PROGRESS', meta={'status': 'Running factorization using original dzgrainalyzer code...'})
 
         # Call original Julia code directly to match dzgrainalyzer exactly
-        # This uses rank_sources_custom_rank() from dzgrainalyzer_helpers.jl
+        # This uses rank_sources_custom_rank() from the SourceAnalysisHelpers package
         import subprocess
         import tempfile
         import json

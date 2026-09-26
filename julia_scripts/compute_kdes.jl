@@ -4,29 +4,13 @@ Compute empirical KDEs for multivariate samples using the SedimentSourceAnalysis
 
 Usage: julia compute_kdes.jl <input_excel> <output_json>
 
-This script calls create_input_viz_data() from dzgrainalyzer_helpers.jl
+This script calls create_input_viz_data() from the SourceAnalysisHelpers package
 to compute standardized KDEs for all samples and features.
 """
 
-using Pkg
-
-# Install required packages if not already installed
-packages = ["XLSX", "NamedArrays", "DataFrames", "JSON", "MatrixTensorFactor", "SedimentSourceAnalysis"]
-for pkg in packages
-    if !haskey(Pkg.project().dependencies, pkg)
-        if pkg == "MatrixTensorFactor"
-            Pkg.add(url="https://github.com/MPF-Optimization-Laboratory/MatrixTensorFactor.jl.git", rev="main")
-        elseif pkg == "SedimentSourceAnalysis"
-            Pkg.add(url="https://github.com/njericha/Sediment-Source-Analysis.jl.git")
-        else
-            Pkg.add(pkg)
-        end
-    end
-end
-
-# Include the dzgrainalyzer helper module
-include("dzgrainalyzer_helpers.jl")
-using .SourceAnalysisHelpers
+# Precompiled package in julia_scripts/SourceAnalysisHelpers, installed into the
+# Julia project by utils.tensor_factorization.initialize_julia_packages()
+using SourceAnalysisHelpers
 using JSON
 
 function main()
@@ -37,13 +21,13 @@ function main()
 
     input_file = ARGS[1]
     output_file = ARGS[2]
-    n_samples, bandwidth_overrides = SourceAnalysisHelpers.parse_kde_options(get(ARGS, 3, ""))
+    n_samples, bandwidth_overrides = parse_kde_options(get(ARGS, 3, ""))
 
     try
         println("Computing empirical KDEs for $input_file")
 
         # Call the create_input_viz_data function to compute KDEs
-        results = Dict{String, Any}(SourceAnalysisHelpers.create_input_viz_data(input_file; n_samples, bandwidth_overrides))
+        results = Dict{String, Any}(create_input_viz_data(input_file; n_samples, bandwidth_overrides))
 
         # Add status field
         results["status"] = "success"

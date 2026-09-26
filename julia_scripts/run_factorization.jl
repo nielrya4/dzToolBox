@@ -4,29 +4,13 @@ Run tensor factorization with a custom rank using the original dzgrainalyzer cod
 
 Usage: julia run_factorization.jl <input_excel> <rank> <output_json> [kde_options_json]
 
-This script calls rank_sources_custom_rank() from dzgrainalyzer_helpers.jl
+This script calls rank_sources_custom_rank() from the SourceAnalysisHelpers package
 which matches the original dzgrainalyzer implementation exactly.
 """
 
-using Pkg
-
-# Install required packages if not already installed
-packages = ["XLSX", "NamedArrays", "DataFrames", "JSON", "MatrixTensorFactor", "SedimentSourceAnalysis"]
-for pkg in packages
-    if !haskey(Pkg.project().dependencies, pkg)
-        if pkg == "MatrixTensorFactor"
-            Pkg.add(url="https://github.com/MPF-Optimization-Laboratory/MatrixTensorFactor.jl.git", rev="main")
-        elseif pkg == "SedimentSourceAnalysis"
-            Pkg.add(url="https://github.com/njericha/Sediment-Source-Analysis.jl.git")
-        else
-            Pkg.add(pkg)
-        end
-    end
-end
-
-# Include the dzgrainalyzer helper module
-include("dzgrainalyzer_helpers.jl")
-using .SourceAnalysisHelpers
+# Precompiled package in julia_scripts/SourceAnalysisHelpers, installed into the
+# Julia project by utils.tensor_factorization.initialize_julia_packages()
+using SourceAnalysisHelpers
 using JSON
 
 function main()
@@ -38,13 +22,13 @@ function main()
     input_file = ARGS[1]
     rank = parse(Int, ARGS[2])
     output_file = ARGS[3]
-    n_samples, bandwidth_overrides = SourceAnalysisHelpers.parse_kde_options(get(ARGS, 4, ""))
+    n_samples, bandwidth_overrides = parse_kde_options(get(ARGS, 4, ""))
 
     try
         println("Running factorization with rank=$rank on $input_file")
 
         # Call the original dzgrainalyzer function
-        results = SourceAnalysisHelpers.rank_sources_custom_rank(input_file, rank; n_samples, bandwidth_overrides)
+        results = rank_sources_custom_rank(input_file, rank; n_samples, bandwidth_overrides)
 
         # Add status field
         results["status"] = "success"

@@ -37,6 +37,16 @@ except Exception as e:
     print(f'Warning: Could not pre-install Julia packages: {e}')
 "
 
+echo "Precompiling Julia helpers for the multivariate scripts (can take several minutes)..."
+python3 -c "
+try:
+    from utils.tensor_factorization import precompile_julia_scripts
+    precompile_julia_scripts()
+    print('Julia helpers precompiled successfully!')
+except Exception as e:
+    print(f'Warning: Could not precompile Julia helpers: {e}')
+"
+
 echo "Checking for dz_lib updates..."
 pip install --upgrade dz_lib
 deactivate

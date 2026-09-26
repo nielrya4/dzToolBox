@@ -38,12 +38,50 @@ function kde_bandwidths(sinks, overrides)
     return bandwidths, is_default
 end
 
+# Same weights as KernelDensity's default UniformWeights{N} (each 1/N, summing to exactly 1.0,
+# so results are bit-identical), but without N in the type. UniformWeights{N} makes Julia
+# compile the whole KDE pipeline again for every distinct grain count, which can't be
+# precompiled and cost several seconds per run.
+struct EqualWeights <: AbstractVector{Float64}
+    n::Int
+end
+Base.size(w::EqualWeights) = (w.n,)
+Base.getindex(w::EqualWeights, i::Int) = 1 / w.n
+Base.sum(::EqualWeights) = 1.0
+
+# SedimentSourceAnalysis's make_densities(::Sink; ...) with the KDE weights swapped for EqualWeights.
+function make_sink_densities(sink; bandwidths, inner_percentile)
+    density_estimates = Vector{UnivariateKDE}(undef, length(bandwidths))
+    for (i, (measurement_values, b)) in enumerate(zip(eachmeasurement(sink), bandwidths))
+        measurement_values = filter_inner_percentile(measurement_values, inner_percentile)
+        density_estimates[i] = kde(measurement_values; bandwidth=b, weights=EqualWeights(length(measurement_values)))
+    end
+    return density_estimates
+end
+
+# Equivalent to DensityTensor(standardize_KDEs(raw_densities; n_samples)..., sinks), which
+# splats the per-sink lists into tuples and so recompiles for every distinct number of sinks.
+# Standardizing one measurement at a time with the single-measurement standardize_KDEs does
+# the same arithmetic without that.
+function standardized_density_tensor(raw_densities, measurement_names, n_samples)
+    n_sinks = length(raw_densities)
+    n_measurements = length(measurement_names)
+    data = Array{Float64,3}(undef, n_sinks, n_measurements, n_samples)
+    domains = Vector{StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64},Int}}(undef, n_measurements)
+    for m in 1:n_measurements
+        densities, domains[m] = standardize_KDEs([raw_densities[s][m] for s in 1:n_sinks]; n_samples)
+        for s in 1:n_sinks
+            data[s, m, :] = densities[s]
+        end
+    end
+    return DensityTensor(data, domains, measurement_names), domains
+end
+
 # Returns the DensityTensor plus a JSON-friendly summary of the parameters used.
 function build_density_tensor(sinks, n_samples, overrides)
     bandwidths, is_default = kde_bandwidths(sinks, overrides)
-    raw_densities = make_densities.(sinks; bandwidths, inner_percentile=KDE_INNER_PERCENTILE)
-    densities, domains = standardize_KDEs(raw_densities; n_samples)
-    densitytensor = DensityTensor(densities, domains, sinks)
+    raw_densities = make_sink_densities.(sinks; bandwidths, inner_percentile=KDE_INNER_PERCENTILE)
+    densitytensor, domains = standardized_density_tensor(raw_densities, getmeasurements(sinks[begin]), n_samples)
     kde_parameters = Dict(
         "n_samples" => n_samples,
         "measurements" => [string(m) for m in getmeasurements(sinks[begin])],

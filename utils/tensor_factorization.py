@@ -6,6 +6,7 @@ Richardson et al. (2024-2025) "Tracing Sedimentary Origins in Multivariate Geoch
 via Constrained Tensor Factorization"
 """
 
+import os
 import numpy as np
 from typing import List, Tuple, Optional, Dict
 import warnings
@@ -34,6 +35,23 @@ def _julia_available():
     return importlib.util.find_spec("juliacall") is not None
 
 JULIA_AVAILABLE = _julia_available()
+
+
+SOURCE_ANALYSIS_HELPERS_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'julia_scripts', 'SourceAnalysisHelpers')
+
+
+def precompile_julia_scripts():
+    """Precompile SourceAnalysisHelpers so the julia_scripts subprocesses start warm.
+
+    Run at deploy time: the package's precompile workload caches the compiled
+    KDE/factorization code, which otherwise costs every subprocess 10-20 seconds.
+    Julia also recompiles on first use after the package source changes, so
+    doing it here keeps that off the first user request after a deploy.
+    """
+    initialize_julia_packages()
+    # resolve picks up dependency changes in the package's own Project.toml
+    get_julia().seval('Pkg.resolve(); Pkg.precompile("SourceAnalysisHelpers")')
 
 
 def initialize_julia_packages():
@@ -65,6 +83,14 @@ def initialize_julia_packages():
         Pkg.add(url="https://github.com/njericha/Sediment-Source-Analysis.jl.git")
     end
     using SedimentSourceAnalysis
+    """)
+
+    # The julia_scripts/*.jl subprocesses load their code from this local package.
+    # juliapkg rewrites the project on re-resolve, so re-register it when it goes missing.
+    jl.seval(f"""
+    if !haskey(Pkg.project().dependencies, "SourceAnalysisHelpers")
+        Pkg.develop(path=raw"{SOURCE_ANALYSIS_HELPERS_PATH}")
+    end
     """)
 
     # Define wrapper functions globally for Python access
@@ -670,7 +696,7 @@ def calculate_source_attribution(
     This matches the original dzgrainalyzer implementation where each grain is
     evaluated against learned source KDEs using probability density functions.
 
-    Implementation follows dzgrainalyzer_helpers.jl lines 198-205 / 290-298:
+    Implementation follows julia_scripts/SourceAnalysisHelpers/src/SourceAnalysisHelpers.jl lines 198-205 / 290-298:
     For each grain, calls estimate_which_source(g, F) which evaluates the grain's
     raw measurements against each source's learned KDEs and returns the source
     with highest combined likelihood.
