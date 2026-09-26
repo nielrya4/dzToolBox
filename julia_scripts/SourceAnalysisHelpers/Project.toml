@@ -1,0 +1,21 @@
+name = "SourceAnalysisHelpers"
+uuid = "f227de19-92c9-4efb-af68-69264ad18b9f"
+authors = ["Ryan Nielsen"]
+version = "0.1.0"
+
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+KernelDensity = "5ab0869b-81aa-558d-bb23-cbf5423bbe9b"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+MatrixTensorFactor = "b7339fc4-c5a0-4c8f-934d-9fd05475ae37"
+NamedArrays = "86f7a689-2022-50b4-a561-43c23ac3c673"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SedimentSourceAnalysis = "ec7d977d-20c2-4b4d-b160-abe0d9e86f32"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
+
+[compat]
+julia = "1.10"
