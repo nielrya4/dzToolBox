@@ -1,12 +1,12 @@
 import json
 from utils.output import Output
 
-def is_age_excluded(age, excluded_age_ranges):
-    """True if age falls inside any [min, max] range (inclusive, in Ma)."""
-    return any(low <= age <= high for low, high in excluded_age_ranges)
+def in_any_range(value, ranges):
+    """True if value falls inside any [min, max] range (inclusive)."""
+    return any(low <= value <= high for low, high in ranges)
 
 
-def _clean_age_ranges(raw_ranges):
+def clean_ranges(raw_ranges):
     """Keep well-formed [min, max] pairs of finite numbers, swapping reversed bounds."""
     import math
     ranges = []
@@ -31,7 +31,7 @@ class AgeSettings:
     def from_json(self, json_data):
         self.min_age = float(json_data.get("min_age", 0))
         self.max_age = float(json_data.get("max_age", 4500))
-        self.excluded_age_ranges = _clean_age_ranges(json_data.get("excluded_age_ranges", []))
+        self.excluded_age_ranges = clean_ranges(json_data.get("excluded_age_ranges", []))
 
     def to_json(self):
         return {
@@ -46,7 +46,7 @@ class AgeSettings:
             return samples
         for sample in samples:
             sample.grains = [grain for grain in sample.grains
-                             if not is_age_excluded(grain.age, self.excluded_age_ranges)]
+                             if not in_any_range(grain.age, self.excluded_age_ranges)]
         return [sample for sample in samples if sample.grains]
 
 MIN_KDE_POINTS = 16

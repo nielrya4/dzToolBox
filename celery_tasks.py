@@ -58,7 +58,8 @@ def tensor_factorization_task(
     stack_graphs='true',
     fill='false',
     kde_points=128,
-    bandwidths=None
+    bandwidths=None,
+    excluded_feature_ranges=None
 ):
     """
     Run multivariate tensor factorization as a Celery task
@@ -96,7 +97,8 @@ def tensor_factorization_task(
         loaded_samples, feature_names = spreadsheet.read_multivariate_samples(
             spreadsheet_array=spreadsheet_data,
             max_age=4500,
-            excluded_age_ranges=project.settings.age_settings.excluded_age_ranges
+            excluded_age_ranges=project.settings.age_settings.excluded_age_ranges,
+            excluded_feature_ranges=excluded_feature_ranges
         )
 
         # Filter to selected samples
@@ -598,7 +600,8 @@ def view_empirical_kdes_task(
     fig_height=8,
     color_map='tab20',
     kde_points=128,
-    bandwidths=None
+    bandwidths=None,
+    excluded_feature_ranges=None
 ):
     """
     View empirical KDEs without running factorization
@@ -637,7 +640,8 @@ def view_empirical_kdes_task(
         loaded_samples, feature_names = spreadsheet.read_multivariate_samples(
             spreadsheet_array=spreadsheet_data,
             max_age=4500,
-            excluded_age_ranges=project.settings.age_settings.excluded_age_ranges
+            excluded_age_ranges=project.settings.age_settings.excluded_age_ranges,
+            excluded_feature_ranges=excluded_feature_ranges
         )
 
         # Filter to selected samples
@@ -892,7 +896,8 @@ def find_optimal_rank_task(
     fig_height=8,
     color_map='viridis',
     kde_points=128,
-    bandwidths=None
+    bandwidths=None,
+    excluded_feature_ranges=None
 ):
     """
     Find optimal rank by testing multiple ranks
@@ -923,7 +928,8 @@ def find_optimal_rank_task(
         loaded_samples, feature_names = spreadsheet.read_multivariate_samples(
             spreadsheet_array=spreadsheet_data,
             max_age=4500,
-            excluded_age_ranges=project.settings.age_settings.excluded_age_ranges
+            excluded_age_ranges=project.settings.age_settings.excluded_age_ranges,
+            excluded_feature_ranges=excluded_feature_ranges
         )
 
         # Filter to selected samples

@@ -370,6 +370,14 @@ function viewEmpiricalKdesSendArgs() {
         queryString += "&bandwidths=" + encodeURIComponent(JSON.stringify(bandwidths));
     }
 
+    var excludedRanges = view_empirical_kdes_bandwidthsGetExcludedRanges();
+    if (excludedRanges === null) {
+        return;
+    }
+    if (Object.keys(excludedRanges).length > 0) {
+        queryString += "&excludedRanges=" + encodeURIComponent(JSON.stringify(excludedRanges));
+    }
+
     var modal = bootstrap.Modal.getInstance(document.getElementById('view_empirical_kdes_modal'));
     if (modal) {
         modal.hide();

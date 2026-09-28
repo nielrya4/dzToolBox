@@ -7,6 +7,10 @@
 
     Call {{ id }}GetBandwidths() when submitting: it returns {variable: bandwidth} for the
     filled-in fields (blank = automatic), or null after alerting if a value is invalid.
+
+    Call {{ id }}GetExcludedRanges() too: it returns {variable: [[min, max], ...]} for the
+    per-variable grain exclusions, or null after alerting if a range is half-filled.
+    Age isn't listed; age exclusions are a project setting (Project Settings -> Age Range).
 #}
 {% macro kde_bandwidth_options(id, modal, prefix) %}
     <h6 class="{{ prefix }}-panel-title" style="color: #212529 !important;">Advanced KDE Options</h6>
@@ -24,6 +28,17 @@
         </p>
     </div>
 
+    <h6 class="{{ prefix }}-panel-title mt-4" style="color: #212529 !important;">Exclude Grains by Variable</h6>
+    <p class="{{ prefix }}-panel-description">
+        Leave out grains whose value for a variable falls inside any of its ranges (inclusive).
+        Excluded grains are removed from every variable, not just the one they were excluded by.
+        To exclude by age, use <b>Project Settings &rarr; Age Range</b>.
+    </p>
+
+    <div class="{{ prefix }}-group">
+        <div id="{{ id }}_exclusions" class="kde-exclusions"></div>
+    </div>
+
     <small class="{{ prefix }}-hint" style="display: block; color: #6c757d !important;">
         To see the automatic bandwidths, run <b>View Empirical KDEs</b> with the <b>KDE Data Table</b>
         output and open its <b>KDE Parameters</b> tab. The number of points each KDE is discretized
@@ -31,11 +46,19 @@
     </small>
 
     <style>
-        .kde-bw-rows {
+        /* One grid per variable (rather than one grid for the whole table) so each variable's
+           row can be shaded; alternate rows are gray to tell variables apart */
+        .kde-bw-rows .kde-bw-row {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
-            gap: 0.5rem 1rem;
+            gap: 0 1rem;
             align-items: center;
+            padding: 0.4rem 0.5rem;
+            border-radius: 6px;
+        }
+        .kde-bw-rows .kde-striped,
+        .kde-exclusions .kde-striped {
+            background: #f1f3f5 !important;
         }
         .kde-bw-rows label {
             margin: 0;
@@ -50,6 +73,39 @@
             letter-spacing: 0.03em;
             color: #6c757d !important;
         }
+        .kde-exclusions .kde-exclusion-variable {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr);
+            gap: 0.5rem 1rem;
+            align-items: start;
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+        .kde-exclusions .kde-exclusion-variable label {
+            display: block;
+            margin: 0;
+            font-size: 0.9rem;
+            color: #212529 !important;
+            overflow-wrap: anywhere;
+        }
+        .kde-exclusions .kde-exclusion-range {
+            font-size: 0.8rem;
+            color: #6c757d !important;
+            font-variant-numeric: tabular-nums;
+            overflow-wrap: anywhere;
+        }
+        .kde-exclusions .kde-exclusion-range::before {
+            content: "Data range: ";
+        }
+        .kde-exclusions .kde-exclusion-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .kde-exclusions .kde-exclusion-row span {
+            color: #6c757d !important;
+        }
         .kde-bw-rows .kde-bw-range {
             font-size: 0.85rem;
             color: #495057 !important;
@@ -62,7 +118,9 @@
         (function() {
             // Values typed so far, kept by variable name so reopening the wizard doesn't lose them
             const entered = {};
+            const enteredExclusions = {};
             const rows = document.getElementById("{{ id }}_rows");
+            const exclusions = document.getElementById("{{ id }}_exclusions");
             const empty = document.getElementById("{{ id }}_empty");
             const modalEl = document.getElementById("{{ modal }}");
             // {sample name: {variable: [min, max]}} from the server
@@ -75,17 +133,85 @@
                 });
             }
 
+            function addExclusionRow(list, low = "", high = "") {
+                const row = document.createElement("div");
+                row.className = "kde-exclusion-row";
+                const lowInput = document.createElement("input");
+                lowInput.type = "number";
+                lowInput.step = "any";
+                lowInput.placeholder = "From";
+                lowInput.className = "form-control {{ prefix }}-input kde-exclusion-min";
+                lowInput.value = low;
+                const separator = document.createElement("span");
+                separator.textContent = "to";
+                const highInput = document.createElement("input");
+                highInput.type = "number";
+                highInput.step = "any";
+                highInput.placeholder = "To";
+                highInput.className = "form-control {{ prefix }}-input kde-exclusion-max";
+                highInput.value = high;
+                const removeButton = document.createElement("button");
+                removeButton.type = "button";
+                removeButton.className = "btn btn-outline-danger btn-sm";
+                removeButton.setAttribute("aria-label", "Remove range");
+                removeButton.innerHTML = "&times;";
+                removeButton.addEventListener("click", () => row.remove());
+                row.append(lowInput, separator, highInput, removeButton);
+                list.append(row);
+            }
+
+            function rememberExclusions() {
+                exclusions.querySelectorAll(".kde-exclusion-variable").forEach(function(block) {
+                    enteredExclusions[block.dataset.feature] = Array.from(
+                        block.querySelectorAll(".kde-exclusion-row"),
+                        row => [row.querySelector(".kde-exclusion-min").value, row.querySelector(".kde-exclusion-max").value]);
+                });
+            }
+
+            function renderExclusions(featureNames) {
+                rememberExclusions();
+                exclusions.replaceChildren();
+                featureNames.filter(name => name !== "Age").forEach(function(name, i) {
+                    const block = document.createElement("div");
+                    block.className = "kde-exclusion-variable" + (i % 2 ? " kde-striped" : "");
+                    block.dataset.feature = name;
+                    const label = document.createElement("div");
+                    const labelName = document.createElement("label");
+                    labelName.textContent = name;
+                    // Reminder of the values this variable takes in the selected samples
+                    const range = document.createElement("div");
+                    range.className = "kde-bw-range kde-exclusion-range";
+                    range.dataset.feature = name;
+                    label.append(labelName, range);
+                    const column = document.createElement("div");
+                    const list = document.createElement("div");
+                    (enteredExclusions[name] || []).forEach(([low, high]) => addExclusionRow(list, low, high));
+                    const addButton = document.createElement("button");
+                    addButton.type = "button";
+                    addButton.className = "btn btn-outline-primary btn-sm";
+                    addButton.textContent = "+ Add Range";
+                    addButton.addEventListener("click", () => addExclusionRow(list));
+                    column.append(list, addButton);
+                    block.append(label, column);
+                    exclusions.append(block);
+                });
+                updateRanges();
+            }
+
             function render(featureNames) {
                 remember();
                 rows.replaceChildren();
                 empty.style.display = featureNames.length ? "none" : "block";
                 if (featureNames.length) {
+                    const headerRow = document.createElement("div");
+                    headerRow.className = "kde-bw-row";
                     ["Variable", "Data range", "Bandwidth"].forEach(function(text) {
                         const header = document.createElement("div");
                         header.className = "kde-bw-header";
                         header.textContent = text;
-                        rows.append(header);
+                        headerRow.append(header);
                     });
+                    rows.append(headerRow);
                 }
                 featureNames.forEach(function(name, i) {
                     const inputId = "{{ id }}_input_" + i;
@@ -104,7 +230,10 @@
                     const range = document.createElement("div");
                     range.className = "kde-bw-range";
                     range.dataset.feature = name;
-                    rows.append(label, range, input);
+                    const row = document.createElement("div");
+                    row.className = "kde-bw-row" + (i % 2 ? " kde-striped" : "");
+                    row.append(label, range, input);
+                    rows.append(row);
                 });
                 updateRanges();
             }
@@ -118,7 +247,7 @@
 
             function updateRanges() {
                 const samples = selectedSamples();
-                rows.querySelectorAll(".kde-bw-range").forEach(function(cell) {
+                [rows, exclusions].flatMap(container => Array.from(container.querySelectorAll(".kde-bw-range"))).forEach(function(cell) {
                     let lo = Infinity, hi = -Infinity;
                     samples.forEach(function(sample) {
                         const r = (rangesBySample[sample] || {})[cell.dataset.feature];
@@ -143,6 +272,7 @@
                     .then(function(data) {
                         rangesBySample = data.feature_ranges || {};
                         render(data.feature_names || []);
+                        renderExclusions(data.feature_names || []);
                     })
                     .catch(error => console.error('Error fetching variable names:', error));
             });
@@ -161,6 +291,25 @@
                     bandwidths[input.dataset.feature] = value;
                 }
                 return bandwidths;
+            };
+
+            window["{{ id }}GetExcludedRanges"] = function() {
+                const excluded = {};
+                for (const block of exclusions.querySelectorAll(".kde-exclusion-variable")) {
+                    const name = block.dataset.feature;
+                    for (const row of block.querySelectorAll(".kde-exclusion-row")) {
+                        const lowInput = row.querySelector(".kde-exclusion-min");
+                        const highInput = row.querySelector(".kde-exclusion-max");
+                        const low = lowInput.value.trim(), high = highInput.value.trim();
+                        if (low === "" && high === "" && !lowInput.validity.badInput && !highInput.validity.badInput) continue;
+                        if (low === "" || high === "" || !Number.isFinite(Number(low)) || !Number.isFinite(Number(high))) {
+                            alert("Each excluded range for '" + name + "' needs both a 'from' and a 'to' value.");
+                            return null;
+                        }
+                        (excluded[name] = excluded[name] || []).push([Number(low), Number(high)]);
+                    }
+                }
+                return excluded;
             };
         })();
     </script>

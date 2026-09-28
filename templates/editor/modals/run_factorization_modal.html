@@ -429,6 +429,14 @@ function runFactorizationSendArgs() {
         queryString += "&bandwidths=" + encodeURIComponent(JSON.stringify(bandwidths));
     }
 
+    var excludedRanges = run_factorization_bandwidthsGetExcludedRanges();
+    if (excludedRanges === null) {
+        return;
+    }
+    if (Object.keys(excludedRanges).length > 0) {
+        queryString += "&excludedRanges=" + encodeURIComponent(JSON.stringify(excludedRanges));
+    }
+
     var modal = bootstrap.Modal.getInstance(document.getElementById('run_factorization_modal'));
     if (modal) {
         modal.hide();

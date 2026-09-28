@@ -436,6 +436,14 @@ function findOptimalRankSendArgs() {
         queryString += "&bandwidths=" + encodeURIComponent(JSON.stringify(bandwidths));
     }
 
+    var excludedRanges = find_optimal_rank_bandwidthsGetExcludedRanges();
+    if (excludedRanges === null) {
+        return;
+    }
+    if (Object.keys(excludedRanges).length > 0) {
+        queryString += "&excludedRanges=" + encodeURIComponent(JSON.stringify(excludedRanges));
+    }
+
     var modal = bootstrap.Modal.getInstance(document.getElementById('find_optimal_rank_modal'));
     if (modal) {
         modal.hide();

@@ -6,7 +6,7 @@ from flask import request, jsonify, session
 from flask_login import login_required, current_user
 from server import database
 from utils import compression
-from utils.project import project_from_json
+from utils.project import project_from_json, clean_ranges
 from utils.output import Output
 import json
 import math
@@ -46,6 +46,26 @@ def __parse_bandwidths(raw):
             raise ValueError(f"Bandwidth for '{name}' must be a positive number")
         bandwidths[str(name)] = value
     return bandwidths
+
+
+def __parse_excluded_ranges(raw):
+    """Parse the per-variable exclusions sent by the multivariate wizards.
+
+    Expects a JSON object of {feature name: [[min, max], ...]}; returns {} when absent.
+    """
+    if not raw:
+        return {}
+    parsed = json.loads(raw)
+    if not isinstance(parsed, dict):
+        raise ValueError("excludedRanges must be an object of {variable: [[min, max], ...]}")
+    excluded = {}
+    for name, ranges in parsed.items():
+        if not isinstance(ranges, list):
+            raise ValueError(f"Excluded ranges for '{name}' must be a list of [min, max] pairs")
+        ranges = clean_ranges(ranges)
+        if ranges:
+            excluded[str(name)] = ranges
+    return excluded
 
 
 def register(app):
@@ -323,7 +343,8 @@ def register(app):
                     fig_height=project.settings.graph_settings.figure_height,
                     color_map=project.settings.graph_settings.color_map,
                     kde_points=project.settings.statistical_settings.multivariate_kde_points,
-                    bandwidths=__parse_bandwidths(request.args.get("bandwidths"))
+                    bandwidths=__parse_bandwidths(request.args.get("bandwidths")),
+                    excluded_feature_ranges=__parse_excluded_ranges(request.args.get("excludedRanges"))
                 )
                 return jsonify({"job_id": task.id, "status": "started"})
             except Exception as e:
@@ -367,7 +388,8 @@ def register(app):
                     fig_height=project.settings.graph_settings.figure_height,
                     color_map=project.settings.graph_settings.color_map,
                     kde_points=project.settings.statistical_settings.multivariate_kde_points,
-                    bandwidths=__parse_bandwidths(request.args.get("bandwidths"))
+                    bandwidths=__parse_bandwidths(request.args.get("bandwidths")),
+                    excluded_feature_ranges=__parse_excluded_ranges(request.args.get("excludedRanges"))
                 )
                 return jsonify({"job_id": task.id, "status": "started"})
             except Exception as e:
@@ -413,7 +435,8 @@ def register(app):
                     stack_graphs=project.settings.graph_settings.stack_graphs,
                     fill=project.settings.graph_settings.fill,
                     kde_points=project.settings.statistical_settings.multivariate_kde_points,
-                    bandwidths=__parse_bandwidths(request.args.get("bandwidths"))
+                    bandwidths=__parse_bandwidths(request.args.get("bandwidths")),
+                    excluded_feature_ranges=__parse_excluded_ranges(request.args.get("excludedRanges"))
                 )
                 return jsonify({"job_id": task.id, "status": "started"})
             except Exception as e:
@@ -459,7 +482,8 @@ def register(app):
                     stack_graphs=project.settings.graph_settings.stack_graphs,
                     fill=project.settings.graph_settings.fill,
                     kde_points=project.settings.statistical_settings.multivariate_kde_points,
-                    bandwidths=__parse_bandwidths(request.args.get("bandwidths"))
+                    bandwidths=__parse_bandwidths(request.args.get("bandwidths")),
+                    excluded_feature_ranges=__parse_excluded_ranges(request.args.get("excludedRanges"))
                 )
                 return jsonify({"job_id": task.id, "status": "started"})
             except Exception as e:
