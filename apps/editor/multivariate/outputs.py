@@ -152,7 +152,8 @@ def register(app):
                 # Read multivariate samples
                 samples, feature_names = spreadsheet.read_multivariate_samples(
                     spreadsheet_array=spreadsheet_data,
-                    max_age=4500
+                    max_age=4500,
+                    excluded_age_ranges=project.settings.age_settings.excluded_age_ranges
                 )
 
                 # Find the sample

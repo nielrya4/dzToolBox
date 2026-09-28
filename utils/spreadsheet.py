@@ -121,7 +121,8 @@ def read_multivariate_samples(
     sink_id_col=0,
     grain_id_col=1,
     feature_start_col=2,
-    max_age=4500
+    max_age=4500,
+    excluded_age_ranges=()
 ):
     """
     Read row-based multivariate grain data from a spreadsheet array.
@@ -138,6 +139,8 @@ def read_multivariate_samples(
         grain_id_col: Column index for grain IDs (default 1)
         feature_start_col: First column with feature data (default 2)
         max_age: Optional age filter for 'Age' feature (default 4500)
+        excluded_age_ranges: [min, max] age ranges (Ma) whose grains are skipped;
+            like max_age, only applied when there is an 'Age' feature
 
     Returns:
         Tuple of:
@@ -148,6 +151,7 @@ def read_multivariate_samples(
         ValueError: If data format is invalid or insufficient samples
     """
     from utils.multivariate_sample import MultivariateGrain, MultivariateSample
+    from utils.project import is_age_excluded
     from collections import defaultdict
 
     if not spreadsheet_array or len(spreadsheet_array) < 2:
@@ -166,6 +170,9 @@ def read_multivariate_samples(
     # Validate that 'Age' is present (optional but recommended)
     if 'Age' not in feature_names:
         print("Warning: 'Age' feature not found in data. This may affect some analyses.")
+        if excluded_age_ranges:
+            print(f"Warning: excluded age ranges are set but there is no 'Age' feature, so no grains were excluded. "
+                  f"Columns found: {feature_names!r}")
 
     # Group grains by SINK_ID
     sample_grains = defaultdict(list)
@@ -209,7 +216,7 @@ def read_multivariate_samples(
         # Apply age filter if Age feature exists
         if age_feature_index is not None:
             age_value = features['Age']
-            if age_value > max_age:
+            if age_value > max_age or is_age_excluded(age_value, excluded_age_ranges):
                 skipped_rows += 1
                 continue
 

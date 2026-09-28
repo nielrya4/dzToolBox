@@ -1,20 +1,53 @@
 import json
 from utils.output import Output
 
+def is_age_excluded(age, excluded_age_ranges):
+    """True if age falls inside any [min, max] range (inclusive, in Ma)."""
+    return any(low <= age <= high for low, high in excluded_age_ranges)
+
+
+def _clean_age_ranges(raw_ranges):
+    """Keep well-formed [min, max] pairs of finite numbers, swapping reversed bounds."""
+    import math
+    ranges = []
+    for age_range in raw_ranges or []:
+        try:
+            low, high = (float(bound) for bound in age_range)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(low) and math.isfinite(high):
+            ranges.append([min(low, high), max(low, high)])
+    return ranges
+
+
 class AgeSettings:
-    def __init__(self, min_age: float = 0, max_age: float = 4500):
+    def __init__(self, min_age: float = 0, max_age: float = 4500, excluded_age_ranges: list = None):
         self.min_age = min_age
         self.max_age = max_age
+        # Grains with ages inside any of these [min, max] ranges (Ma) are left out of every
+        # univariate and multivariate analysis
+        self.excluded_age_ranges = excluded_age_ranges if excluded_age_ranges is not None else []
 
     def from_json(self, json_data):
         self.min_age = float(json_data.get("min_age", 0))
         self.max_age = float(json_data.get("max_age", 4500))
-    
+        self.excluded_age_ranges = _clean_age_ranges(json_data.get("excluded_age_ranges", []))
+
     def to_json(self):
         return {
             "min_age": self.min_age,
-            "max_age": self.max_age
+            "max_age": self.max_age,
+            "excluded_age_ranges": self.excluded_age_ranges
         }
+
+    def exclude_grains(self, samples):
+        """Drop excluded grains from univariate/bivariate samples, and any samples left empty."""
+        if not self.excluded_age_ranges:
+            return samples
+        for sample in samples:
+            sample.grains = [grain for grain in sample.grains
+                             if not is_age_excluded(grain.age, self.excluded_age_ranges)]
+        return [sample for sample in samples if sample.grains]
 
 MIN_KDE_POINTS = 16
 MAX_KDE_POINTS = 1024

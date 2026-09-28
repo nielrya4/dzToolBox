@@ -273,7 +273,7 @@ def register(app):
                 output_type = request.args.get("outputType", "kde")
                 sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
-                loaded_samples = data.read_1d_samples(spreadsheet_data)
+                loaded_samples = project.settings.age_settings.exclude_grains(data.read_1d_samples(spreadsheet_data))
                 active_samples = []
                 for sample in loaded_samples:
                     sample.name = __clean_sample_name(sample.name)
@@ -359,7 +359,7 @@ def register(app):
                 bin_labels = [x.strip() for x in bin_labels_str.split(",") if x.strip()] if bin_labels_str else None
 
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
-                loaded_samples = data.read_1d_samples(spreadsheet_data)
+                loaded_samples = project.settings.age_settings.exclude_grains(data.read_1d_samples(spreadsheet_data))
                 active_samples = []
                 for sample in loaded_samples:
                     sample.name = __clean_sample_name(sample.name)
@@ -432,7 +432,7 @@ def register(app):
                 output_types = request.args.getlist("outputType")
                 sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
-                loaded_samples = data.read_1d_samples(spreadsheet_data)
+                loaded_samples = project.settings.age_settings.exclude_grains(data.read_1d_samples(spreadsheet_data))
                 active_samples = []
                 for sample in loaded_samples:
                     sample.name = __clean_sample_name(sample.name)
@@ -505,7 +505,7 @@ def register(app):
                 output_types = request.args.getlist("outputType")
                 sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
-                loaded_samples = data.read_1d_samples(spreadsheet_data)
+                loaded_samples = project.settings.age_settings.exclude_grains(data.read_1d_samples(spreadsheet_data))
                 active_samples = []
                 for sample in loaded_samples:
                     sample.name = __clean_sample_name(sample.name)
@@ -598,7 +598,7 @@ def register(app):
                 output_type = request.args.get("outputType", "kde")
                 sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
-                loaded_samples = data.read_1d_samples(spreadsheet_data)
+                loaded_samples = project.settings.age_settings.exclude_grains(data.read_1d_samples(spreadsheet_data))
                 active_samples = []
                 for sample in loaded_samples:
                     sample.name = __clean_sample_name(sample.name)
@@ -635,7 +635,7 @@ def register(app):
                 output_type = request.args.get("outputType", "kde")
                 sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
-                loaded_samples = data.read_2d_samples(spreadsheet_data)
+                loaded_samples = project.settings.age_settings.exclude_grains(data.read_2d_samples(spreadsheet_data))
                 active_samples = []
                 for sample in loaded_samples:
                     sample.name = __clean_sample_name(sample.name)
@@ -699,7 +699,7 @@ def register(app):
                 ysp_entry_rule = request.args.get("ysp_entry_rule", "global")
 
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
-                loaded_samples = data.read_1d_samples(spreadsheet_data)
+                loaded_samples = project.settings.age_settings.exclude_grains(data.read_1d_samples(spreadsheet_data))
                 active_samples = []
                 for sample in loaded_samples:
                     sample.name = __clean_sample_name(sample.name)

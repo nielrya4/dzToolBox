@@ -95,7 +95,8 @@ def tensor_factorization_task(
         # If it's in column format, we'd need to handle that differently
         loaded_samples, feature_names = spreadsheet.read_multivariate_samples(
             spreadsheet_array=spreadsheet_data,
-            max_age=4500
+            max_age=4500,
+            excluded_age_ranges=project.settings.age_settings.excluded_age_ranges
         )
 
         # Filter to selected samples
@@ -635,7 +636,8 @@ def view_empirical_kdes_task(
         spreadsheet_data = spreadsheet.text_to_array(project.grainalyzer_data)
         loaded_samples, feature_names = spreadsheet.read_multivariate_samples(
             spreadsheet_array=spreadsheet_data,
-            max_age=4500
+            max_age=4500,
+            excluded_age_ranges=project.settings.age_settings.excluded_age_ranges
         )
 
         # Filter to selected samples
@@ -920,7 +922,8 @@ def find_optimal_rank_task(
         spreadsheet_data = spreadsheet.text_to_array(project.grainalyzer_data)
         loaded_samples, feature_names = spreadsheet.read_multivariate_samples(
             spreadsheet_array=spreadsheet_data,
-            max_age=4500
+            max_age=4500,
+            excluded_age_ranges=project.settings.age_settings.excluded_age_ranges
         )
 
         # Filter to selected samples

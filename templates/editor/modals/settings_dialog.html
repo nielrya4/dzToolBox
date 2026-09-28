@@ -64,6 +64,13 @@
                                     <input type="number" class="form-control settings-input" id="max_age" name="max_age" value="4500" required>
                                     <small class="settings-hint">Upper bound for age distributions and plots</small>
                                 </div>
+
+                                <div class="settings-group">
+                                    <label class="settings-label">Excluded Grains in Age Ranges (Ma)</label>
+                                    <div id="excluded_age_ranges"></div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="add_excluded_age_range">+ Add Exclusion</button>
+                                    <small class="settings-hint d-block mt-1">Grains with ages inside any of these ranges (inclusive) are left out of all univariate and multivariate analyses. This does not take uncertainty into account. Multivariate data must have a column named 'Age'.</small>
+                                </div>
                             </div>
 
                             <!-- Uncertainty Panel -->
@@ -358,6 +365,17 @@
     flex: 1;
 }
 
+.excluded-age-range-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.excluded-age-range-row span {
+    color: #6c757d;
+}
+
 .settings-row {
     display: flex;
     gap: 1rem;
@@ -531,6 +549,55 @@ document.getElementById('graph_color_map').addEventListener('change', function()
     customInput.style.display = this.value === 'custom' ? 'block' : 'none';
 });
 
+// Excluded age ranges: one row of [from, to] inputs per range
+function addExcludedAgeRangeRow(low = '', high = '') {
+    const row = document.createElement('div');
+    row.className = 'excluded-age-range-row';
+
+    const lowInput = document.createElement('input');
+    lowInput.type = 'number';
+    lowInput.className = 'form-control settings-input excluded-age-min';
+    lowInput.placeholder = 'From (Ma)';
+    lowInput.value = low;
+
+    const separator = document.createElement('span');
+    separator.textContent = 'to';
+
+    const highInput = document.createElement('input');
+    highInput.type = 'number';
+    highInput.className = 'form-control settings-input excluded-age-max';
+    highInput.placeholder = 'To (Ma)';
+    highInput.value = high;
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn-outline-danger btn-sm';
+    removeButton.setAttribute('aria-label', 'Remove exclusion');
+    removeButton.innerHTML = '&times;';
+    removeButton.addEventListener('click', () => row.remove());
+
+    row.append(lowInput, separator, highInput, removeButton);
+    document.getElementById('excluded_age_ranges').appendChild(row);
+}
+
+// Returns the [from, to] pairs, or null (after alerting) if a row is half-filled
+function readExcludedAgeRanges() {
+    const ranges = [];
+    for (const row of document.querySelectorAll('.excluded-age-range-row')) {
+        const low = row.querySelector('.excluded-age-min').value;
+        const high = row.querySelector('.excluded-age-max').value;
+        if (low === '' && high === '') continue;
+        if (low === '' || high === '' || isNaN(parseFloat(low)) || isNaN(parseFloat(high))) {
+            alert('Each excluded age range needs both a "from" and a "to" age.');
+            return null;
+        }
+        ranges.push([parseFloat(low), parseFloat(high)]);
+    }
+    return ranges;
+}
+
+document.getElementById('add_excluded_age_range').addEventListener('click', () => addExcludedAgeRangeRow());
+
 // Load settings when modal opens
 document.getElementById('project_settings_modal').addEventListener('show.bs.modal', function() {
     fetch('/projects/{{ project_id }}/settings')
@@ -541,6 +608,8 @@ document.getElementById('project_settings_modal').addEventListener('show.bs.moda
             // Age settings
             document.getElementById('min_age').value = settings.min_age || 0;
             document.getElementById('max_age').value = settings.max_age || 4500;
+            document.getElementById('excluded_age_ranges').innerHTML = '';
+            (settings.excluded_age_ranges || []).forEach(([low, high]) => addExcludedAgeRangeRow(low, high));
 
             // Uncertainty settings
             document.getElementById('sigma_in').value = settings.sigma_in || 1;
@@ -620,6 +689,11 @@ document.getElementById('update_settings').addEventListener('click', function() 
         return;
     }
 
+    const excludedAgeRanges = readExcludedAgeRanges();
+    if (excludedAgeRanges === null) {
+        return;
+    }
+
     // Close modal
     const modal = bootstrap.Modal.getInstance(document.getElementById('project_settings_modal'));
     if (modal) {
@@ -630,6 +704,7 @@ document.getElementById('update_settings').addEventListener('click', function() 
     const settingsData = {
         "min_age": parseFloat(minAge),
         "max_age": parseFloat(maxAge),
+        "excluded_age_ranges": excludedAgeRanges,
         "sigma_in": parseInt(sigmaIn),
         "sigma_out": parseInt(sigmaOut),
         "kde_bandwidth": parseFloat(kdeBandwidth),

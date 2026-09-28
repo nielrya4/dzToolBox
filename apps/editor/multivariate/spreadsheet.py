@@ -67,7 +67,8 @@ def register(app):
             try:
                 samples, feature_names = spreadsheet.read_multivariate_samples(
                     spreadsheet_array=spreadsheet_data,
-                    max_age=4500
+                    max_age=4500,
+                    excluded_age_ranges=project.settings.age_settings.excluded_age_ranges
                 )
                 sample_names = [sample.name for sample in samples]
                 # Per-sample [min, max] of each feature, so the wizards can show the data
