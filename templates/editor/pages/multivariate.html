@@ -214,14 +214,21 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Save data on edit
+        // Save after any change to the grid's contents or shape. Paste, cut, drag-fill and the
+        // context menu report change sources other than 'edit', so they must not be filtered out.
+        // Debounced so one paste (which fires several hooks) sends one save.
+        let saveTimer = null;
+        function scheduleSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveTableData, 300);
+        }
         multivariateHot.addHook('afterChange', function(changes, src) {
-            if (src === 'edit') {
-                saveTableData();
+            if (src !== 'loadData' && src !== 'updateData') {
+                scheduleSave();
             }
         });
-        multivariateHot.addHook('afterRedo', saveTableData);
-        multivariateHot.addHook('afterUndo', saveTableData);
-        multivariateHot.addHook('afterPaste', saveTableData);
+        ['afterCreateRow', 'afterRemoveRow', 'afterCreateCol', 'afterRemoveCol', 'afterUndo', 'afterRedo', 'afterPaste']
+            .forEach(hook => multivariateHot.addHook(hook, scheduleSave));
     }
 
     function saveTableData() {

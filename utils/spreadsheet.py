@@ -1,7 +1,33 @@
 import openpyxl
+import math
+import re
 from utils.sample import Sample, Grain
 import json
 import orjson  # Much faster JSON library
+
+# "1,234" / "-12,345.67": digits grouped in threes with commas, as Excel copies formatted numbers
+_THOUSANDS_GROUPED = re.compile(r'^[+-]?\d{1,3}(,\d{3})+(\.\d*)?$')
+
+
+def parse_number(cell):
+    """Return cell as a float if it holds a finite number, else None.
+
+    Accepts numbers and numeric text, including text with thousands separators
+    ("1,234.5"), which is what Excel puts on the clipboard for formatted cells.
+    """
+    if isinstance(cell, bool) or cell is None:
+        return None
+    if isinstance(cell, (int, float)):
+        value = float(cell)
+    else:
+        text = str(cell).strip()
+        if _THOUSANDS_GROUPED.match(text):
+            text = text.replace(',', '')
+        try:
+            value = float(text)
+        except ValueError:
+            return None
+    return value if math.isfinite(value) else None
 
 
 def read_samples(spreadsheet_array):
@@ -206,11 +232,11 @@ def read_multivariate_samples(
                 skip_grain = True
                 break
 
-            try:
-                features[feat_name] = float(feat_value)
-            except (ValueError, TypeError):
+            value = parse_number(feat_value)
+            if value is None:
                 skip_grain = True
                 break
+            features[feat_name] = value
 
         if skip_grain:
             skipped_rows += 1

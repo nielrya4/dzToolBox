@@ -26,16 +26,6 @@ def __get_project(project_id):
         return None
 
 
-def __is_float(element) -> bool:
-    if element is None:
-        return False
-    try:
-        float(element)
-        return True
-    except ValueError:
-        return False
-
-
 def register(app):
 
     @app.route('/projects/<int:project_id>/save', methods=['POST'])
@@ -57,8 +47,8 @@ def register(app):
                         if cell is not None:
                             if str(cell).strip() == '':
                                 data[i][j] = None
-                            elif __is_float(cell):
-                                data[i][j] = float(str(cell).strip())
+                            elif (value := spreadsheet.parse_number(cell)) is not None:
+                                data[i][j] = value
                 project = __get_project(project_id)
                 project.data = spreadsheet.array_to_text(data)
                 compressed_proj_content = compression.compress(project.to_json())

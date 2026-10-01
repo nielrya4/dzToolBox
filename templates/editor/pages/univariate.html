@@ -105,14 +105,21 @@ document.addEventListener('DOMContentLoaded', function () {
             stretchH: 'all'
         });
 
+        // Save after any change to the grid's contents or shape. Paste, cut, drag-fill and the
+        // context menu report change sources other than 'edit', so they must not be filtered out.
+        // Debounced so one paste (which fires several hooks) sends one save.
+        let saveTimer = null;
+        function scheduleSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveTableData, 300);
+        }
         hot.addHook('afterChange', function(changes, src) {
-            if (src === 'edit') {
-                saveTableData();
+            if (src !== 'loadData' && src !== 'updateData') {
+                scheduleSave();
             }
         });
-        hot.addHook('afterRedo', saveTableData);
-        hot.addHook('afterUndo', saveTableData);
-        hot.addHook('afterPaste', saveTableData);
+        ['afterCreateRow', 'afterRemoveRow', 'afterCreateCol', 'afterRemoveCol', 'afterUndo', 'afterRedo', 'afterPaste']
+            .forEach(hook => hot.addHook(hook, scheduleSave));
 
         function saveTableData() {
             var jsonData = { data: hot.getData() };

@@ -105,7 +105,9 @@
             let data = await file.arrayBuffer();
             let workbook = XLSX.read(data, { type: "array" });
             let sheetName = workbook.SheetNames[0];
-            let jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false });
+            // raw: true keeps numbers as numbers at full precision; raw: false gave the displayed
+            // text ("1,234.5", rounded to the column's format), which the server couldn't read
+            let jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: true });
 
             if (jsonData.length > 0) {
                 let numColumns = jsonData[0].length;
@@ -114,7 +116,7 @@
                 let tableData = jsonData.map((row, index) => {
                     let obj = { rowNum: index + 1 };
                     headers.forEach((col, i) => {
-                        obj[col] = row[i] || "";
+                        obj[col] = row[i] ?? "";  // ?? not ||, so a 0 isn't blanked
                     });
                     return obj;
                 });
