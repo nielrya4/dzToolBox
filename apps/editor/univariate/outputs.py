@@ -448,14 +448,14 @@ def register(app):
 
                 points, kruskal_stress, dissimilarity_matrix, mds_embedding, mds_result = mds.mds_function(
                     samples=adjusted_samples,
-                    metric='similarity',
+                    metric=metric,
                     non_metric=non_metric
                 )
                 pending_outputs = []
                 if "mds_plot" in output_types:
                     graph_fig = mds.mds_graph(
                         points=points,
-                        title=f"{output_title} (metric='similarity', stress={round(kruskal_stress, 2)})",
+                        title=f"{output_title} (metric='{metric}', stress={round(kruskal_stress, 2)})",
                         font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
                         font_size=project.settings.graph_settings.font_size,
                         fig_width=project.settings.graph_settings.figure_width,
@@ -475,7 +475,7 @@ def register(app):
                         mds_result=mds_result,
                         kruskal_stress=kruskal_stress,
                         non_metric=non_metric,
-                        title=f"{output_title} (metric='similarity', stress={round(kruskal_stress, 2)})",
+                        title=f"{output_title} (metric='{metric}', stress={round(kruskal_stress, 2)})",
                         font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
                         font_size=project.settings.graph_settings.font_size,
                         fig_width=project.settings.graph_settings.figure_width,

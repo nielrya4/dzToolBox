@@ -56,42 +56,50 @@ def _compute_mds(dissimilarity_matrix: np.ndarray, non_metric: bool = True):
     """
     Run MDS on a precomputed dissimilarity matrix.
 
-    Fixes vs. original
-    ------------------
     - Exposes n_init and max_iter for a more stable solution.
-    - Computes Kruskal stress-1 (normalized) instead of raw sklearn stress.
-    - Re-scales the 2-D embedding so axis spread grows with mean dissimilarity,
-      making high-dissimilarity datasets visually distinct from low-dissimilarity ones.
+    - Computes Kruskal stress-1 from the final embedding:
+      sqrt(sum((d - d_hat)^2) / sum(d^2)), where d are the embedding distances and d_hat
+      the dissimilarities (metric) or their isotonic fit to d (non-metric). sklearn's raw
+      stress can't be used directly: for non-metric MDS it is on sklearn's internal
+      normalized scale, not the dissimilarities' scale.
+    - Metric MDS embeddings are already in dissimilarity units and are left as they are.
+      Non-metric embeddings come out on an arbitrary scale, so they are rescaled so the
+      largest distance equals the largest dissimilarity, the same convention as MATLAB's
+      mdscale (and so DZmds; Saylor et al., 2017). That keeps the axes and the Shepard
+      plot's 1:1 line in dissimilarity units, so more dissimilar samples spread further
+      apart, without changing the configuration's shape or the stress (scale-invariant).
 
     Returns
     -------
     mds_result   : fitted sklearn MDS object (stress_ attribute is raw sklearn stress)
-    embedding    : ndarray, shape (n, 2), re-scaled 2-D coordinates
+    embedding    : ndarray, shape (n, 2), 2-D coordinates in dissimilarity units
     kruskal_stress : float, Kruskal stress-1 in [0, 1]
     """
     mds_result = MDS(
         n_components=2,
         dissimilarity="precomputed",
         metric=(not non_metric),
-        normalized_stress=False,   # keep raw stress so we can normalize ourselves
+        normalized_stress=False,
         n_init=10,                 # more random restarts → more stable solution
         max_iter=1000,
     )
     embedding = mds_result.fit_transform(dissimilarity_matrix)
 
-    # --- Kruskal stress-1 (normalized) ---
     upper = np.triu_indices_from(dissimilarity_matrix, k=1)
-    denom = np.sum(dissimilarity_matrix[upper] ** 2)
-    kruskal_stress = float(np.sqrt(mds_result.stress_ / denom)) if denom > 0 else 0.0
+    dissimilarities = dissimilarity_matrix[upper]
+    distances = np.linalg.norm(embedding[upper[0]] - embedding[upper[1]], axis=1)
 
-    # --- Re-scale so axis spread reflects actual dissimilarity magnitude ---
-    # sklearn normalises the embedding to a fixed scale regardless of how
-    # dissimilar the samples are.  Multiplying by (mean_dissimilarity / std)
-    # restores a meaningful axis scale without altering the topology.
-    mean_dissim = float(np.mean(dissimilarity_matrix[upper]))
-    spread = float(np.std(embedding))
-    if spread > 0:
-        embedding = embedding * (mean_dissim / spread)
+    if non_metric:
+        if distances.max() > 0:
+            scale = dissimilarities.max() / distances.max()
+            embedding = embedding * scale
+            distances = distances * scale
+        fitted = IsotonicRegression().fit_transform(dissimilarities, distances)
+    else:
+        fitted = dissimilarities
+
+    denom = np.sum(distances ** 2)
+    kruskal_stress = float(np.sqrt(np.sum((distances - fitted) ** 2) / denom)) if denom > 0 else 0.0
 
     return mds_result, embedding, kruskal_stress
 
