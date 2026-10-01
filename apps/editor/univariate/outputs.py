@@ -563,9 +563,17 @@ def register(app):
                     )
                     pending_outputs.append({"output_id": output_id, "output_type": "graph", "output_data": output_data})
                 if "trials_graph" in output_types:
-                    r2_vals = [metrics.r2(top_distro.y_values, sink_distribution.y_values) for top_distro in top_distributions]
-                    avg_r2 = np.average(r2_vals)
-                    output_title += f" (r^2={round(avg_r2, 3)}) (metric='{metric}')"
+                    # Report the fit with the metric the trials were ranked by: r^2 between KDEs/PDPs
+                    # for cross-correlation, the KS D or Kuiper V statistic between CDFs otherwise
+                    fit_label, fit_function = {
+                        "cross_correlation": ("r^2", metrics.r2),
+                        "ks": ("D", metrics.ks),
+                        "kuiper": ("V", metrics.kuiper),
+                    }[metric]
+                    sink_y_values = np.asarray(sink_distribution.y_values)
+                    avg_fit = np.average([fit_function(np.asarray(top_distro.y_values), sink_y_values)
+                                          for top_distro in top_distributions])
+                    output_title += f" ({fit_label}={round(avg_fit, 3)}) (metric='{metric}')"
                     graph_fig = univariate.unmix.top_trials_graph(
                         sink_distribution=sink_distribution,
                         model_distributions=top_distributions,
