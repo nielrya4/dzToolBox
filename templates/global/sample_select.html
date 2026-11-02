@@ -8,8 +8,11 @@
             document.getElementById("{{id}}_spinner").classList.remove("hidden");
             document.getElementById("{{id}}_spinner").classList.add("visible");
         });
-        function {{ id }}getSampleNames() {
-            fetch('/projects/{{ project_id }}/{{ endpoint }}', {
+        // `selected` (optional): sample names to tick once the list is built, e.g. when
+        // reconfiguring an output; without it every sample starts ticked (multi-select)
+        // or none (single select). Returns a promise that settles once the list is built.
+        function {{ id }}getSampleNames(selected) {
+            return fetch('/projects/{{ project_id }}/{{ endpoint }}', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
             })
@@ -25,6 +28,11 @@
             .then(data => {
                 var sampleNames = data.sample_names;
                 {{ id }}displaySampleNames(sampleNames);
+                if (Array.isArray(selected)) {
+                    document.getElementById("{{ id }}").querySelectorAll(".sample-checkbox").forEach(function(cb) {
+                        cb.checked = selected.includes(cb.value);
+                    });
+                }
             })
             .catch(error => {
                 console.error('Error fetching sample names:', error);

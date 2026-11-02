@@ -1,9 +1,8 @@
 import numpy as np
 import pandas as pd
-from dz_lib.univariate import metrics
 from dz_lib.univariate.distributions import Distribution, distribution_graph
 from dz_lib.utils import fonts
-import random
+from scipy.optimize import minimize
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 
@@ -14,64 +13,131 @@ class Contribution:
         self.contribution = contribution
         self.standard_deviation = standard_deviation
 
-def monte_carlo_model(sink_distribution: Distribution, source_distributions: [Distribution], n_trials: int=10000, metric: str="cross_correlation"):
-    sink_y_values = sink_distribution.y_values
-    sources_y_values = [dist.y_values for dist in source_distributions]
-    trials = [create_trial((sink_y_values, sources_y_values, metric)) for _ in range(n_trials)]
-    if metric == "cross_correlation":
-        sorted_trials = sorted(trials, key=lambda x: x.test_val, reverse=True)
-    elif metric == "ks" or metric == "kuiper":
-        sorted_trials = sorted(trials, key=lambda x: x.test_val, reverse=False)
-    else:
+def _misfit_function(metric: str):
+    """Vectorised misfit (lower is better) of model curves (rows) against the sink curve."""
+    def cross_correlation(models, sink):
+        sink_c = sink - sink.mean()
+        models_c = models - models.mean(axis=1, keepdims=True)
+        r = (models_c @ sink_c) / np.sqrt(np.sum(models_c ** 2, axis=1) * np.sum(sink_c ** 2))
+        return 1.0 - r ** 2
+
+    def ks(models, sink):
+        return np.max(np.abs(models - sink), axis=1)
+
+    def kuiper(models, sink):
+        diff = models - sink
+        return np.maximum(diff.max(axis=1), 0.0) + np.maximum((-diff).max(axis=1), 0.0)
+
+    try:
+        return {"cross_correlation": cross_correlation, "ks": ks, "kuiper": kuiper}[metric]
+    except KeyError:
         raise ValueError(f"Unknown metric '{metric}'")
-    top_trials = sorted_trials[:10]
-    top_lines = [trial.model_line for trial in top_trials]
-    
-    # Convert top lines back to Distribution objects
+
+
+def _refine(starts, sources, sink, misfit):
+    """Constrained optimisation of the mixing proportions (SLSQP, as in detritalPy).
+
+    KS D and Kuiper V are maxima, so their misfit surface has many shallow local minima;
+    starting from several good trials (and from equal proportions) and keeping the lowest
+    misfit makes the answer stable from run to run.
+    """
+    n = starts.shape[1]
+    objective = lambda w: float(misfit(w[None, :] @ sources, sink)[0])
+    best_w, best_val = starts[0], objective(starts[0])
+    for start in list(starts) + [np.full(n, 1.0 / n)]:
+        result = minimize(objective, start, method="SLSQP", bounds=[(0.0, 1.0)] * n,
+                          constraints={"type": "eq", "fun": lambda w: 1.0 - np.sum(w)},
+                          options={"maxiter": 10000})
+        w = np.clip(result.x, 0.0, None)
+        w = w / w.sum()
+        val = objective(w)
+        if val < best_val:
+            best_w, best_val = w, val
+    return best_w
+
+
+def _dzmix_weights(n_trials: int, n_sources: int, rng) -> np.ndarray:
+    """Random proportions as DZmix generates them (Sundell & Saylor, 2017; the Monte Carlo
+    loop of Sundell_Saylor_2017_Inverse_unmixing_model_v_1_1_02.m).
+
+    Breakpoints on [0, 1] are placed in random order, each at least its share of an even
+    split along the line, and the gaps between them, shuffled, are the proportions. This
+    favours lopsided mixtures: with 10 sources about 74% of trials give some source more
+    than 30%, against about 39% for a uniform (Dirichlet) draw.
+    """
+    weights = np.empty((n_trials, n_sources))
+    for trial in range(n_trials):
+        order = rng.permutation(np.arange(1, n_sources))
+        breakpoints = np.zeros(n_sources + 1)
+        breakpoints[n_sources] = 1.0
+        floors = order * (1.0 / n_sources)   # as DZmix computes it (samples .* 1/N)
+        for i, k in enumerate(order):
+            lower = breakpoints[:k].max()
+            upper_candidates = breakpoints[k:]
+            upper = upper_candidates[upper_candidates != 0].min()
+            start = floors[i] if lower < floors[i] else lower
+            breakpoints[k] = start + rng.random() * (upper - start)
+        weights[trial] = np.diff(breakpoints)[rng.permutation(n_sources)]
+    return weights
+
+
+# How random mixing proportions are drawn for the Monte Carlo trials
+SAMPLERS = {
+    "dirichlet": lambda n_trials, n_sources, rng: rng.dirichlet(np.ones(n_sources), size=n_trials),
+    "dzmix": _dzmix_weights,
+}
+
+
+def monte_carlo_model(sink_distribution: Distribution, source_distributions: [Distribution], n_trials: int = 10000,
+                      metric: str = "cross_correlation", n_top: int = 10, refine: bool = True, seed=None,
+                      sampler: str = "dirichlet"):
+    """Unmix a sink distribution into source contributions (after Sundell & Saylor, 2017).
+
+    Random mixing proportions are drawn uniformly over all possible mixtures
+    (sampler='dirichlet') or with DZmix's stick-breaking generator (sampler='dzmix', see
+    _dzmix_weights); each is scored against the sink with the chosen metric (1 - R^2 on PDPs/KDEs, or KS D /
+    Kuiper V on CDFs).
+
+    refine=True
+        The best trials are refined by constrained optimisation (SLSQP, bounds 0-1, sum 1),
+        like DZmix's default "minimum function search" (fmincon from the best Monte Carlo
+        fits) and detritalPy. The contributions are the single best fit.
+    refine=False
+        Monte Carlo only, as in Sundell & Saylor (2017): the contributions are the mean of
+        the `n_top` best trials.
+
+    Returns
+    -------
+    source_contributions : percent contribution of each source
+    source_std : standard deviation of the `n_top` best Monte Carlo trials, in percent
+    top_distributions : model curves of the `n_top` best trials (refined best fit first)
+    """
+    sink = np.asarray(sink_distribution.y_values, dtype=float)
+    sources = np.array([np.asarray(d.y_values, dtype=float) for d in source_distributions])
+    misfit = _misfit_function(metric)
+    rng = np.random.default_rng(seed)
+
+    try:
+        draw = SAMPLERS[sampler]
+    except KeyError:
+        raise ValueError(f"Unknown sampler '{sampler}'")
+    weights = draw(int(n_trials), len(sources), rng)
+    scores = np.empty(len(weights))
+    chunk = 1000  # bounds memory: chunk x curve length model curves at a time
+    for start in range(0, len(weights), chunk):
+        scores[start:start + chunk] = misfit(weights[start:start + chunk] @ sources, sink)
+    top_weights = weights[np.argsort(scores, kind="stable")[:n_top]]
+
+    if refine:
+        best = _refine(top_weights, sources, sink, misfit)
+        model_weights = [best] + list(top_weights[1:])
+    else:
+        best = top_weights.mean(axis=0)
+        model_weights = list(top_weights)
     x_values = sink_distribution.x_values
-    top_distributions = [Distribution(f"Top_Trial_{i+1}", x_values, y_values) 
-                        for i, y_values in enumerate(top_lines)]
-    
-    random_configurations = [trial.random_configuration for trial in top_trials]
-    source_contributions = np.average(random_configurations, axis=0) * 100
-    source_std = np.std(random_configurations, axis=0) * 100
-    return source_contributions, source_std, top_distributions
-
-def create_trial(args):
-    sink_y_values, sources_y_values, test_type = args
-    return UnmixingTrial(sink_y_values, sources_y_values, metric=test_type)
-
-class UnmixingTrial:
-    def __init__(self, sink_line: [float], source_lines: [[float]], metric: str="cross_correlation"):
-        self.sink_line = sink_line
-        self.source_lines = source_lines
-        self.metric = metric
-        self.random_configuration, self.model_line, self.test_val = self.__do_trial()
-
-    def __do_trial(self):
-        sink_line = self.sink_line
-        source_lines = self.source_lines
-        n_sources = len(source_lines)
-        rands = self.__make_cumulative_random(n_sources)
-        model_line = np.zeros_like(sink_line)
-        for j, source_line in enumerate(source_lines):
-            model_line += source_line * rands[j]
-        if self.metric == "cross_correlation":
-            val = metrics.r2(sink_line, model_line)
-        elif self.metric == "ks":
-            val = metrics.ks(sink_line, model_line)
-        elif self.metric == "kuiper":
-            val = metrics.kuiper(sink_line, model_line)
-        else:
-            raise ValueError(f"Unknown metric '{self.metric}'")
-        return rands, model_line, val
-
-    @staticmethod
-    def __make_cumulative_random(num_samples):
-        rands = [random.random() for _ in range(num_samples)]
-        total = sum(rands)
-        normalized_rands = [rand / total for rand in rands]
-        return normalized_rands
+    top_distributions = [Distribution(f"Top_Trial_{i + 1}", x_values, w @ sources)
+                         for i, w in enumerate(model_weights)]
+    return best * 100, top_weights.std(axis=0) * 100, top_distributions
 
 
 def relative_contribution_graph(
@@ -103,14 +169,17 @@ def relative_contribution_graph(
 def relative_contribution_table(
         contributions: [Contribution],
         metric: str = "cross_correlation",
-        title=f"Relative Contribution Table"
+        title=f"Relative Contribution Table",
+        refined: bool = True,
+        n_top: int = 10
     ):
     sample_names = [contribution.name for contribution in contributions]
     percent_contributions = [contribution.contribution for contribution in contributions]
     standard_deviations = [contribution.standard_deviation for contribution in contributions]
+    estimate = "optimised best fit" if refined else f"mean of best {n_top} trials"
     data = {
-        f"% Contribution (metric={metric})": percent_contributions,
-        "Standard Deviation": standard_deviations
+        f"% Contribution ({estimate}, metric={metric})": percent_contributions,
+        f"Std. Dev. of best {n_top} trials": standard_deviations
     }
     indices = [f"{name}" for name in sample_names]
     df = pd.DataFrame(data, index=indices)

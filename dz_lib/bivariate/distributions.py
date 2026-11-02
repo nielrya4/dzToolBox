@@ -1,6 +1,5 @@
 import numpy as np
 import plotly.graph_objects as go
-import scipy.stats as st
 from dz_lib.bivariate.data import BivariateSample
 from dz_lib.utils import fonts
 from scipy.ndimage import zoom
@@ -14,7 +13,7 @@ class BivariateDistribution:
             mesh_x: [float],
             mesh_y: [float],
             mesh_z: [float],
-            kernel: st.gaussian_kde,
+            kernel,
             sample_x: [float],
             sample_y: [float]
     ):
@@ -25,7 +24,25 @@ class BivariateDistribution:
         self.sample_x = sample_x
         self.sample_y = sample_y
 
-def kde_function_2d(sample: BivariateSample):
+def _product_gaussian_kde(sample_x, sample_y, bandwidth_x, bandwidth_y):
+    """Gaussian KDE with independent x and y bandwidths, callable on a (2, M) array of points."""
+    xs, ys = np.asarray(sample_x, dtype=float), np.asarray(sample_y, dtype=float)
+    norm = 1.0 / (xs.size * 2 * np.pi * bandwidth_x * bandwidth_y)
+
+    def kernel(points):
+        px, py = np.asarray(points, dtype=float)
+        gx = np.exp(-0.5 * ((px[:, None] - xs[None, :]) / bandwidth_x) ** 2)
+        gy = np.exp(-0.5 * ((py[:, None] - ys[None, :]) / bandwidth_y) ** 2)
+        return norm * np.sum(gx * gy, axis=1)
+
+    return kernel
+
+
+def kde_function_2d(sample: BivariateSample, bandwidth_x: float = 50, bandwidth_y: float = 2):
+    """Bivariate KDE of age (x) vs. hafnium (y) on a 100 x 100 grid.
+
+    The defaults (50 Ma, 2 epsilon units) are those of DZstats2D (Sundell et al.).
+    """
     sample_x = [grain.age for grain in sample.grains]
     sample_y = [grain.hafnium for grain in sample.grains]
     deltaX = (max(sample_x) - min(sample_x)) / 10
@@ -35,12 +52,12 @@ def kde_function_2d(sample: BivariateSample):
     ymin = min(sample_y) - deltaY
     ymax = max(sample_y) + deltaY
     mesh_x, mesh_y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-    positions = np.vstack([mesh_x.ravel(), mesh_y.ravel()])
-    values = np.vstack([sample_x, sample_y])
-    kernel = st.gaussian_kde(values)
-    bandwidths = np.array([10, 0.25])
-    kernel.covariance = np.diag(bandwidths ** 2)
-    mesh_z = np.reshape(kernel(positions).T, mesh_x.shape)
+    kernel = _product_gaussian_kde(sample_x, sample_y, float(bandwidth_x), float(bandwidth_y))
+    # The grid is a product of x and y axes, so the density factorises into one matrix product
+    xs, ys = np.asarray(sample_x, dtype=float), np.asarray(sample_y, dtype=float)
+    gx = np.exp(-0.5 * ((mesh_x[:, 0][:, None] - xs[None, :]) / bandwidth_x) ** 2)
+    gy = np.exp(-0.5 * ((mesh_y[0, :][:, None] - ys[None, :]) / bandwidth_y) ** 2)
+    mesh_z = (gx @ gy.T) / (xs.size * 2 * np.pi * bandwidth_x * bandwidth_y)
     bivariate_distro = BivariateDistribution(mesh_x, mesh_y, mesh_z, kernel, sample_x, sample_y)
     return bivariate_distro
 

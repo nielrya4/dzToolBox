@@ -289,6 +289,10 @@ document.getElementById('heatmap_modal').addEventListener('shown.bs.modal', asyn
         const featureXSelect = document.getElementById('heatmap_feature_x');
         const featureYSelect = document.getElementById('heatmap_feature_y');
 
+        // Keep the current choices (e.g. prefilled when reconfiguring an output) across the rebuild
+        const previousX = featureXSelect.value;
+        const previousY = featureYSelect.value;
+
         // Clear existing options (except the first placeholder)
         featureXSelect.innerHTML = '<option value="" disabled selected>Select feature...</option>';
         featureYSelect.innerHTML = '<option value="" disabled selected>Select feature...</option>';
@@ -305,6 +309,12 @@ document.getElementById('heatmap_modal').addEventListener('shown.bs.modal', asyn
             optionY.textContent = feature;
             featureYSelect.appendChild(optionY);
         });
+        if (previousX !== '' && featureXSelect.querySelector('option[value="' + previousX + '"]')) {
+            featureXSelect.value = previousX;
+        }
+        if (previousY !== '' && featureYSelect.querySelector('option[value="' + previousY + '"]')) {
+            featureYSelect.value = previousY;
+        }
     } catch (error) {
         console.error('Error fetching feature names:', error);
     }

@@ -338,6 +338,28 @@ def _refine_peak_parabolic(x: np.ndarray, y: np.ndarray, i: int) -> float:
     return float(x[i] + delta * (x[1] - x[0]))
 
 
+def _refine_peak_gauss_window(x: np.ndarray, y: np.ndarray, i: int, half_width: int = 10) -> float:
+    """Sub-grid peak position from a least-squares Gaussian fitted to the grid points
+    i - half_width .. i + half_width (the Python implementation's refinement, via
+    peakutils.interpolate). Falls back to the grid position if the fit fails or its
+    centre leaves that window.
+    """
+    lo, hi = max(i - half_width, 0), min(i + half_width, y.size - 1)
+    xs, ys = x[lo:hi + 1], y[lo:hi + 1]
+    if xs.size < 3:
+        return float(x[i])
+    from scipy.optimize import curve_fit
+    gauss = lambda t, amp, mu, dev: amp * np.exp(-(t - mu) ** 2 / (2.0 * dev ** 2))
+    try:
+        (_, mu, _), _ = curve_fit(gauss, xs, ys, p0=(float(ys.max()), float(xs[0]), 5.0 * float(x[1] - x[0])),
+                                  maxfev=10000)
+    except (RuntimeError, ValueError):
+        return float(x[i])
+    if not (math.isfinite(mu) and x[lo] <= mu <= x[hi]):
+        return float(x[i])
+    return float(mu)
+
+
 def _fit_gaussian_segment(x: np.ndarray, y: np.ndarray) -> tuple[float, float] | None:
     """Least-squares Gaussian fit to a density segment. Returns (mu, sigma).
 
@@ -364,6 +386,74 @@ def _fit_gaussian_segment(x: np.ndarray, y: np.ndarray) -> tuple[float, float] |
     if mu < xs.min() - 3 * sigma or mu > xs.max() + 3 * sigma:
         return None
     return float(mu), float(sigma)
+
+
+PeakWindow = Literal["troughs", "nearest_trough", "inflection"]
+PeakFit = Literal["log_quadratic", "least_squares"]
+
+
+def _peak_window(x: np.ndarray, y: np.ndarray, i: int, tr: np.ndarray,
+                 window: PeakWindow) -> tuple[int, int]:
+    """Index bounds of the curve segment a Gaussian is fitted to around peak i.
+
+    window='troughs'
+        From the density minimum below the peak to the one above it.
+    window='nearest_trough'
+        Symmetric about the peak, out to the distance of the nearest minimum on
+        either side (the MATLAB implementation's construction).
+    window='inflection'
+        Between the inflection points flanking the peak (sign changes of the
+        second derivative), as in the Python implementation, following Saylor
+        et al. (2023): "fit to the portion of the PDP that included the
+        youngest inflection point".
+    """
+    last = y.size - 1
+    if window == "troughs":
+        lo = int(tr[tr < i].max()) if np.any(tr < i) else 0
+        hi = int(tr[tr > i].min()) if np.any(tr > i) else last
+        return lo, hi
+    if window == "nearest_trough":
+        if tr.size == 0:
+            return 0, last
+        half = float(np.min(np.abs(x[tr] - x[i])))
+        lo = int(np.argmin(np.abs(x - (x[i] - half))))
+        hi = int(np.argmin(np.abs(x - (x[i] + half))))
+        return lo, hi
+    if window == "inflection":
+        d2 = np.gradient(np.gradient(y, x), x)
+        lo = next((k for k in range(i - 1, 0, -1) if d2[k] * d2[k - 1] <= 0), 0)
+        hi = next((k for k in range(i + 1, last) if d2[k] * d2[k + 1] <= 0), last)
+        return lo, hi
+    raise ValueError(f"unknown window: {window!r}")
+
+
+def _fit_peak(x: np.ndarray, y: np.ndarray, i: int, tr: np.ndarray,
+              window: PeakWindow = "troughs",
+              fit: PeakFit = "log_quadratic") -> tuple[float, float] | None:
+    """Gaussian (mu, sigma) fitted to the segment around peak i.
+
+    fit='log_quadratic'
+        Closed-form weighted fit to log(y) (_fit_gaussian_segment).
+    fit='least_squares'
+        Ordinary nonlinear least squares of A*exp(-(x-mu)^2 / (2 sigma^2)) to y,
+        which is what MATLAB's fit(..., 'gauss1') and scipy's curve_fit do.
+    """
+    lo, hi = _peak_window(x, y, i, tr, window)
+    if hi - lo < 2:
+        return None
+    xs, ys = x[lo:hi + 1], y[lo:hi + 1]
+    if fit == "log_quadratic":
+        return _fit_gaussian_segment(xs, ys)
+    from scipy.optimize import curve_fit
+    gauss = lambda t, amp, mu, sig: amp * np.exp(-0.5 * ((t - mu) / sig) ** 2)
+    try:
+        (_, mu, sig), _ = curve_fit(
+            gauss, xs, ys, p0=(float(y[i]), float(x[i]), max(float(xs[-1] - xs[0]) / 2.0, 1e-3)),
+            bounds=([0.0, float(x[0]), 1e-6], [np.inf, float(x[-1]), float(x[-1] - x[0])]),
+            maxfev=10000)
+    except (RuntimeError, ValueError):
+        return None
+    return float(mu), float(sig)
 
 
 # --------------------------------------------------------------------------- #
@@ -476,7 +566,8 @@ def ysg(sample: Sample, *, rank_by: RankBy = "age+1s") -> MDAResult:
 
 def yc(sample: Sample, *, k_sigma: float = 1.0, min_n: int = 2,
        rank_by: RankBy | None = None, anchor: Anchor = "scan",
-       contiguous: bool = True, mutual: bool = False) -> MDAResult:
+       contiguous: bool = True, mutual: bool = False,
+       inclusive: bool = True) -> MDAResult:
     """Youngest grain cluster, YC{k}s({min_n}+) (Dickinson & Gehrels, 2009).
 
     YC1s(2+) is k_sigma=1, min_n=2. YC2s(3+) is k_sigma=2, min_n=3.
@@ -490,11 +581,13 @@ def yc(sample: Sample, *, k_sigma: float = 1.0, min_n: int = 2,
     label = f"YC{int(k_sigma)}s({min_n}+)"
     res = MDAResult(label, convention=dict(
         k_sigma=k_sigma, min_n=min_n, rank_by=rank_by, anchor=anchor,
-        contiguous=contiguous, mutual=mutual, sigma_in=sample.sigma_in))
+        contiguous=contiguous, mutual=mutual, inclusive=inclusive,
+        sigma_in=sample.sigma_in))
 
     idx = _youngest_cluster(sample.age, sample.s1, k_sigma=k_sigma,
                             min_n=min_n, rank_by=rank_by, anchor=anchor,
-                            contiguous=contiguous, mutual=mutual)
+                            contiguous=contiguous, mutual=mutual,
+                            inclusive=inclusive)
     if idx.size == 0:
         res.note = f"no cluster of >= {min_n} grains overlapping at {k_sigma} sigma"
         return res
@@ -520,7 +613,8 @@ def y3za(sample: Sample, *, n_grains: int = 3, rank_by: RankBy = "age") -> MDARe
 
 def y3zo(sample: Sample, *, n_grains: int = 3, k_sigma: float = 2.0,
          rank_by: RankBy | None = None, anchor: Anchor = "scan",
-         contiguous: bool = True, mutual: bool = False) -> MDAResult:
+         contiguous: bool = True, mutual: bool = False,
+         inclusive: bool = True) -> MDAResult:
     """Weighted mean of the youngest n grains that overlap at k sigma (Y3Zo).
 
     Coutts et al. (2019). Implemented as: find the youngest qualifying cluster,
@@ -533,11 +627,13 @@ def y3zo(sample: Sample, *, n_grains: int = 3, k_sigma: float = 2.0,
 
     res = MDAResult(f"Y{n_grains}Zo", convention=dict(
         n_grains=n_grains, k_sigma=k_sigma, rank_by=rank_by, anchor=anchor,
-        contiguous=contiguous, mutual=mutual, sigma_in=sample.sigma_in))
+        contiguous=contiguous, mutual=mutual, inclusive=inclusive,
+        sigma_in=sample.sigma_in))
 
     idx = _youngest_cluster(sample.age, sample.s1, k_sigma=k_sigma,
                             min_n=n_grains, rank_by=rank_by, anchor=anchor,
-                            contiguous=contiguous, mutual=mutual)
+                            contiguous=contiguous, mutual=mutual,
+                            inclusive=inclusive)
     if idx.size == 0:
         res.note = f"no cluster of >= {n_grains} grains overlapping at {k_sigma} sigma"
         return res
@@ -549,9 +645,10 @@ def y3zo(sample: Sample, *, n_grains: int = 3, k_sigma: float = 2.0,
 def ypp(sample: Sample, *, min_n: int = 2, basis: Literal["pdp", "kde"] = "pdp",
         bandwidth: float = 10.0, step: float = 0.1,
         prominence_frac: float = 0.01, min_sep_myr: float = 0.0,
-        peak_position: Literal["grid", "parabolic", "gaussfit"] = "parabolic",
+        peak_position: Literal["grid", "parabolic", "gauss_window", "gaussfit"] = "parabolic",
         count_rule: Literal["grain_brackets_peak", "interval_overlap"] = "grain_brackets_peak",
-        count_sigma: float = 2.0) -> MDAResult:
+        count_sigma: float = 2.0, window: PeakWindow = "troughs",
+        fit: PeakFit = "log_quadratic") -> MDAResult:
     """Youngest graphical / probability peak (Dickinson & Gehrels, 2009).
 
     Four independent choices decide the answer, and all four are exposed:
@@ -582,7 +679,8 @@ def ypp(sample: Sample, *, min_n: int = 2, basis: Literal["pdp", "kde"] = "pdp",
         min_n=min_n, basis=basis, bandwidth=bandwidth, step=step,
         prominence_frac=prominence_frac, min_sep_myr=min_sep_myr,
         peak_position=peak_position, count_rule=count_rule,
-        count_sigma=count_sigma, sigma_in=sample.sigma_in))
+        count_sigma=count_sigma, window=window, fit=fit,
+        sigma_in=sample.sigma_in))
     if sample.n == 0:
         res.note = "empty sample"
         return res
@@ -606,25 +704,25 @@ def ypp(sample: Sample, *, min_n: int = 2, basis: Literal["pdp", "kde"] = "pdp",
             mu, sig = float(x[i]), None
         elif peak_position == "parabolic":
             mu, sig = _refine_peak_parabolic(x, y, i), None
+        elif peak_position == "gauss_window":
+            mu, sig = _refine_peak_gauss_window(x, y, i), None
         else:
-            lo_b = tr[tr < i].max() if np.any(tr < i) else 0
-            hi_b = tr[tr > i].min() if np.any(tr > i) else y.size - 1
-            fit = _fit_gaussian_segment(x[lo_b:hi_b + 1], y[lo_b:hi_b + 1])
-            if fit is None:
+            peak_fit = _fit_peak(x, y, i, tr, window, fit)
+            if peak_fit is None:
                 continue
-            mu, sig = fit
+            mu, sig = peak_fit
 
         if count_rule == "grain_brackets_peak":
-            members = np.flatnonzero((a - count_sigma * s <= mu) &
-                                     (mu <= a + count_sigma * s))
+            # The Python implementation counts grains against the grid peak, not the refined one
+            at = float(x[i]) if peak_position == "gauss_window" else mu
+            members = np.flatnonzero((a - count_sigma * s <= at) &
+                                     (at <= a + count_sigma * s))
         else:
             if sig is None:
-                lo_b = tr[tr < i].max() if np.any(tr < i) else 0
-                hi_b = tr[tr > i].min() if np.any(tr > i) else y.size - 1
-                fit = _fit_gaussian_segment(x[lo_b:hi_b + 1], y[lo_b:hi_b + 1])
-                if fit is None:
+                peak_fit = _fit_peak(x, y, i, tr, window, fit)
+                if peak_fit is None:
                     continue
-                sig = fit[1]
+                sig = peak_fit[1]
             w_lo, w_hi = mu - 2 * sig, mu + 2 * sig
             members = np.flatnonzero((a + count_sigma * s >= w_lo) &
                                      (a - count_sigma * s <= w_hi))
@@ -647,16 +745,25 @@ def ypp(sample: Sample, *, min_n: int = 2, basis: Literal["pdp", "kde"] = "pdp",
 
 
 def ygf(sample: Sample, *, min_n: int = 3, step: float = 0.1,
-        prominence_frac: float = 0.0) -> MDAResult:
+        prominence_frac: float = 0.0, window: PeakWindow = "troughs",
+        fit: PeakFit = "log_quadratic",
+        count_rule: Literal["ages_in_2sigma", "interval_overlap"] = "ages_in_2sigma",
+        count_sigma: float = 2.0) -> MDAResult:
     """Youngest Gaussian fit (Saylor et al., 2023).
 
-    Fits a Gaussian to the youngest PDP mode, bounded by the flanking density
-    minima, and reports its mean. Unlike YPP this yields a width, but that
-    width is the dispersion of the mode, not the precision of the estimate, so
-    it should not be read as a standard error.
+    Fits a Gaussian to the youngest PDP mode and reports its mean. Unlike YPP
+    this yields a width, but that width is the dispersion of the mode, not the
+    precision of the estimate, so it should not be read as a standard error.
+    `window` and `fit` choose the fitted segment and fitting method (see
+    _peak_window / _fit_peak). A mode is accepted once `min_n` grains support
+    it: ages inside mu +/- 2 sigma ('ages_in_2sigma'), or grains whose
+    +/- count_sigma interval overlaps that window ('interval_overlap').
     """
     res = MDAResult("YGF", convention=dict(min_n=min_n, step=step,
                                            prominence_frac=prominence_frac,
+                                           window=window, fit=fit,
+                                           count_rule=count_rule,
+                                           count_sigma=count_sigma,
                                            sigma_in=sample.sigma_in))
     if sample.n == 0:
         res.note = "empty sample"
@@ -672,13 +779,15 @@ def ygf(sample: Sample, *, min_n: int = 3, step: float = 0.1,
 
     a, s = sample.age, sample.s1
     for i in pk:
-        lo_b = tr[tr < i].max() if np.any(tr < i) else 0
-        hi_b = tr[tr > i].min() if np.any(tr > i) else y.size - 1
-        fit = _fit_gaussian_segment(x[lo_b:hi_b + 1], y[lo_b:hi_b + 1])
-        if fit is None:
+        peak_fit = _fit_peak(x, y, i, tr, window, fit)
+        if peak_fit is None:
             continue
-        mu, sig = fit
-        members = np.flatnonzero((a >= mu - 2 * sig) & (a <= mu + 2 * sig))
+        mu, sig = peak_fit
+        if count_rule == "ages_in_2sigma":
+            members = np.flatnonzero((a >= mu - 2 * sig) & (a <= mu + 2 * sig))
+        else:
+            members = np.flatnonzero((a + count_sigma * s >= mu - 2 * sig) &
+                                     (a - count_sigma * s <= mu + 2 * sig))
         if members.size >= min_n:
             res.mda = mu
             res.unc_1s = sig
@@ -769,7 +878,8 @@ def ysp(sample: Sample, *, min_n: int = 2, rank_by: RankBy = "age",
 
 def tau(sample: Sample, *, min_n: int = 3, step: float = 0.1,
         prominence_frac: float = 0.0,
-        bounds: Literal["troughs", "gauss2s"] = "troughs") -> MDAResult:
+        bounds: Literal["troughs", "gauss2s"] = "troughs",
+        window: PeakWindow = "troughs", fit: PeakFit = "log_quadratic") -> MDAResult:
     """Tau method (Barbeau et al., 2009).
 
     Weighted mean of the grains belonging to the youngest PDP mode that holds
@@ -782,7 +892,8 @@ def tau(sample: Sample, *, min_n: int = 3, step: float = 0.1,
     bounds='gauss2s'
         Grains within +/- 2 sigma of a Gaussian fitted to the trough-bounded
         mode. Smoother and less trough-sensitive, but it can reach across a
-        trough and pull in grains from a neighbouring mode.
+        trough and pull in grains from a neighbouring mode. `window` and `fit`
+        choose how that Gaussian is fitted (see _fit_peak).
 
     These two give the same answer on well-separated modes and different
     answers exactly where MDAs are hardest, which is a good reason to report
@@ -790,7 +901,7 @@ def tau(sample: Sample, *, min_n: int = 3, step: float = 0.1,
     """
     res = MDAResult("Tau", convention=dict(
         min_n=min_n, step=step, prominence_frac=prominence_frac,
-        bounds=bounds, sigma_in=sample.sigma_in))
+        bounds=bounds, window=window, fit=fit, sigma_in=sample.sigma_in))
     if sample.n == 0:
         res.note = "empty sample"
         return res
@@ -811,10 +922,10 @@ def tau(sample: Sample, *, min_n: int = 3, step: float = 0.1,
         if bounds == "troughs":
             lo_a, hi_a = float(x[lo_i]), float(x[hi_i])
         else:
-            fit = _fit_gaussian_segment(x[lo_i:hi_i + 1], y[lo_i:hi_i + 1])
-            if fit is None:
+            peak_fit = _fit_peak(x, y, i, tr, window, fit)
+            if peak_fit is None:
                 continue
-            mu, sig = fit
+            mu, sig = peak_fit
             lo_a, hi_a = mu - 2 * sig, mu + 2 * sig
 
         idx = np.flatnonzero((a >= lo_a) & (a <= hi_a))
@@ -1008,22 +1119,33 @@ PRESETS: dict[str, dict] = {
         yc2s=dict(k_sigma=2.0, min_n=3, rank_by="age+2s", anchor="scan", contiguous=True),
         y3za=dict(rank_by="age"),
         y3zo=dict(k_sigma=2.0, rank_by="age+2s", anchor="scan", contiguous=True),
-        ypp=dict(min_n=2, peak_position="parabolic", prominence_frac=0.01,
+        ypp=dict(min_n=2, peak_position="gauss_window", prominence_frac=0.01,
                  min_sep_myr=0.0, count_rule="grain_brackets_peak", count_sigma=2.0),
+        ygf=dict(min_n=3, prominence_frac=0.01, window="inflection", fit="least_squares"),
         ysp=dict(rank_by="age", entry_rule="pair", target_mswd=1.0),
         tau=dict(min_n=3, bounds="troughs", prominence_frac=0.01),
     ),
-    # Reproduces the conventions of the widely used MATLAB implementation.
+    # Reproduces the widely used MATLAB implementation with its shipped GUI
+    # defaults: "sort by age + uncertainty" and "include youngest grain"
+    # (the youngest grain seeds every cluster; overlap tested with a strict <),
+    # and YSP with no acceptance test (MSWD closest to 1 over all subsets).
     "matlab_toolset": dict(
-        ysg=dict(rank_by="age"),
-        yc1s=dict(k_sigma=1.0, min_n=2, rank_by="age", anchor="scan", contiguous=True),
-        yc2s=dict(k_sigma=2.0, min_n=3, rank_by="age", anchor="scan", contiguous=True),
+        ysg=dict(rank_by="age+2s"),
+        yc1s=dict(k_sigma=1.0, min_n=1, rank_by="age+1s", anchor="youngest",
+                  contiguous=True, inclusive=False),
+        yc2s=dict(k_sigma=2.0, min_n=3, rank_by="age+2s", anchor="youngest",
+                  contiguous=True, inclusive=False),
         y3za=dict(rank_by="age"),
-        y3zo=dict(k_sigma=2.0, rank_by="age", anchor="scan", contiguous=True),
+        y3zo=dict(k_sigma=2.0, rank_by="age+2s", anchor="youngest",
+                  contiguous=True, inclusive=False),
         ypp=dict(min_n=2, peak_position="gaussfit", prominence_frac=0.0,
-                 min_sep_myr=0.0, count_rule="interval_overlap", count_sigma=2.0),
-        ysp=dict(rank_by="age", entry_rule="global", target_mswd=1.0),
-        tau=dict(min_n=3, bounds="gauss2s", prominence_frac=0.0),
+                 min_sep_myr=0.0, count_rule="interval_overlap", count_sigma=2.0,
+                 window="nearest_trough", fit="least_squares"),
+        ygf=dict(min_n=2, prominence_frac=0.0, window="nearest_trough", fit="least_squares",
+                 count_rule="interval_overlap", count_sigma=2.0),
+        ysp=dict(rank_by="age", entry_rule="none", target_mswd=1.0),
+        tau=dict(min_n=2, bounds="gauss2s", prominence_frac=0.0,
+                 window="nearest_trough", fit="least_squares"),
     ),
     # Recommended defaults: rank on the scale the overlap test uses, let an
     # outlying youngest grain be dropped, require a real peak, and prefer the

@@ -3,6 +3,7 @@ from dz_lib.univariate.data import Sample
 from dz_lib.utils import fonts
 from sklearn.manifold import MDS
 from sklearn.isotonic import IsotonicRegression
+from scipy.optimize import minimize
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -20,16 +21,19 @@ def _compute_dissimilarity_matrix(samples: list[Sample], metric: str = "similari
     """
     Build the pairwise dissimilarity matrix for a list of samples.
 
+    Similarity, likeness and cross-correlation compare the samples' PDPs (KDEs when the
+    caller has set grain uncertainties to a bandwidth). KS D and Kuiper V compare the
+    empirical CDFs of the ages, as in DZmds and detritalPy.
+
     Returns
     -------
     dissimilarity_matrix : ndarray, shape (n, n)
     prob_distros : list of distribution objects
-    c_distros : list of CDF distribution objects
     """
     n_samples = len(samples)
     dissimilarity_matrix = np.zeros((n_samples, n_samples))
     prob_distros = [distributions.pdp_function(sample) for sample in samples]
-    c_distros = [distributions.cdf_function(prob_distro) for prob_distro in prob_distros]
+    ages = [sample.get_ages() for sample in samples]
 
     for i in range(n_samples):
         for j in range(i + 1, n_samples):
@@ -40,66 +44,128 @@ def _compute_dissimilarity_matrix(samples: list[Sample], metric: str = "similari
             elif metric == "cross_correlation":
                 value = metrics.dis_r2(prob_distros[i].y_values, prob_distros[j].y_values)
             elif metric == "ks":
-                value = metrics.ks(c_distros[i].y_values, c_distros[j].y_values)
+                value = metrics.ks_ages(ages[i], ages[j])
             elif metric == "kuiper":
-                value = metrics.kuiper(c_distros[i].y_values, c_distros[j].y_values)
+                value = metrics.kuiper_ages(ages[i], ages[j])
             else:
                 raise ValueError(f"Unknown metric '{metric}'")
 
             dissimilarity_matrix[i, j] = value
             dissimilarity_matrix[j, i] = value  # matrix is symmetric
 
-    return dissimilarity_matrix, prob_distros, c_distros
+    return dissimilarity_matrix, prob_distros
+
+
+def _classical_mds(dissimilarity_matrix: np.ndarray, n_components: int = 2) -> np.ndarray:
+    """Classical (Torgerson) MDS, MATLAB cmdscale: the default start for mdscale."""
+    n = dissimilarity_matrix.shape[0]
+    centering = np.eye(n) - 1.0 / n
+    b = -0.5 * centering @ (dissimilarity_matrix ** 2) @ centering
+    eigenvalues, eigenvectors = np.linalg.eigh(b)
+    top = np.argsort(eigenvalues)[::-1][:n_components]
+    return eigenvectors[:, top] * np.sqrt(np.maximum(eigenvalues[top], 1e-12))
+
+
+def _kruskal_stress(dissimilarity_matrix: np.ndarray, embedding: np.ndarray, non_metric: bool):
+    """Kruskal stress-1 of `embedding`, plus its pairwise distances and fitted disparities."""
+    upper = np.triu_indices_from(dissimilarity_matrix, k=1)
+    dissimilarities = dissimilarity_matrix[upper]
+    distances = np.linalg.norm(embedding[upper[0]] - embedding[upper[1]], axis=1)
+    if non_metric:
+        fitted = IsotonicRegression().fit_transform(dissimilarities, distances)
+    else:
+        fitted = dissimilarities
+    denom = np.sum(distances ** 2)
+    stress = float(np.sqrt(np.sum((distances - fitted) ** 2) / denom)) if denom > 0 else 0.0
+    return stress, dissimilarities, distances
+
+
+def _polish_stress1(dissimilarity_matrix: np.ndarray, embedding: np.ndarray, non_metric: bool) -> np.ndarray:
+    """Minimise Kruskal stress-1 directly from a good start (mdscale's 'stress' criterion).
+
+    SMACOF minimises raw stress, which is close to but not the same as stress-1, so a few
+    L-BFGS steps on stress-1 itself finish the job. The result is kept only if it lowers
+    stress-1 without collapsing the map (non-metric stress-1 is also zero when every
+    distance is equal, or when points merge into tight clusters).
+    """
+    n, dims = embedding.shape
+    upper = np.triu_indices(n, k=1)
+    dissimilarities = dissimilarity_matrix[upper]
+    isotonic = IsotonicRegression()
+
+    def stress_and_gradient(flat):
+        coords = flat.reshape(n, dims)
+        diff = coords[:, None, :] - coords[None, :, :]
+        dist_full = np.sqrt((diff ** 2).sum(-1))
+        d = dist_full[upper]
+        d_hat = isotonic.fit_transform(dissimilarities, d) if non_metric else dissimilarities
+        raw, norm = np.sum((d - d_hat) ** 2), np.sum(d ** 2)
+        stress = np.sqrt(raw / norm)
+        grad_d = ((d - d_hat) / norm - raw * d / norm ** 2) / max(stress, 1e-15)
+        g = np.zeros((n, n))
+        g[upper] = grad_d
+        g = g + g.T
+        with np.errstate(divide="ignore", invalid="ignore"):
+            weights = np.where(dist_full > 0, g / dist_full, 0.0)
+        return stress, (weights[:, :, None] * diff).sum(1).ravel()
+
+    start_stress = stress_and_gradient(embedding.ravel())[0]
+    result = minimize(stress_and_gradient, embedding.ravel(), jac=True, method="L-BFGS-B",
+                      options={"maxiter": 2000})
+    polished = result.x.reshape(n, dims)
+    d = np.linalg.norm(polished[upper[0]] - polished[upper[1]], axis=1)
+    collapsed = d.mean() == 0 or d.std() / d.mean() < 0.1 or np.mean(d < 1e-3 * d.max()) > 0.05
+    if result.fun < start_stress and not collapsed:
+        return polished - polished.mean(0)
+    return embedding
 
 
 def _compute_mds(dissimilarity_matrix: np.ndarray, non_metric: bool = True):
     """
     Run MDS on a precomputed dissimilarity matrix.
 
-    - Exposes n_init and max_iter for a more stable solution.
-    - Computes Kruskal stress-1 from the final embedding:
-      sqrt(sum((d - d_hat)^2) / sum(d^2)), where d are the embedding distances and d_hat
-      the dissimilarities (metric) or their isotonic fit to d (non-metric). sklearn's raw
-      stress can't be used directly: for non-metric MDS it is on sklearn's internal
-      normalized scale, not the dissimilarities' scale.
-    - Metric MDS embeddings are already in dissimilarity units and are left as they are.
-      Non-metric embeddings come out on an arbitrary scale, so they are rescaled so the
-      largest distance equals the largest dissimilarity, the same convention as MATLAB's
-      mdscale (and so DZmds; Saylor et al., 2017). That keeps the axes and the Shepard
-      plot's 1:1 line in dissimilarity units, so more dissimilar samples spread further
-      apart, without changing the configuration's shape or the stress (scale-invariant).
+    - Metric MDS: SMACOF from 10 seeded random starts plus the classical MDS solution.
+    - Non-metric MDS: SMACOF started from the classical MDS solution and from the metric
+      MDS solution; the start reaching the lower stress-1 wins. Random starts are not used:
+      with more than ~12 samples, scikit-learn's non-metric SMACOF from random starts
+      stalls far from the optimum (stress-1 ~0.4 where ~0.05 is reachable), giving maps
+      that bear no relation to the data and change from run to run.
+    - The winner is then polished by minimising stress-1 directly (_polish_stress1).
+    - Stress is Kruskal stress-1, sqrt(sum((d - d_hat)^2) / sum(d^2)), with d_hat the
+      dissimilarities (metric) or their isotonic fit to d (non-metric). sklearn's raw stress
+      can't be used directly: for non-metric MDS it is on sklearn's internal scale.
+    - Non-metric embeddings come out on an arbitrary scale, so they are rescaled so the
+      largest distance equals the largest dissimilarity, the convention of MATLAB's mdscale
+      (and so DZmds; Saylor et al., 2017). Shape and stress are unchanged by this.
 
     Returns
     -------
-    mds_result   : fitted sklearn MDS object (stress_ attribute is raw sklearn stress)
+    mds_result   : fitted sklearn MDS object of the chosen solution
     embedding    : ndarray, shape (n, 2), 2-D coordinates in dissimilarity units
     kruskal_stress : float, Kruskal stress-1 in [0, 1]
     """
-    mds_result = MDS(
-        n_components=2,
-        dissimilarity="precomputed",
-        metric=(not non_metric),
-        normalized_stress=False,
-        n_init=10,                 # more random restarts → more stable solution
-        max_iter=1000,
-    )
-    embedding = mds_result.fit_transform(dissimilarity_matrix)
+    classical = _classical_mds(dissimilarity_matrix)
 
-    upper = np.triu_indices_from(dissimilarity_matrix, k=1)
-    dissimilarities = dissimilarity_matrix[upper]
-    distances = np.linalg.norm(embedding[upper[0]] - embedding[upper[1]], axis=1)
+    def smacof(metric, init=None, n_init=1, random_state=None):
+        model = MDS(n_components=2, dissimilarity="precomputed", metric=metric,
+                    normalized_stress=False, n_init=n_init, max_iter=1000, random_state=random_state)
+        return model, model.fit_transform(dissimilarity_matrix, init=init)
 
+    metric_candidates = [smacof(True, n_init=10, random_state=0), smacof(True, init=classical)]
     if non_metric:
-        if distances.max() > 0:
-            scale = dissimilarities.max() / distances.max()
-            embedding = embedding * scale
-            distances = distances * scale
-        fitted = IsotonicRegression().fit_transform(dissimilarities, distances)
+        best_metric = min(metric_candidates,
+                          key=lambda c: _kruskal_stress(dissimilarity_matrix, c[1], False)[0])
+        candidates = [smacof(False, init=classical), smacof(False, init=best_metric[1])]
     else:
-        fitted = dissimilarities
+        candidates = metric_candidates
+    mds_result, embedding = min(
+        candidates, key=lambda c: _kruskal_stress(dissimilarity_matrix, c[1], non_metric)[0])
+    embedding = _polish_stress1(dissimilarity_matrix, embedding, non_metric)
 
-    denom = np.sum(distances ** 2)
-    kruskal_stress = float(np.sqrt(np.sum((distances - fitted) ** 2) / denom)) if denom > 0 else 0.0
+    _, dissimilarities, distances = _kruskal_stress(dissimilarity_matrix, embedding, non_metric)
+    if non_metric and distances.max() > 0:
+        embedding = embedding * (dissimilarities.max() / distances.max())
+    kruskal_stress, _, _ = _kruskal_stress(dissimilarity_matrix, embedding, non_metric)
 
     return mds_result, embedding, kruskal_stress
 
@@ -117,7 +183,7 @@ def mds_function(samples: list[Sample], metric: str = "similarity", non_metric: 
     mds_result         : fitted sklearn MDS object
     """
     n_samples = len(samples)
-    dissimilarity_matrix, prob_distros, c_distros = _compute_dissimilarity_matrix(samples, metric)
+    dissimilarity_matrix, prob_distros = _compute_dissimilarity_matrix(samples, metric)
     mds_result, embedding, kruskal_stress = _compute_mds(dissimilarity_matrix, non_metric=non_metric)
 
     # Build an index map once so nearest-neighbour lookup is O(1)

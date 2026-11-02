@@ -115,6 +115,18 @@
                                 </div>
 
                                 <div class="settings-group">
+                                    <label for="bivariate_bandwidth_x" class="settings-label">Bivariate KDE Bandwidth, Age</label>
+                                    <input type="number" class="form-control settings-input" id="bivariate_bandwidth_x" name="bivariate_bandwidth_x" value="50" min="0" step="any" required>
+                                    <small class="settings-hint">Age (x) bandwidth for 2D KDEs, in Ma (DZstats2D default: 50)</small>
+                                </div>
+
+                                <div class="settings-group">
+                                    <label for="bivariate_bandwidth_y" class="settings-label">Bivariate KDE Bandwidth, Hafnium</label>
+                                    <input type="number" class="form-control settings-input" id="bivariate_bandwidth_y" name="bivariate_bandwidth_y" value="2" min="0" step="any" required>
+                                    <small class="settings-hint">Hafnium (y) bandwidth for 2D KDEs, in epsilon units (DZstats2D default: 2)</small>
+                                </div>
+
+                                <div class="settings-group">
                                     <label for="n_trials" class="settings-label">Unmixing Trials</label>
                                     <input type="number" class="form-control settings-input" id="n_trials" name="n_trials" required>
                                     <small class="settings-hint">Number of Monte Carlo trials for unmixing calculations</small>
@@ -617,6 +629,8 @@ document.getElementById('project_settings_modal').addEventListener('show.bs.moda
 
             // Data settings
             document.getElementById('kde_bandwidth').value = settings.kde_bandwidth || 10;
+            document.getElementById('bivariate_bandwidth_x').value = settings.bivariate_bandwidth_x || 50;
+            document.getElementById('bivariate_bandwidth_y').value = settings.bivariate_bandwidth_y || 2;
             document.getElementById('n_trials').value = settings.n_unmix_trials || 10000;
             document.getElementById('matrix_function_type').value = settings.matrix_function_type || 'kde';
             document.getElementById('multivariate_kde_points').value = settings.multivariate_kde_points || 128;
@@ -660,6 +674,8 @@ document.getElementById('update_settings').addEventListener('click', function() 
     const sigmaIn = document.getElementById('sigma_in').value;
     const sigmaOut = document.getElementById('sigma_out').value;
     const kdeBandwidth = document.getElementById('kde_bandwidth').value;
+    const bivariateBandwidthX = parseFloat(document.getElementById('bivariate_bandwidth_x').value);
+    const bivariateBandwidthY = parseFloat(document.getElementById('bivariate_bandwidth_y').value);
     const nTrials = document.getElementById('n_trials').value;
     const matrixFunctionType = document.getElementById('matrix_function_type').value;
     const kdePoints = parseInt(document.getElementById('multivariate_kde_points').value);
@@ -681,6 +697,11 @@ document.getElementById('update_settings').addEventListener('click', function() 
     // Validate required fields
     if (!minAge || !maxAge || !kdeBandwidth || !nTrials || !fontSize || !figureWidth || !figureHeight) {
         alert('Please fill in all required fields.');
+        return;
+    }
+
+    if (!(bivariateBandwidthX > 0) || !(bivariateBandwidthY > 0)) {
+        alert('Bivariate KDE bandwidths must be positive numbers.');
         return;
     }
 
@@ -710,6 +731,8 @@ document.getElementById('update_settings').addEventListener('click', function() 
         "kde_bandwidth": parseFloat(kdeBandwidth),
         "matrix_function_type": matrixFunctionType,
         "multivariate_kde_points": kdePoints,
+        "bivariate_bandwidth_x": bivariateBandwidthX,
+        "bivariate_bandwidth_y": bivariateBandwidthY,
         "stack_graphs": stackGraphs,
         "n_unmix_trials": parseInt(nTrials),
         "font_size": parseFloat(fontSize),

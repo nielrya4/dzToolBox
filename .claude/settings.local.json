@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(find:*)",
+      "Bash(pyenv:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(tree:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(grep:*)",
+      "Bash(.venv/bin/pip:*)",
+      "WebSearch",
+      "WebFetch(domain:link.springer.com)",
+      "Bash(chmod:*)",
+      "Bash(redis-cli ping)",
+      "Bash(python3:*)",
+      "Bash(celery -A celery_tasks inspect active:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(pkill:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(git clone:*)",
+      "Bash(xargs kill:*)",
+      "Bash(systemctl:*)",
+      "Bash(/home/ryan/PycharmProjects/dzToolBox/.venv/julia_env/pyjuliapkg/install/bin/julia:*)",
+      "Bash(julia -e:*)",
+      "Bash(ls:*)",
+      "Bash(git -C /home/ryan/PycharmProjects/dzToolBox log --oneline)",
+      "Bash(wc:*)",
+      "Bash(git stash:*)",
+      "WebFetch(domain:mpf-optimization-laboratory.github.io)"
+    ],
+    "deny": []
+  }
+}

@@ -113,8 +113,10 @@ class Sample:
         return np.array([grain.uncertainty_2s for grain in self.grains])
 
     def replace_grain_uncertainties(self, bandwidth: float):
+        # A KDE bandwidth is a 1-sigma kernel width, whatever sigma the input data used
         for grain in self.grains:
             grain._uncertainty_raw = bandwidth
+            grain._sigma_in = 1
         return self
 
     def get_q1_age(self):

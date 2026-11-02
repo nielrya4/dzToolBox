@@ -96,6 +96,7 @@
     {% include "editor/spinners/delete_output_spinner.html" %}
     {% include "editor/spinners/get_settings_spinner.html" %}
     {% include "editor/spinners/update_settings_spinner.html" %}
+    {% include "editor/misc/reconfigure_outputs.html" %}
     {% include "editor/modals/preview_output_dialog.html" %}
 	{% include "editor/spinners/save_output_spinner.html" %}
 	<script src="{{ url_for('static', filename='editor/scripts/collapsible.js')}}"></script>
@@ -184,6 +185,20 @@
     // Flag to indicate if we're saving to multivariate_outputs or regular outputs
     let isMultivariateOutput = false;
 
+    // Mirrors Output.wrapper_html() in utils/output.py
+    function outputWrapperHtml(output) {
+        var div = document.createElement('div');
+        div.className = 'mb-3 project-output';
+        div.style.maxWidth = '100%';
+        div.dataset.outputId = output.output_id;
+        if (output.source_url && output.group_id) {
+            div.dataset.groupId = output.group_id;
+            div.dataset.sourceUrl = output.source_url;
+        }
+        div.innerHTML = output.output_data;
+        return div.outerHTML;
+    }
+
     function pollTensorJobStatus(jobId) {
         tensorJobPollingInterval = setInterval(function() {
             fetch('/projects/{{ project_id }}/outputs/job-status/' + jobId)
@@ -264,7 +279,7 @@
 
                     // Build outputs HTML
                     var outputsHtml = outputs.map(function(output) {
-                        return '<div class="mb-3" style="max-width: 100%;">' + output.output_data + '</div>';
+                        return outputWrapperHtml(output);
                     }).join('');
 
                     targetElement.innerHTML = outputsHtml;
@@ -302,7 +317,7 @@
                 var outputsHtml = '';
                 if (outputs && outputs.length > 0) {
                     outputsHtml = outputs.map(function(output) {
-                        return '<div class="mb-3" style="max-width: 100%;">' + output.output_data + '</div>';
+                        return outputWrapperHtml(output);
                     }).join('');
                 } else {
                     outputsHtml = '<p class="text-muted">Run tensor factorization to see interactive results here</p>';

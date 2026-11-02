@@ -3,69 +3,39 @@ from io import BytesIO
 import pyexcel as p
 import numpy as np
 import pandas as pd
-from dz_lib.univariate.distributions import kde_function, pdp_function, cdf_function
+from dz_lib.univariate.distributions import kde_function, pdp_function
 from dz_lib.univariate import metrics
 
-def generate_data_frame(samples, row_labels=None, col_labels=None, metric="similarity", function_type="kde"):
-    if metric == "ks" or metric == "kuiper":
-        samples.reverse()
-    sample_kdes = [kde_function(sample, 10).y_values for sample in samples]
-    sample_pdps = [pdp_function(sample).y_values for sample in samples]
-    sample_cdfs = [cdf_function(kde_function(sample, 10)).y_values for sample in samples]
-    num_data_sets = len(samples)
-    matrix = np.zeros((num_data_sets, num_data_sets))
-    if metric == "similarity":
-        for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-            for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-                similarity_score = metrics.similarity(sample1, sample2)
-                matrix[i, j] = np.round(similarity_score, 2)
-    elif metric == "dis_similarity":
-        for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-            for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-                dissimilarity_score = metrics.dis_similarity(sample1, sample2)
-                matrix[i, j] = np.round(dissimilarity_score, 2)
-    elif metric == "likeness":
-        for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-            for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-                likeness_score = metrics.likeness(sample1, sample2)
-                matrix[i, j] = np.round(likeness_score, 2)
-    elif metric == "dis_likeness":
-        for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-            for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-                likeness_score = metrics.dis_likeness(sample1, sample2)
-                matrix[i, j] = np.round(likeness_score, 2)
-    elif metric == "ks":
-        for i, sample1 in enumerate(sample_cdfs):
-            for j, sample2 in enumerate(sample_cdfs):
-                ks_score = metrics.ks(sample1, sample2)
-                matrix[i, j] = np.round(ks_score, 2)
-    elif metric == "dis_ks":
-        for i, sample1 in enumerate(sample_cdfs):
-            for j, sample2 in enumerate(sample_cdfs):
-                ks_score = metrics.dis_ks(sample1, sample2)
-                matrix[i, j] = np.round(ks_score, 2)
-    elif metric == "kuiper":
-        for i, sample1 in enumerate(sample_cdfs):
-            for j, sample2 in enumerate(sample_cdfs):
-                kuiper_score = metrics.kuiper(sample1, sample2)
-                matrix[i, j] = np.round(kuiper_score, 2)
-    elif metric == "dis_kuiper":
-        for i, sample1 in enumerate(sample_cdfs):
-            for j, sample2 in enumerate(sample_cdfs):
-                kuiper_score = metrics.dis_kuiper(sample1, sample2)
-                matrix[i, j] = np.round(kuiper_score, 2)
-    elif metric == "cross_correlation":
-        for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-            for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-                cross_correlation_score = metrics.r2(sample1, sample2)
-                matrix[i, j] = np.round(cross_correlation_score, 2)
-    elif metric == "dis_cross_correlation":
-        for i, sample1 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-            for j, sample2 in enumerate(sample_kdes if function_type == "kde" else sample_pdps):
-                cross_correlation_score = metrics.dis_r2(sample1, sample2)
-                matrix[i, j] = np.round(cross_correlation_score, 2)
+def generate_data_frame(samples, row_labels=None, col_labels=None, metric="similarity", function_type="kde",
+                        bandwidth=10):
+    """Pairwise comparison matrix for `samples`.
+
+    Similarity, likeness and cross-correlation compare KDEs (with `bandwidth`) or 1-sigma
+    PDPs, per `function_type`. KS and Kuiper compare the empirical CDFs of the ages, as the
+    tests are defined. A `dis_` prefix returns 1 - value.
+    """
+    dis = metric.startswith("dis_")
+    base = metric[4:] if dis else metric
+    if base in ("ks", "kuiper"):
+        data = [sample.get_ages() for sample in samples]
+        compare = metrics.ks_ages if base == "ks" else metrics.kuiper_ages
+    elif base in ("similarity", "likeness", "cross_correlation"):
+        if function_type == "kde":
+            data = [kde_function(sample, bandwidth).y_values for sample in samples]
+        else:
+            data = [pdp_function(sample).y_values for sample in samples]
+        compare = {"similarity": metrics.similarity, "likeness": metrics.likeness,
+                   "cross_correlation": metrics.r2}[base]
     else:
         raise ValueError(f"Unknown metric {metric}")
+
+    num_data_sets = len(samples)
+    matrix = np.zeros((num_data_sets, num_data_sets))
+    for i in range(num_data_sets):
+        for j in range(num_data_sets):
+            value = compare(data[i], data[j])
+            matrix[i, j] = np.round(1 - value if dis else value, 2)
+
     if row_labels is None:
         row_labels = [sample.name for sample in samples]
     if col_labels is None:

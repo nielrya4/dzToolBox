@@ -1,0 +1,226 @@
+<script>
+    // "Reconfigure..." for saved outputs: reopens the dialog that made an output with the
+    // options that made it, and the next generateOutput() (preview_output_dialog.html)
+    // shows the current and new versions side by side so the user can keep either.
+
+    // Set by reconfigureOutput(); consumed by the next generateOutput()
+    var reconfigureContext = null;
+
+    // How to put each output request's parameters back into its dialog, keyed by the
+    // request's path after /outputs/new/.
+    //   samples     - sample_select id; sampleParam names the request parameter
+    //   fields      - request parameter -> input/select id, applied in this order
+    //   checks      - multi-valued parameter -> {value: checkbox id}
+    //   checkClass  - multi-valued parameter -> selector of checkboxes whose value is the option
+    //   flags       - "true"/"false" parameter -> checkbox id
+    const RECONFIGURABLE_OUTPUTS = {
+        "distribution": {
+            modal: "distro_modal", samples: "distro_sample_select",
+            fields: { outputType: "distro_select", outputTitle: "distro_output_name" },
+        },
+        "histogram": {
+            modal: "histogram_modal", samples: "histogram_sample_select",
+            fields: {
+                outputType: "histogram_select", binEdges: "histogram_bin_edges",
+                binLabels: "histogram_bin_edges_labels", nCols: "histogram_bin_edges_n_cols",
+                outputTitle: "histogram_output_name",
+            },
+        },
+        "matrix": {
+            modal: "matrix_modal", samples: "matrix_sample_select",
+            fields: { outputType: "matrix_select", outputTitle: "matrix_output_name" },
+        },
+        "mds": {
+            modal: "mds_modal", samples: "mds_sample_select",
+            fields: { metric: "mds_metric", mds_type: "mds_type", outputTitle: "mds_output_title" },
+            checks: { outputType: { mds_plot: "mds_output_plot", shepard_plot: "mds_output_shepard" } },
+        },
+        "unmix": {
+            modal: "unmix_modal", samples: "unmix_sample_select",
+            fields: { metric: "unmix_metric", sampler: "unmix_sampler", outputTitle: "unmix_output_title" },
+            checks: { outputType: {
+                contribution_table: "unmix_output_table", contribution_graph: "unmix_output_graph",
+                trials_graph: "unmix_output_trials",
+            } },
+            flags: { refine: "unmix_refine" },
+        },
+        "mda": {
+            modal: "mda_modal", samples: "mda_sample_select",
+            // The preset first: changing it resets the options below to "Preset default"
+            fields: {
+                preset: "mda_preset", rank_by: "mda_rank_by", yc_min_n: "mda_yc_min_n",
+                ysp_target_mswd: "mda_ysp_target_mswd", ysp_entry_rule: "mda_ysp_entry_rule",
+                outputTitle: "mda_output_title",
+            },
+            checks: {
+                metrics: {
+                    YSG: "metric_ysg", YC1s: "metric_yc1s", YC2s: "metric_yc2s", Y3Za: "metric_y3za",
+                    Y3Zo: "metric_y3zo", YPP: "metric_ypp", YGF: "metric_ygf", YSP: "metric_ysp",
+                    Tau: "metric_tau", MLA: "metric_mla",
+                },
+                outputType: {
+                    mda_table: "output_mda_table", mda_graph: "output_mda_graph", rank_plot: "output_rank_plot",
+                    ygf_graph: "output_ygf_graph", radial_plot: "output_radial_plot",
+                },
+            },
+        },
+        "heatmap": {
+            modal: "heatmap_modal", multivariate: true,
+            samples: "heatmap_sample_select", sampleParam: "sampleName",
+            fields: {
+                featureX: "heatmap_feature_x", featureY: "heatmap_feature_y",
+                outputType: "heatmap_select", outputTitle: "heatmap_output_name",
+            },
+        },
+        "tensor-factorization": {
+            modal: "tensor_modal", multivariate: true, samples: "tensor_sample_select",
+            fields: { outputTitle: "tensor_output_title" },
+            checkClass: { outputType: ".tensor-output-checkbox" },
+        },
+    };
+
+    function reconfigurableKind(sourceUrl) {
+        var path = new URL(sourceUrl, window.location.origin).pathname;
+        var marker = "/outputs/new/";
+        var at = path.indexOf(marker);
+        if (at < 0) return null;
+        var kind = path.slice(at + marker.length);
+        return RECONFIGURABLE_OUTPUTS[kind] ? kind : null;
+    }
+
+    // Add "Reconfigure..." to the Actions menu of every output that knows how it was made
+    function addReconfigureItems(container) {
+        container.querySelectorAll(".project-output[data-source-url]").forEach(function(wrapper) {
+            if (!reconfigurableKind(wrapper.dataset.sourceUrl)) return;
+            wrapper.querySelectorAll(".dropdown-menu").forEach(function(menu) {
+                if (menu.querySelector(".reconfigure-output-item")) return;
+                var item = document.createElement("button");
+                item.type = "button";
+                item.className = "dropdown-item reconfigure-output-item";
+                item.textContent = "Reconfigure...";
+                item.addEventListener("click", function() { reconfigureOutput(wrapper); });
+                menu.insertBefore(item, menu.firstChild);
+            });
+        });
+    }
+
+    // Outputs lists are re-rendered from several places (save, delete, refresh), so watch them
+    ["outputs_container", "multivariate_outputs"].forEach(function(id) {
+        var container = document.getElementById(id);
+        if (!container) return;
+        addReconfigureItems(container);
+        new MutationObserver(function() { addReconfigureItems(container); })
+            .observe(container, { childList: true, subtree: true });
+    });
+
+    // A static copy of an output for the side-by-side preview: no menu, scripts or ids,
+    // so it cannot re-run plots or collide with the live output it was copied from
+    function staticCopy(wrapper) {
+        var copy = wrapper.cloneNode(true);
+        copy.querySelectorAll("form, script").forEach(function(node) { node.remove(); });
+        copy.removeAttribute("id");
+        copy.querySelectorAll("[id]").forEach(function(node) { node.removeAttribute("id"); });
+        copy.classList.remove("project-output");
+        return copy;
+    }
+
+    function reconfigureOutput(wrapper) {
+        var kind = reconfigurableKind(wrapper.dataset.sourceUrl);
+        var config = RECONFIGURABLE_OUTPUTS[kind];
+        var params = new URL(wrapper.dataset.sourceUrl, window.location.origin).searchParams;
+        var groupId = wrapper.dataset.groupId;
+        var group = wrapper.parentElement.querySelectorAll(".project-output");
+        reconfigureContext = {
+            groupId: groupId,
+            multivariate: !!config.multivariate,
+            current: Array.from(group)
+                .filter(function(w) { return w.dataset.groupId === groupId; })
+                .map(staticCopy),
+        };
+
+        var context = reconfigureContext;
+        var modalElement = document.getElementById(config.modal);
+        // Closing the dialog without generating abandons the reconfigure. The dialogs
+        // don't animate, so Bootstrap fires "hidden" synchronously inside hide(), which
+        // each dialog's send function calls just *before* generateOutput(); checking on
+        // the next tick lets generateOutput() take the context first.
+        modalElement.addEventListener("hidden.bs.modal", function() {
+            setTimeout(function() {
+                if (reconfigureContext === context) {
+                    reconfigureContext = null;
+                }
+            }, 0);
+        }, { once: true });
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
+        prefillDialog(config, params);
+    }
+
+    // The value a control had when the page loaded (what the dialog starts with)
+    function initialValue(element) {
+        if (element.tagName === "SELECT") {
+            var initial = Array.from(element.options).find(function(option) { return option.defaultSelected; });
+            return initial ? initial.value : (element.options[0] ? element.options[0].value : "");
+        }
+        return element.defaultValue;
+    }
+
+    function setControl(id, value) {
+        var element = document.getElementById(id);
+        if (!element) return;
+        element.value = value === null ? initialValue(element) : value;
+        // Dialogs show or hide dependent options on change (e.g. histogram pie-chart labels)
+        element.dispatchEvent(new Event("change", { bubbles: true }));
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    // Some selects are filled asynchronously when their dialog opens (heatmap features)
+    function setControlWhenAvailable(id, value, attemptsLeft) {
+        var element = document.getElementById(id);
+        if (!element) return;
+        var waiting = element.tagName === "SELECT" && value !== null &&
+            !Array.from(element.options).some(function(option) { return option.value === value; });
+        if (waiting && attemptsLeft > 0) {
+            setTimeout(function() { setControlWhenAvailable(id, value, attemptsLeft - 1); }, 100);
+            return;
+        }
+        setControl(id, value);
+    }
+
+    function prefillDialog(config, params) {
+        var sampleParam = config.sampleParam || "sampleNames";
+        var loadSamples = window[config.samples + "getSampleNames"];
+        if (typeof loadSamples === "function") {
+            var spinner = document.getElementById(config.samples + "_spinner");
+            if (spinner) {
+                spinner.classList.remove("hidden");
+                spinner.classList.add("visible");
+            }
+            loadSamples(params.getAll(sampleParam));
+        }
+
+        // A parameter missing from the request was left at the dialog's starting value
+        // (e.g. a blank title, or an MDA option on "Preset default")
+        Object.entries(config.fields || {}).forEach(function([param, id]) {
+            setControlWhenAvailable(id, params.has(param) ? params.get(param) : null, 50);
+        });
+        Object.entries(config.checks || {}).forEach(function([param, ids]) {
+            if (!params.has(param)) return;
+            var chosen = params.getAll(param);
+            Object.entries(ids).forEach(function([value, id]) {
+                var box = document.getElementById(id);
+                if (box) box.checked = chosen.includes(value);
+            });
+        });
+        Object.entries(config.checkClass || {}).forEach(function([param, selector]) {
+            if (!params.has(param)) return;
+            var chosen = params.getAll(param);
+            document.querySelectorAll(selector).forEach(function(box) {
+                box.checked = chosen.includes(box.value);
+            });
+        });
+        Object.entries(config.flags || {}).forEach(function([param, id]) {
+            var box = document.getElementById(id);
+            if (box && params.has(param)) box.checked = params.get(param) !== "false";
+        });
+    }
+</script>

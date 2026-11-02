@@ -116,7 +116,7 @@ def pdp_function(
     sample: Sample,
     x_min: float = 0,
     x_max: float = 4500,
-    sigma: Optional[int] = None
+    sigma: Optional[int] = 1
 ):
     """
     Compute Probability Density Plot (PDP) for a sample.
@@ -130,8 +130,9 @@ def pdp_function(
     x_max : float
         Maximum x value (age) for the distribution
     sigma : int, optional
-        Sigma level to use for bandwidths. If None, uses config.sigma_in
-        (i.e., the raw input uncertainties). Use 1 for 1-sigma or 2 for 2-sigma.
+        Sigma level of the Gaussian widths. Defaults to 1, the standard PDP
+        definition, so 2-sigma input is halved first. None uses
+        the raw input uncertainties at whatever sigma they were entered.
     """
     n_steps = int(x_max - x_min + 1)
     x_values = np.linspace(x_min, x_max, n_steps)
@@ -158,6 +159,19 @@ def pdp_function(
     y_values = np.sum(kernels, axis=0)
 
     y_values /= np.sum(y_values)
+    return Distribution(sample.name, x_values, y_values)
+
+
+def ecdf_function(sample: Sample, x_min: float = 0, x_max: float = 4500, x_values=None):
+    """Empirical CDF of the sample's ages (no uncertainties). This is the CDF that DZstats
+    and detritalPy plot. Evaluated on the same 1 Myr grid as kde_function / pdp_function,
+    or at `x_values` if given (e.g. the pooled ages of several samples, as in DZmix)."""
+    if x_values is None:
+        n_steps = int(x_max - x_min + 1)
+        x_values = np.linspace(x_min, x_max, n_steps)
+    x_values = np.asarray(x_values, dtype=float)
+    ages = np.sort(np.array([grain.age for grain in sample.grains], dtype=float))
+    y_values = np.searchsorted(ages, x_values, side="right") / ages.size
     return Distribution(sample.name, x_values, y_values)
 
 

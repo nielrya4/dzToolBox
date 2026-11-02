@@ -3,7 +3,7 @@
         <div class="modal-content">
             <div class="frame">
                 <div class="modal-header">
-                    <h5 class="modal-title">Preview Output</h5>
+                    <h5 class="modal-title" id="preview_title">Preview Output</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="preview_modal_body" style="overflow: auto; max-height: 70vh;">
@@ -12,6 +12,8 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal" id="discard_preview_btn">Discard</button>
                     <button type="button" class="btn btn-primary" id="save_preview_btn">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="keep_current_btn" style="display: none;">Keep current</button>
+                    <button type="button" class="btn btn-primary" id="keep_new_btn" style="display: none;">Keep new</button>
                 </div>
             </div>
         </div>
@@ -19,6 +21,12 @@
 </div>
 
 <style>
+    .preview-compare-label {
+        font-weight: 600;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 4px;
+        margin-bottom: 12px;
+    }
     #preview_modal_body img {
         max-width: 100%;
         height: auto;
@@ -113,7 +121,27 @@
         });
     }
 
+    // Set when a preview is comparing a reconfigured output with the one it would replace
+    let pendingReconfigure = null;
+
+    function newOutputGroupId() {
+        return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    }
+
+    function setPreviewMode(comparing) {
+        document.getElementById('preview_title').textContent =
+            comparing ? 'Reconfigured Output: Current vs New' : 'Preview Output';
+        document.querySelector('#preview_output_modal .modal-dialog').classList.toggle('modal-xl', comparing);
+        document.getElementById('discard_preview_btn').style.display = comparing ? 'none' : '';
+        document.getElementById('save_preview_btn').style.display = comparing ? 'none' : '';
+        document.getElementById('keep_current_btn').style.display = comparing ? '' : 'none';
+        document.getElementById('keep_new_btn').style.display = comparing ? '' : 'none';
+    }
+
     function generateOutput(url) {
+        // A reconfigure (see reconfigure_outputs.html) is consumed by the next generated output
+        var reconfigure = reconfigureContext;
+        reconfigureContext = null;
         show_output_spinner();
         fetch(url)
             .then(function(response) {
@@ -121,11 +149,32 @@
                 return response.json();
             })
             .then(function(data) {
-                pendingOutputs = data.outputs;
+                // Remember the request so the outputs can be reconfigured later; a reconfigured
+                // version keeps its group id so it can be reconfigured again
+                var groupId = reconfigure ? reconfigure.groupId : newOutputGroupId();
+                pendingOutputs = data.outputs.map(function(o) {
+                    return Object.assign({}, o, { source_url: url, group_id: groupId });
+                });
+                pendingReconfigure = reconfigure;
+
                 var container = document.getElementById('preview_zoom_container');
-                container.innerHTML = pendingOutputs.map(function(o) {
+                var newHtml = pendingOutputs.map(function(o) {
                     return '<div class="mb-3">' + o.output_data + '</div>';
                 }).join('');
+                setPreviewMode(!!reconfigure);
+                if (reconfigure) {
+                    container.innerHTML =
+                        '<div class="row g-3">' +
+                        '<div class="col-6"><div class="preview-compare-label">Current</div><div id="preview_current"></div></div>' +
+                        '<div class="col-6"><div class="preview-compare-label">New</div>' + newHtml + '</div>' +
+                        '</div>';
+                    var currentColumn = document.getElementById('preview_current');
+                    reconfigure.current.forEach(function(node) {
+                        currentColumn.appendChild(node.cloneNode(true));
+                    });
+                } else {
+                    container.innerHTML = newHtml;
+                }
                 container.querySelectorAll('form').forEach(function(form) {
                     form.remove();
                 });
@@ -197,57 +246,48 @@
         }
     });
 
-    document.getElementById('save_preview_btn').addEventListener('click', function() {
+    // Put an outputs list returned by the server into the page and bring its plots to life
+    function showOutputsList(containerId, html) {
+        var container = document.getElementById(containerId);
+        container.innerHTML = html;
+
+        // Tell HTMX to process the dynamically added content
+        if (typeof htmx !== 'undefined') {
+            htmx.process(container);
+        }
+
+        // Reinitialize tabbed outputs after inserting new HTML
+        if (typeof initializeTabbedOutputs === 'function') {
+            setTimeout(function() {
+                initializeTabbedOutputs();
+            }, 100);
+        }
+
+        // Process any Plotly plots
+        setTimeout(function() {
+            container.querySelectorAll('script[type="text/javascript"]').forEach(function(script) {
+                try {
+                    eval(script.textContent);
+                } catch (e) {
+                    console.error('Error executing Plotly script:', e);
+                }
+            });
+        }, 150);
+    }
+
+    function postOutputs(endpoint, body, containerId) {
         show_save_spinner();
-
-        // Use appropriate endpoint based on output type
-        var saveEndpoint = isMultivariateOutput
-            ? '/projects/{{ project_id }}/multivariate/outputs/save'
-            : '/projects/{{ project_id }}/outputs/save';
-
-        var outputContainerId = isMultivariateOutput
-            ? 'multivariate_outputs'
-            : 'outputs_container';
-
-        fetch(saveEndpoint, {
+        return fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ outputs: pendingOutputs })
+            body: JSON.stringify(body)
         })
         .then(function(response) {
             if (!response.ok) throw new Error('Failed to save output');
             return response.text();
         })
         .then(function(html) {
-            var container = document.getElementById(outputContainerId);
-            container.innerHTML = html;
-
-            // Tell HTMX to process the dynamically added content
-            if (typeof htmx !== 'undefined') {
-                htmx.process(container);
-            }
-
-            pendingOutputs = [];
-            isMultivariateOutput = false; // Reset flag
-
-            // Reinitialize tabbed outputs after inserting new HTML
-            if (typeof initializeTabbedOutputs === 'function') {
-                setTimeout(function() {
-                    initializeTabbedOutputs();
-                }, 100);
-            }
-
-            // Process any Plotly plots after saving
-            setTimeout(function() {
-                container.querySelectorAll('script[type="text/javascript"]').forEach(function(script) {
-                    try {
-                        eval(script.textContent);
-                    } catch (e) {
-                        console.error('Error executing Plotly script:', e);
-                    }
-                });
-            }, 150);
-
+            showOutputsList(containerId, html);
             bootstrap.Modal.getInstance(document.getElementById('preview_output_modal')).hide();
         })
         .catch(function(error) {
@@ -256,6 +296,27 @@
         .finally(function() {
             hide_save_spinner();
         });
+    }
+
+    document.getElementById('save_preview_btn').addEventListener('click', function() {
+        // Use appropriate endpoint based on output type
+        var saveEndpoint = isMultivariateOutput
+            ? '/projects/{{ project_id }}/multivariate/outputs/save'
+            : '/projects/{{ project_id }}/outputs/save';
+        var outputContainerId = isMultivariateOutput ? 'multivariate_outputs' : 'outputs_container';
+        postOutputs(saveEndpoint, { outputs: pendingOutputs }, outputContainerId);
+    });
+
+    // Replace the reconfigured outputs with the new version, in the same place in the list
+    document.getElementById('keep_new_btn').addEventListener('click', function() {
+        if (!pendingReconfigure) return;
+        var multivariate = pendingReconfigure.multivariate;
+        var replaceEndpoint = multivariate
+            ? '/projects/{{ project_id }}/multivariate/outputs/replace'
+            : '/projects/{{ project_id }}/outputs/replace';
+        postOutputs(replaceEndpoint,
+                    { group_id: pendingReconfigure.groupId, outputs: pendingOutputs },
+                    multivariate ? 'multivariate_outputs' : 'outputs_container');
     });
 
     // Reset flag when discarding
@@ -264,8 +325,12 @@
         pendingOutputs = [];
     });
 
-    // Also reset when modal is hidden (in case user clicks outside or uses Escape)
+    // Also reset when modal is hidden (in case user clicks outside, uses Escape, or keeps
+    // the current version of a reconfigured output)
     document.getElementById('preview_output_modal').addEventListener('hidden.bs.modal', function() {
         isMultivariateOutput = false;
+        pendingOutputs = [];
+        pendingReconfigure = null;
+        setPreviewMode(false);
     });
 </script>

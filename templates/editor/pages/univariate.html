@@ -59,9 +59,7 @@
         <div class="p-3" id="outputs_container">
             {% block outputs %}
             {% for output in outputs_data %}
-                <div class="mb-3" style="max-width: 100%;">
-                    {{ output.output_data | safe }}
-                </div>
+                {{ output.wrapper_html() | safe }}
             {% endfor %}
             {% endblock %}
         </div>

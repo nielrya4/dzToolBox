@@ -55,12 +55,16 @@ MAX_KDE_POINTS = 1024
 
 class StatisticalSettings:
     def __init__(self, kde_bandwidth: float = 10, matrix_function_type: str = "kde", n_unmix_trials: int = 10000,
-                 multivariate_kde_points: int = 128):
+                 multivariate_kde_points: int = 128, bivariate_bandwidth_x: float = 50,
+                 bivariate_bandwidth_y: float = 2):
         self.kde_bandwidth = kde_bandwidth
         self.matrix_function_type = matrix_function_type
         self.n_unmix_trials = n_unmix_trials
         # Number of points (K) each multivariate KDE is discretized over
         self.multivariate_kde_points = multivariate_kde_points
+        # Bivariate (age vs. hafnium) KDE bandwidths; defaults match DZstats2D
+        self.bivariate_bandwidth_x = bivariate_bandwidth_x
+        self.bivariate_bandwidth_y = bivariate_bandwidth_y
 
     def from_json(self, json_data):
         self.kde_bandwidth = float(json_data.get("kde_bandwidth", 10))
@@ -68,13 +72,17 @@ class StatisticalSettings:
         self.n_unmix_trials = int(json_data.get("n_unmix_trials", 10000))
         self.multivariate_kde_points = min(max(int(json_data.get("multivariate_kde_points", 128)),
                                                MIN_KDE_POINTS), MAX_KDE_POINTS)
+        self.bivariate_bandwidth_x = float(json_data.get("bivariate_bandwidth_x", 50))
+        self.bivariate_bandwidth_y = float(json_data.get("bivariate_bandwidth_y", 2))
     
     def to_json(self):
         return {
             "kde_bandwidth": self.kde_bandwidth,
             "matrix_function_type": self.matrix_function_type,
             "n_unmix_trials": self.n_unmix_trials,
-            "multivariate_kde_points": self.multivariate_kde_points
+            "multivariate_kde_points": self.multivariate_kde_points,
+            "bivariate_bandwidth_x": self.bivariate_bandwidth_x,
+            "bivariate_bandwidth_y": self.bivariate_bandwidth_y
         }
 
 class GraphSettings:
@@ -190,6 +198,19 @@ class Project:
             if project_output.output_id == output_id:
                 self.grainalyzer_outputs.remove(project_output)
 
+    @staticmethod
+    def replace_output_group(outputs, group_id, new_outputs):
+        """Put `new_outputs` where the outputs of `group_id` were, in place.
+
+        The replacement takes the position of the group's first output; the group's
+        other outputs are removed. If the group no longer exists (e.g. deleted while
+        being reconfigured), the new outputs are appended.
+        """
+        positions = [i for i, output in enumerate(outputs) if output.group_id == group_id]
+        insert_at = positions[0] if positions else len(outputs)
+        outputs[:] = [output for output in outputs if output.group_id != group_id]
+        outputs[insert_at:insert_at] = new_outputs
+
     def get_output(self, output_id):
         for project_output in self.outputs:
             if project_output.output_id == output_id:
@@ -212,17 +233,9 @@ class Project:
             "grainalyzer_outputs": []
         }
         for output in self.outputs:
-            json_data["outputs"].append({
-                "output_id": output.output_id,
-                "output_type": output.output_type,
-                "output_data": output.generate_html_data()
-            })
+            json_data["outputs"].append(output.to_dict(output.generate_html_data()))
         for output in self.grainalyzer_outputs:
-            json_data["grainalyzer_outputs"].append({
-                "output_id": output.output_id,
-                "output_type": output.output_type,
-                "output_data": output.generate_html_data()
-            })
+            json_data["grainalyzer_outputs"].append(output.to_dict(output.generate_html_data()))
         json_string = json.dumps(json_data, indent=4)
         return json_string
 
@@ -233,19 +246,13 @@ def project_from_json(json_data):
     settings = Settings()
     outputs = []
     for output in json_data.get("outputs", []):
-        output_id = output.get("output_id", "")
-        output_type = output.get("output_type", "")
-        output_data = output.get("output_data", "")
-        outputs.append(Output(output_id, output_type, output_data))
+        outputs.append(Output.from_dict(output))
 
     # Load grainalyzer data if it exists (backward compatibility)
     grainalyzer_data = json_data.get("grainalyzer_data", "")
     grainalyzer_outputs = []
     for output in json_data.get("grainalyzer_outputs", []):
-        output_id = output.get("output_id", "")
-        output_type = output.get("output_type", "")
-        output_data = output.get("output_data", "")
-        grainalyzer_outputs.append(Output(output_id, output_type, output_data))
+        grainalyzer_outputs.append(Output.from_dict(output))
 
     project = Project(name, data, outputs, settings, grainalyzer_data, grainalyzer_outputs)
     if "settings" in json_data:

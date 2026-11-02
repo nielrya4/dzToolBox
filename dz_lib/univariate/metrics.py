@@ -30,6 +30,29 @@ def r2(y1_values, y2_values):
     cross_correlation = correlation_xy ** 2
     return cross_correlation
 
+# The KS and Kuiper tests are defined on the empirical CDFs of the ages themselves (as in
+# DZstats, DZmds, DZmix and detritalPy), not on the CDF of a smoothed PDP or KDE.
+def ecdf(ages, x_values):
+    """Empirical CDF of `ages` evaluated at `x_values` (right-continuous)."""
+    ages = np.sort(np.asarray(ages, dtype=float))
+    return np.searchsorted(ages, np.asarray(x_values, dtype=float), side="right") / ages.size
+
+
+def _ecdf_differences(ages1, ages2):
+    pooled = np.concatenate([np.asarray(ages1, dtype=float), np.asarray(ages2, dtype=float)])
+    return ecdf(ages1, pooled) - ecdf(ages2, pooled)
+
+
+def ks_ages(ages1, ages2):
+    """Two-sample KS D from the raw ages (matches MATLAB kstest2 and scipy ks_2samp)."""
+    return float(np.max(np.abs(_ecdf_differences(ages1, ages2))))
+
+
+def kuiper_ages(ages1, ages2):
+    """Two-sample Kuiper V from the raw ages (matches kuipertest2c in DZstats)."""
+    diff = _ecdf_differences(ages1, ages2)
+    return float(max(np.max(diff), 0.0) + max(np.max(-diff), 0.0))
+
 def dis_similarity(y1_values, y2_values):
     return float(1 - similarity(y1_values, y2_values))
 

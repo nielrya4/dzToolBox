@@ -59,9 +59,7 @@
         <div id="multivariate_outputs" class="p-3">
             {% if multivariate_outputs_data and multivariate_outputs_data|length > 0 %}
                 {% for output in multivariate_outputs_data %}
-                    <div class="mb-3" style="max-width: 100%;">
-                        {{ output.output_data | safe }}
-                    </div>
+                    {{ output.wrapper_html() | safe }}
                 {% endfor %}
             {% else %}
             {% endif %}

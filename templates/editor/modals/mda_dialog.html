@@ -188,28 +188,30 @@
                                 <div class="mda-group">
                                     <label class="mda-label">Grain Ranking Method</label>
                                     <select id="mda_rank_by" class="form-select mda-input">
+                                        <option value="" selected>Preset default</option>
                                         <option value="age">By Age Only</option>
                                         <option value="age+1s">By Age + 1-sigma</option>
                                         <option value="age+2s">By Age + 2-sigma</option>
                                     </select>
-                                    <small class="mda-hint">How grains are sorted before selecting the "youngest"</small>
+                                    <small class="mda-hint">How grains are sorted before selecting the "youngest". Leave on "Preset default" to use the preset's own ranking for each metric.</small>
                                 </div>
 
                                 <div class="mda-group">
                                     <label class="mda-label">Cluster Minimum Grains (YC)</label>
-                                    <input type="number" id="mda_yc_min_n" class="form-control mda-input" value="2" min="2" max="10">
+                                    <input type="number" id="mda_yc_min_n" class="form-control mda-input" value="" placeholder="Preset default" min="1" max="10">
                                     <small class="mda-hint">Minimum number of overlapping grains required for YC metrics</small>
                                 </div>
 
                                 <div class="mda-group">
                                     <label class="mda-label">YSP Target MSWD</label>
-                                    <input type="number" id="mda_ysp_target_mswd" class="form-control mda-input" value="1.0" min="0.1" max="5.0" step="0.1">
+                                    <input type="number" id="mda_ysp_target_mswd" class="form-control mda-input" value="" placeholder="Preset default (1.0)" min="0.1" max="5.0" step="0.1">
                                     <small class="mda-hint">Target MSWD value for Youngest Statistical Population</small>
                                 </div>
 
                                 <div class="mda-group">
                                     <label class="mda-label">YSP Entry Rule</label>
                                     <select id="mda_ysp_entry_rule" class="form-select mda-input">
+                                        <option value="" selected>Preset default</option>
                                         <option value="global">Global (any subset reaches target)</option>
                                         <option value="pair">Pair (youngest pair must pass)</option>
                                         <option value="none">None (always use closest to target)</option>
@@ -559,16 +561,11 @@ document.getElementById('mda_preset').addEventListener('change', function() {
     const ycMinN = document.getElementById('mda_yc_min_n');
     const yspEntryRule = document.getElementById('mda_ysp_entry_rule');
 
-    if (preset === 'python_toolset') {
-        rankBy.value = 'age+1s';
-        yspEntryRule.value = 'pair';
-    } else if (preset === 'matlab_toolset') {
-        rankBy.value = 'age';
-        yspEntryRule.value = 'global';
-    } else { // harmonized
-        rankBy.value = 'age+1s';
-        yspEntryRule.value = 'global';
-    }
+    // Each preset carries its own per-metric conventions; only explicit choices override them
+    rankBy.value = '';
+    ycMinN.value = '';
+    document.getElementById('mda_ysp_target_mswd').value = '';
+    yspEntryRule.value = '';
 });
 
 // Send MDA arguments
@@ -639,10 +636,11 @@ function mda_send_args() {
 
     // Add options
     queryString += "&preset=" + encodeURIComponent(preset);
-    queryString += "&rank_by=" + encodeURIComponent(rankBy);
-    queryString += "&yc_min_n=" + encodeURIComponent(ycMinN);
-    queryString += "&ysp_target_mswd=" + encodeURIComponent(yspTargetMswd);
-    queryString += "&ysp_entry_rule=" + encodeURIComponent(yspEntryRule);
+    // Only send options the user set; blank means "use the preset's value"
+    if (rankBy !== "") queryString += "&rank_by=" + encodeURIComponent(rankBy);
+    if (ycMinN !== "") queryString += "&yc_min_n=" + encodeURIComponent(ycMinN);
+    if (yspTargetMswd !== "") queryString += "&ysp_target_mswd=" + encodeURIComponent(yspTargetMswd);
+    if (yspEntryRule !== "") queryString += "&ysp_entry_rule=" + encodeURIComponent(yspEntryRule);
 
     if (mdaOutputTitle !== "") {
         queryString += "&outputTitle=" + encodeURIComponent(mdaOutputTitle);

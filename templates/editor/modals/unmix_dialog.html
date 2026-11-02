@@ -88,6 +88,23 @@
                                     </select>
                                     <small class="unmix-hint">Method for comparing source and target distributions</small>
                                 </div>
+
+                                <div class="unmix-group">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="unmix_refine" checked>
+                                        <label class="form-check-label unmix-label" for="unmix_refine">Refine best fit with optimisation</label>
+                                    </div>
+                                    <small class="unmix-hint">On (recommended): the best Monte Carlo trials are refined by constrained optimisation and the single best fit is reported, as with DZmix's "Optimize" step. Off: Monte Carlo only, reporting the mean of the best 10 trials (Sundell &amp; Saylor, 2017).</small>
+                                </div>
+
+                                <div class="unmix-group">
+                                    <label class="unmix-label" for="unmix_sampler">Random Trial Sampler</label>
+                                    <select name="unmix_sampler" id="unmix_sampler" class="form-select unmix-input">
+                                        <option value="dirichlet" selected>Uniform over all mixtures (Dirichlet)</option>
+                                        <option value="dzmix">DZmix stick-breaking (Sundell &amp; Saylor, 2017)</option>
+                                    </select>
+                                    <small class="unmix-hint">How random source proportions are drawn. Uniform tries every mixture equally often. DZmix's generator favours lopsided mixtures (one source dominant, others near zero); choose it to reproduce DZmix's Monte Carlo results.</small>
+                                </div>
                             </div>
 
                             <!-- Outputs Panel -->
@@ -375,6 +392,8 @@ function unmix_send_args() {
     var queryString = "/projects/{{ project_id }}/outputs/new/unmix?sampleNames="
         + encodedSamples.join("&sampleNames=")
         + "&metric=" + unmixMetric
+        + "&refine=" + (document.getElementById("unmix_refine").checked ? "true" : "false")
+        + "&sampler=" + encodeURIComponent(document.getElementById("unmix_sampler").value)
         + "&outputType=" + unmixOutputsSelect.join("&outputType=");
 
     if (unmixOutputTitle !== "") {

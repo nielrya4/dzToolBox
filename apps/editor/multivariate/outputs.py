@@ -68,6 +68,13 @@ def __parse_excluded_ranges(raw):
     return excluded
 
 
+def __render_grainalyzer_outputs(project):
+    """The multivariate outputs list as HTML, or its placeholder when empty."""
+    if not project.grainalyzer_outputs:
+        return '<p class="">Run tensor factorization to see interactive results here</p>'
+    return ''.join(output.wrapper_html() for output in project.grainalyzer_outputs)
+
+
 def register(app):
 
     @app.route('/projects/<int:project_id>/multivariate/outputs', methods=['GET'])
@@ -75,11 +82,7 @@ def register(app):
     def get_grainalyzer_outputs(project_id):
         if session.get("open_project", 0) == project_id:
             project = __get_project(project_id)
-            return jsonify([{
-                "output_id": output.output_id,
-                "output_type": output.output_type,
-                "output_data": output.output_data
-            } for output in project.grainalyzer_outputs])
+            return jsonify([output.to_dict() for output in project.grainalyzer_outputs])
         else:
             return jsonify({"error": "access_denied"}), 403
 
@@ -103,22 +106,27 @@ def register(app):
             outputs_data = request.get_json().get('outputs', [])
 
             for output_item in outputs_data:
-                project.grainalyzer_outputs.append(Output(
-                    output_id=output_item['output_id'],
-                    output_type=output_item['output_type'],
-                    output_data=output_item['output_data']
-                ))
+                project.grainalyzer_outputs.append(Output.from_dict(output_item))
 
             compressed_proj_content = compression.compress(project.to_json())
             database.write_file(project_id, compressed_proj_content)
 
-            html = ''
-            if project.grainalyzer_outputs:
-                for output in project.grainalyzer_outputs:
-                    html += f'<div class="mb-3" style="max-width: 100%;">{output.output_data}</div>'
-            else:
-                html = '<p class="">Run tensor factorization to see interactive results here</p>'
-            return html
+            return __render_grainalyzer_outputs(project)
+        else:
+            return jsonify({"error": "access_denied"}), 403
+
+    @app.route('/projects/<int:project_id>/multivariate/outputs/replace', methods=['POST'])
+    @login_required
+    def replace_grainalyzer_outputs(project_id):
+        """Swap a reconfigured output group for its new version, in place."""
+        if session.get("open_project", 0) == project_id:
+            project = __get_project(project_id)
+            payload = request.get_json()
+            new_outputs = [Output.from_dict(item) for item in payload.get('outputs', [])]
+            project.replace_output_group(project.grainalyzer_outputs, payload.get('group_id'), new_outputs)
+            compressed_proj_content = compression.compress(project.to_json())
+            database.write_file(project_id, compressed_proj_content)
+            return __render_grainalyzer_outputs(project)
         else:
             return jsonify({"error": "access_denied"}), 403
 
@@ -133,13 +141,7 @@ def register(app):
             compressed_proj_content = compression.compress(project.to_json())
             database.write_file(project_id, compressed_proj_content)
 
-            html = ''
-            if project.grainalyzer_outputs:
-                for output in project.grainalyzer_outputs:
-                    html += f'<div class="mb-3" style="max-width: 100%;">{output.output_data}</div>'
-            else:
-                html = '<p class="">Run tensor factorization to see interactive results here</p>'
-            return html
+            return __render_grainalyzer_outputs(project)
         else:
             return jsonify({"error": "access_denied"}), 403
 

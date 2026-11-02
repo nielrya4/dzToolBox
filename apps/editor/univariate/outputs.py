@@ -181,11 +181,7 @@ def register(app):
         if session.get("open_project", 0) == project_id:
             try:
                 project = __get_project(project_id)
-                return jsonify([{
-                    'output_id': output.output_id,
-                    'output_type': output.output_type,
-                    'output_data': output.output_data
-                } for output in project.outputs])
+                return jsonify([output.to_dict() for output in project.outputs])
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
         else:
@@ -198,11 +194,29 @@ def register(app):
             project = __get_project(project_id)
             outputs_data = request.get_json().get('outputs', [])
             for output_item in outputs_data:
-                project.outputs.append(Output(
-                    output_id=output_item['output_id'],
-                    output_type=output_item['output_type'],
-                    output_data=output_item['output_data']
-                ))
+                project.outputs.append(Output.from_dict(output_item))
+            updated_project_content = project.to_json()
+            compressed_proj_content = compression.compress(updated_project_content)
+            database.write_file(project_id, compressed_proj_content)
+            return render_block(
+                environment=environment,
+                template_name="editor/pages/univariate.html",
+                block_name="outputs",
+                outputs_data=project.outputs,
+                project_id=project_id
+            )
+        else:
+            return jsonify({"error": "access_denied"}), 403
+
+    @app.route('/projects/<int:project_id>/outputs/replace', methods=['POST'])
+    @login_required
+    def replace_outputs(project_id):
+        """Swap a reconfigured output group for its new version, in place."""
+        if session.get("open_project", 0) == project_id:
+            project = __get_project(project_id)
+            payload = request.get_json()
+            new_outputs = [Output.from_dict(item) for item in payload.get('outputs', [])]
+            project.replace_output_group(project.outputs, payload.get('group_id'), new_outputs)
             updated_project_content = project.to_json()
             compressed_proj_content = compression.compress(updated_project_content)
             database.write_file(project_id, compressed_proj_content)
@@ -298,15 +312,7 @@ def register(app):
                 elif output_type == 'pdp':
                     distros = [univariate.distributions.pdp_function(sample) for sample in adjusted_samples]
                 elif output_type == 'cdf':
-                    distros = [
-                        univariate.distributions.cdf_function(
-                            univariate.distributions.kde_function(
-                                sample=sample,
-                                bandwidth=float(project.settings.statistical_settings.kde_bandwidth)
-                            )
-                        )
-                        for sample in adjusted_samples
-                    ]
+                    distros = [univariate.distributions.ecdf_function(sample) for sample in adjusted_samples]
                 else:
                     raise ValueError("output_type is not supported")
 
@@ -502,6 +508,15 @@ def register(app):
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", "")
                 metric = request.args.get("metric", "cross_correlation")
+                # Refine the best Monte Carlo trials by optimisation unless explicitly turned off
+                refine = request.args.get("refine", "true") != "false"
+                # How trial proportions are drawn: uniform (Dirichlet) or DZmix's generator
+                sampler = request.args.get("sampler", "dirichlet")
+                if sampler not in univariate.unmix.SAMPLERS:
+                    return jsonify({"error": f"Unknown sampler '{sampler}'"}), 400
+                method_label = "optimised" if refine else "Monte Carlo"
+                if sampler == "dzmix":
+                    method_label += ", DZmix sampler"
                 output_types = request.args.getlist("outputType")
                 sample_names = request.args.getlist("sampleNames")
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
@@ -519,19 +534,27 @@ def register(app):
                     adjusted_samples.append(sample)
                 x_min = project.settings.age_settings.min_age
                 x_max = project.settings.age_settings.max_age
-                sample_pdps = [univariate.distributions.pdp_function(sample, x_min, x_max) for sample in adjusted_samples]
                 if metric == 'cross_correlation':
+                    sample_pdps = [univariate.distributions.pdp_function(sample, x_min, x_max) for sample in adjusted_samples]
                     sink_distribution = sample_pdps[0]
                     source_distributions = sample_pdps[1:]
                 else:
-                    sink_distribution = univariate.distributions.cdf_function(sample_pdps[0])
-                    source_distributions = [univariate.distributions.cdf_function(p) for p in sample_pdps[1:]]
+                    # KS and Kuiper compare empirical CDFs of the ages, evaluated at every
+                    # pooled age so no step is missed (as in DZmix)
+                    pooled_ages = np.unique(np.concatenate([sample.get_ages() for sample in adjusted_samples]))
+                    pooled_ages = pooled_ages[(pooled_ages >= x_min) & (pooled_ages <= x_max)]
+                    sample_ecdfs = [univariate.distributions.ecdf_function(sample, x_values=pooled_ages)
+                                    for sample in adjusted_samples]
+                    sink_distribution = sample_ecdfs[0]
+                    source_distributions = sample_ecdfs[1:]
                 contributions, stdevs, top_distributions = (
                     monte_carlo_optimized.monte_carlo_model_optimized(
                         sink_distribution=sink_distribution,
                         source_distributions=source_distributions,
                         n_trials=int(project.settings.statistical_settings.n_unmix_trials),
-                        metric=metric
+                        metric=metric,
+                        refine=refine,
+                        sampler=sampler
                     )
                 )
                 contribution_pairs = [
@@ -540,7 +563,8 @@ def register(app):
                 ]
                 pending_outputs = []
                 if "contribution_table" in output_types:
-                    matrix_df = univariate.unmix.relative_contribution_table(contributions=contribution_pairs, metric=metric)
+                    matrix_df = univariate.unmix.relative_contribution_table(
+                        contributions=contribution_pairs, metric=metric, refined=refine)
                     output_id = secrets.token_hex(15)
                     output_data = embedding.embed_matrix(
                         dataframe=matrix_df, output_id=output_id, project_id=project_id,
@@ -550,7 +574,7 @@ def register(app):
                 if "contribution_graph" in output_types:
                     graph_fig = univariate.unmix.relative_contribution_graph(
                         contributions=contribution_pairs,
-                        title=f"{output_title} (metric='{metric}')",
+                        title=f"{output_title} ({method_label}, metric='{metric}')",
                         font_path=f'static/global/fonts/{project.settings.graph_settings.font_name}.ttf',
                         font_size=project.settings.graph_settings.font_size,
                         fig_width=project.settings.graph_settings.figure_width,
@@ -571,9 +595,15 @@ def register(app):
                         "kuiper": ("V", metrics.kuiper),
                     }[metric]
                     sink_y_values = np.asarray(sink_distribution.y_values)
-                    avg_fit = np.average([fit_function(np.asarray(top_distro.y_values), sink_y_values)
-                                          for top_distro in top_distributions])
-                    output_title += f" ({fit_label}={round(avg_fit, 3)}) (metric='{metric}')"
+                    if refine:
+                        # The first curve is the optimised best fit, which is the reported answer
+                        fit_value = fit_function(np.asarray(top_distributions[0].y_values), sink_y_values)
+                        fit_text = f"best-fit {fit_label}={round(fit_value, 3)}"
+                    else:
+                        fit_value = np.average([fit_function(np.asarray(top_distro.y_values), sink_y_values)
+                                                for top_distro in top_distributions])
+                        fit_text = f"mean {fit_label}={round(fit_value, 3)}"
+                    output_title += f" ({fit_text}) ({method_label}, metric='{metric}')"
                     graph_fig = univariate.unmix.top_trials_graph(
                         sink_distribution=sink_distribution,
                         model_distributions=top_distributions,
@@ -619,7 +649,11 @@ def register(app):
                         sample.replace_grain_uncertainties(project.settings.statistical_settings.kde_bandwidth)
                     adjusted_samples.append(sample)
                 adjusted_samples.reverse()
-                matrix_df = matrices.generate_data_frame(samples=adjusted_samples, metric=output_type)
+                matrix_df = matrices.generate_data_frame(
+                    samples=adjusted_samples, metric=output_type,
+                    function_type=project.settings.statistical_settings.matrix_function_type,
+                    bandwidth=float(project.settings.statistical_settings.kde_bandwidth)
+                )
                 output_id = secrets.token_hex(15)
                 output_data = embedding.embed_matrix(
                     dataframe=matrix_df, output_id=output_id, title=output_title,
@@ -650,7 +684,11 @@ def register(app):
                     for sample_name in sample_names:
                         if sample.name == sample_name:
                             active_samples.append(sample)
-                bivariate_distro = kde_function_2d(active_samples[0])
+                bivariate_distro = kde_function_2d(
+                    active_samples[0],
+                    bandwidth_x=float(project.settings.statistical_settings.bivariate_bandwidth_x),
+                    bandwidth_y=float(project.settings.statistical_settings.bivariate_bandwidth_y)
+                )
                 if output_type == 'kde_2d_surface':
                     fig_type = "plotly"
                     graph_fig = kde_graph_2d(
@@ -701,10 +739,11 @@ def register(app):
                 # Parse new MDA parameters
                 selected_metrics = request.args.getlist("metrics")
                 preset = request.args.get("preset", "harmonized")
-                rank_by = request.args.get("rank_by", "age+1s")
-                yc_min_n = int(request.args.get("yc_min_n", 2))
-                ysp_target_mswd = float(request.args.get("ysp_target_mswd", 1.0))
-                ysp_entry_rule = request.args.get("ysp_entry_rule", "global")
+                # Options left blank in the dialog aren't sent, so the preset's values stand
+                rank_by = request.args.get("rank_by") or None
+                yc_min_n = request.args.get("yc_min_n") or None
+                ysp_target_mswd = request.args.get("ysp_target_mswd") or None
+                ysp_entry_rule = request.args.get("ysp_entry_rule") or None
 
                 spreadsheet_data = spreadsheet.text_to_array(project.data)
                 loaded_samples = project.settings.age_settings.exclude_grains(data.read_1d_samples(spreadsheet_data))
@@ -719,20 +758,19 @@ def register(app):
                 sigma_in = project.settings.uncertainty_settings.sigma_in
                 sigma_out = project.settings.uncertainty_settings.sigma_out
 
-                # Build overrides for custom options
+                # Override only what the user set explicitly
                 overrides = {}
                 if rank_by:
-                    overrides['ysg'] = {'rank_by': rank_by}
-                    overrides['y3za'] = {'rank_by': rank_by}
+                    for key in ('ysg', 'y3za', 'yc1s', 'yc2s', 'ysp'):
+                        overrides.setdefault(key, {})['rank_by'] = rank_by
                 if yc_min_n:
-                    overrides['yc1s'] = {'min_n': yc_min_n, 'rank_by': rank_by}
-                    overrides['yc2s'] = {'min_n': max(yc_min_n, 3), 'rank_by': rank_by}
-                if ysp_target_mswd or ysp_entry_rule:
-                    overrides['ysp'] = {
-                        'target_mswd': ysp_target_mswd,
-                        'entry_rule': ysp_entry_rule,
-                        'rank_by': rank_by
-                    }
+                    yc_min_n = int(yc_min_n)
+                    overrides.setdefault('yc1s', {})['min_n'] = yc_min_n
+                    overrides.setdefault('yc2s', {})['min_n'] = max(yc_min_n, 3)
+                if ysp_target_mswd:
+                    overrides.setdefault('ysp', {})['target_mswd'] = float(ysp_target_mswd)
+                if ysp_entry_rule:
+                    overrides.setdefault('ysp', {})['entry_rule'] = ysp_entry_rule
 
                 # Convert grains to MDA Sample and run all metrics
                 try:
