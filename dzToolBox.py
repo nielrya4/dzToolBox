@@ -22,8 +22,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (
 
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,
-    'pool_size': 20,  # Base connection pool size
-    'max_overflow': 30,  # Additional connections during peak load
+    # uwsgi runs 4 processes x 2 threads, so 8 requests at once at most; the database allows
+    # 225 connections in total. 20+30 per process (~200 across 4 processes) could exhaust it.
+    'pool_size': 5,  # Base connection pool size per process
+    'max_overflow': 5,  # Additional connections during peaks
     'pool_recycle': 3600,  # Recycle connections every hour
     'pool_timeout': 30,  # Timeout when getting connection from pool
 }

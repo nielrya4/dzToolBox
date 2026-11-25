@@ -18,7 +18,7 @@ import pandas as pd
 
 
 def __get_project(project_id):
-    if session.get("open_project", 0) == project_id:
+    if database.owns_file(project_id):
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
         return project_from_json(project_content)
@@ -31,7 +31,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/save', methods=['POST'])
     @login_required
     def save_project(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             try:
                 compressed_data = request.get_json().get('compressedData', '')
                 if not compressed_data:
@@ -63,7 +63,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/sample-names', methods=['GET'])
     @login_required
     def get_sample_names(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             spreadsheet_data = spreadsheet.text_to_array(project.data)
             try:
@@ -79,7 +79,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/data/export', methods=['GET'])
     @login_required
     def export_data(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             spreadsheet_data = spreadsheet.text_to_array(project.data)
             filename = sanitize_filename(request.args.get("filename", "exported_data"))

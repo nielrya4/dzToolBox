@@ -1,7 +1,7 @@
 from flask_login import current_user
 import dzToolBox as APP
 from sqlalchemy import func
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import defer, selectinload
 
 
 def get_user_by_username(username):
@@ -21,8 +21,21 @@ def get_file(file_id):
     return file
 
 
-def get_all_files(limit=None, offset=None):
+def owns_file(file_id):
+    """True if the logged-in user owns this project. This is the access check for every
+    project route. (It used to compare against session["open_project"], a single slot per
+    browser, so opening a second project in another tab made the first tab's saves fail.)"""
+    return APP.db.session.query(
+        APP.CodeFile.query.filter_by(user_id=current_user.id, id=file_id).exists()
+    ).scalar()
+
+
+def get_all_files(limit=None, offset=None, with_content=False):
+    """List the user's projects. Content (avg 1.7 MB, up to 16 MB each) is NOT loaded unless
+    asked for: the project list only needs titles."""
     query = APP.CodeFile.query.filter_by(user_id=current_user.id).order_by(APP.CodeFile.id.desc())
+    if not with_content:
+        query = query.options(defer(APP.CodeFile.content))
     if limit:
         query = query.limit(limit)
     if offset:

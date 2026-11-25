@@ -21,7 +21,7 @@ except ImportError:
 
 
 def __get_project(project_id):
-    if session.get("open_project", 0) == project_id:
+    if database.owns_file(project_id):
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
         return project_from_json(project_content)
@@ -80,7 +80,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/multivariate/outputs', methods=['GET'])
     @login_required
     def get_grainalyzer_outputs(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             return jsonify([output.to_dict() for output in project.grainalyzer_outputs])
         else:
@@ -89,7 +89,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/multivariate/outputs/clear', methods=['POST'])
     @login_required
     def clear_grainalyzer_outputs(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             project.grainalyzer_outputs = []
             compressed_proj_content = compression.compress(project.to_json())
@@ -101,7 +101,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/multivariate/outputs/save', methods=['POST'])
     @login_required
     def save_grainalyzer_outputs(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             outputs_data = request.get_json().get('outputs', [])
 
@@ -119,7 +119,7 @@ def register(app):
     @login_required
     def replace_grainalyzer_outputs(project_id):
         """Swap a reconfigured output group for its new version, in place."""
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             payload = request.get_json()
             new_outputs = [Output.from_dict(item) for item in payload.get('outputs', [])]
@@ -133,7 +133,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/multivariate/outputs/delete/<string:output_id>', methods=['POST'])
     @login_required
     def delete_grainalyzer_output(project_id, output_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             project.grainalyzer_outputs = [
                 o for o in project.grainalyzer_outputs if o.output_id != output_id
@@ -149,7 +149,7 @@ def register(app):
     @login_required
     def new_heatmap(project_id):
         """Create a 2D KDE heatmap or surface plot for any two features of a sample"""
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             try:
                 from utils import spreadsheet, embedding
                 # Import only specific functions to avoid Julia initialization
@@ -319,7 +319,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/multivariate/view-data', methods=['GET'])
     @login_required
     def view_empirical_data(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             try:
                 if not CELERY_AVAILABLE:
@@ -359,7 +359,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/multivariate/find-optimal-rank', methods=['GET'])
     @login_required
     def find_optimal_rank(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             try:
                 if not CELERY_AVAILABLE:
@@ -404,7 +404,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/multivariate/run-factorization', methods=['GET'])
     @login_required
     def run_factorization(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             try:
                 if not CELERY_AVAILABLE:
@@ -451,7 +451,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/new/tensor-factorization', methods=['GET'])
     @login_required
     def new_tensor_factorization(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             try:
                 if not CELERY_AVAILABLE:
@@ -498,7 +498,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/job-status/<job_id>', methods=['GET'])
     @login_required
     def get_job_status(project_id, job_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             if not CELERY_AVAILABLE:
                 return jsonify({"error": "Celery is not configured"}), 500
             try:

@@ -155,7 +155,7 @@ environment = Environment(
 
 
 def __get_project(project_id):
-    if session.get("open_project", 0) == project_id:
+    if database.owns_file(project_id):
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
         return project_from_json(project_content)
@@ -178,7 +178,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs', methods=['GET'])
     @login_required
     def get_project_outputs(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             try:
                 project = __get_project(project_id)
                 return jsonify([output.to_dict() for output in project.outputs])
@@ -190,7 +190,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/save', methods=['POST'])
     @login_required
     def save_output(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             outputs_data = request.get_json().get('outputs', [])
             for output_item in outputs_data:
@@ -212,7 +212,7 @@ def register(app):
     @login_required
     def replace_outputs(project_id):
         """Swap a reconfigured output group for its new version, in place."""
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             payload = request.get_json()
             new_outputs = [Output.from_dict(item) for item in payload.get('outputs', [])]
@@ -233,7 +233,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/delete/<string:output_id>', methods=['POST'])
     @login_required
     def delete_output(project_id, output_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             project.delete_output(output_id)
             updated_project_content = project.to_json()
@@ -252,7 +252,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/clear', methods=['POST'])
     @login_required
     def clear_outputs(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             project.outputs = []
             updated_project_content = project.to_json()
@@ -271,7 +271,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/active-jobs', methods=['GET'])
     @login_required
     def get_active_jobs(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             return jsonify({"active_jobs": []})
         else:
             return jsonify({"error": "access_denied"}), 403
@@ -279,7 +279,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/new/distribution', methods=['GET'])
     @login_required
     def new_distro(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             _configure_dz_lib(project)  # Apply project sigma settings
             if request.method == "GET":
@@ -353,7 +353,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/new/histogram', methods=['GET'])
     @login_required
     def new_histogram(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", None)
@@ -429,7 +429,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/new/mds', methods=['GET'])
     @login_required
     def new_mds(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", None)
@@ -502,7 +502,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/new/unmix', methods=['GET'])
     @login_required
     def new_unmix(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             _configure_dz_lib(project)  # Apply project sigma settings
             if request.method == "GET":
@@ -629,7 +629,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/new/matrix', methods=['GET'])
     @login_required
     def new_matrix(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", None)
@@ -670,7 +670,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/new/2d-distribution', methods=['GET'])
     @login_required
     def new_2d_distro(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             if request.method == "GET":
                 output_title = request.args.get("outputTitle", None)
@@ -728,7 +728,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/outputs/new/mda', methods=['GET'])
     @login_required
     def new_mda(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             _configure_dz_lib(project)  # Apply project sigma settings
             if request.method == "GET":
