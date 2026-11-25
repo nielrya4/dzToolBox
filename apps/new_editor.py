@@ -43,7 +43,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/settings', methods=['GET', 'POST'])
     @login_required
     def settings(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             if request.method == "POST":
                 proj_settings = request.get_json()
@@ -62,7 +62,7 @@ def register(app):
 
 
 def __get_project(project_id):
-    if session.get("open_project", 0) == project_id:
+    if database.owns_file(project_id):
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
         return project_from_json(project_content)

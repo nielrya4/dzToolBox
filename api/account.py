@@ -50,8 +50,10 @@ def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         token = None
-        if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].split(" ")[1]
+        auth_header = request.headers.get('Authorization', '')
+        parts = auth_header.split(" ")
+        if len(parts) == 2 and parts[0].lower() == 'bearer':
+            token = parts[1]
         if not token:
             return jsonify({'error': 'Token is missing!'}), 403
         try:

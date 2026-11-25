@@ -14,7 +14,7 @@ from utils.project import project_from_json
 
 
 def __get_project(project_id):
-    if session.get("open_project", 0) == project_id:
+    if database.owns_file(project_id):
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
         return project_from_json(project_content)
@@ -28,7 +28,7 @@ def register(app):
     @login_required
     def save_grainalyzer_data(project_id):
         """Save multivariate spreadsheet data"""
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             try:
                 compressed_data = request.get_json().get('compressedData', '')
                 if not compressed_data:
@@ -61,7 +61,7 @@ def register(app):
     @login_required
     def get_tensor_sample_names(project_id):
         """Get sample names for multivariate tensor factorization"""
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             spreadsheet_data = spreadsheet.text_to_array(project.grainalyzer_data)
             try:

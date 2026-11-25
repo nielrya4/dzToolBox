@@ -1,6 +1,7 @@
 import os
 import dzToolBox as APP
 from datetime import datetime, timezone, timedelta
+from sqlalchemy import or_
 import schedule
 import threading
 import time
@@ -17,7 +18,12 @@ def start_cleanup():
 def cleanup_job():
     with APP.app.app_context():
         try:
-            guest_users = APP.User.query.filter(APP.User.is_guest.is_(True)).all()
+            # Only guests older than 12 hours (or of unknown age), so nobody loses a session in progress.
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=12)
+            guest_users = APP.User.query.filter(
+                APP.User.is_guest.is_(True),
+                or_(APP.User.created_at.is_(None), APP.User.created_at < cutoff)
+            ).all()
             
             if not guest_users:
                 print("No guest accounts to clean up")

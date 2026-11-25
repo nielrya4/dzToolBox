@@ -10,7 +10,7 @@ def register(app):
     @app.route('/update-projects', methods=['GET', 'POST'])
     @login_required
     def update_projects():
-        user_projects = database.get_all_files()
+        user_projects = database.get_all_files(with_content=True)
         sorted_user_projects = sorted(user_projects, key=lambda x: str.lower(x.title))
         for file in sorted_user_projects:
             project_content = compression.decompress(file.content)

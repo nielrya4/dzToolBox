@@ -19,7 +19,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
 
 
 def __get_project(project_id):
-    if session.get("open_project", 0) == project_id:
+    if database.owns_file(project_id):
         file = database.get_file(project_id)
         project_content = compression.decompress(file.content)
         return project_from_json(project_content)
@@ -152,7 +152,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/maps/points', methods=['GET'])
     @login_required
     def get_map_points(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             project = __get_project(project_id)
             map_points = getattr(project.settings, 'map_points', [])
             return jsonify(map_points)
@@ -162,7 +162,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/maps/points', methods=['POST'])
     @login_required
     def add_map_point(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             try:
                 project = __get_project(project_id)
                 data = request.get_json()
@@ -196,7 +196,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/maps/points/<point_id>', methods=['DELETE'])
     @login_required
     def delete_map_point(project_id, point_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             try:
                 project = __get_project(project_id)
                 map_points = getattr(project.settings, 'map_points', [])
@@ -218,7 +218,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/maps/upload', methods=['POST'])
     @login_required
     def upload_map_image(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             try:
                 if 'file' not in request.files:
                     return jsonify({'error': 'No file provided'}), 400
@@ -242,7 +242,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/maps/clear', methods=['POST'])
     @login_required
     def clear_map_points(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             try:
                 project = __get_project(project_id)
                 project.settings.mapping_settings.map_points = []
@@ -257,7 +257,7 @@ def register(app):
     @app.route('/projects/<int:project_id>/maps/export', methods=['POST'])
     @login_required
     def export_map(project_id):
-        if session.get("open_project", 0) == project_id:
+        if database.owns_file(project_id):
             try:
                 data = request.get_json()
                 map_data = data.get('map_data')
