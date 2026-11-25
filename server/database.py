@@ -1,6 +1,19 @@
 from flask_login import current_user
 import dzToolBox as APP
+from sqlalchemy import func
 from sqlalchemy.orm import selectinload
+
+
+def get_user_by_username(username):
+    """Exact match first, then case-insensitive. The database guarantees at most one
+    case-insensitive match, so this can never pick between two people."""
+    username = (username or "").strip()
+    if not username:
+        return None
+    user = APP.User.query.filter_by(username=username).first()
+    if user is None:
+        user = APP.User.query.filter(func.lower(APP.User.username) == username.lower()).first()
+    return user
 
 
 def get_file(file_id):
