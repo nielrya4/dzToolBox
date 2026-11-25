@@ -28,8 +28,16 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_timeout': 30,  # Timeout when getting connection from pool
 }
 
-SECRET_KEY = secrets.token_hex(16)
+# Set SECRET_KEY in .env so sessions/API tokens are stable across restarts and workers.
+# (Generate one with: python -c "import secrets; print(secrets.token_hex(32))")
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    SECRET_KEY = secrets.token_hex(32)
+    print("WARNING: SECRET_KEY is not set; using a random key. All sessions will be invalidated on every restart.")
 app.config['SECRET_KEY'] = SECRET_KEY
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', '0') == '1'  # set to 1 behind HTTPS
 
 app.config['TEMP_FOLDER'] = 'temp'
 if not os.path.exists('temp'):
@@ -43,16 +51,32 @@ login_manager.login_view = 'login'
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    username = db.Column(db.String(20), unique=True, nullable=False, index=True)
-    password = db.Column(db.String(60), nullable=False)
-    files = db.relationship('CodeFile', backref='author', lazy=True)
+    username = db.Column(db.String(255), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    # Guest accounts are temporary and deleted nightly. Never infer this from the username.
+    is_guest = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+    # passive_deletes: the database's ON DELETE CASCADE removes a user's files
+    files = db.relationship('CodeFile', backref='author', lazy=True, passive_deletes=True)
+
+
+# Usernames are also unique case-insensitively ("Nancy@x.edu" and "nancy@x.edu" are the same person).
+db.Index('user_username_lower_key', db.func.lower(User.username), unique=True)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    try:
+        return db.session.get(User, int(user_id))
+    except (TypeError, ValueError):
+        return None
 
 
 class CodeFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), index=True)
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     

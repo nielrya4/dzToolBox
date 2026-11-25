@@ -4,16 +4,11 @@ from flask import Flask, request, jsonify, session
 from flask_login import LoginManager, login_user, current_user, logout_user
 from werkzeug.security import check_password_hash
 import dzToolBox as APP
+from server import database
 import jwt
 from functools import wraps
 
 def register(app):
-    login_manager = APP.login_manager
-
-    @login_manager.user_loader
-    def api_load_user(user_id):
-        return APP.User.query.get(int(user_id))
-
     # Login endpoint with JWT
     @app.route('/api/login', methods=['POST'])
     def api_login():
@@ -27,7 +22,7 @@ def register(app):
             return jsonify({'error': 'Missing username or password.'}), 400
 
         try:
-            user = APP.User.query.filter_by(username=username).first()
+            user = database.get_user_by_username(username)
         except Exception as e:
             return jsonify({'error': f"Error querying user: {str(e)}"}), 500
 

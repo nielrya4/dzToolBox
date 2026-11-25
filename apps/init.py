@@ -1,7 +1,7 @@
 import os.path
 from flask import render_template, request, redirect, url_for, flash, session
 from flask_login import login_user, login_required, logout_user, current_user
-from sqlalchemy.dialects.postgresql import array
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 import dzToolBox as APP
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -18,11 +18,6 @@ environment = Environment(
 
 def register(app):
     db = APP.db
-    login_manager = APP.login_manager
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return APP.User.query.get(int(user_id))
 
     @app.route('/logout')
     @login_required
@@ -33,18 +28,36 @@ def register(app):
     @app.route('/signup', methods=['GET', 'POST'])
     def signup():
         if request.method == 'POST':
-            username = request.form.get('username')
-            password = request.form.get('password')
-            confirm_password = request.form.get('confirm_password')
+            username = (request.form.get('username') or '').strip()
+            password = request.form.get('password') or ''
+            confirm_password = request.form.get('confirm_password') or ''
 
+            if not username or not password:
+                flash('Username and password are required', 'error')
+                return redirect(url_for('signup'))
+            if len(username) > 254:
+                flash('Username is too long', 'error')
+                return redirect(url_for('signup'))
+            if username.lower().endswith('_guest'):
+                flash('That username is reserved. Please choose another.', 'error')
+                return redirect(url_for('signup'))
             if password != confirm_password:
                 flash('Passwords do not match', 'error')
                 return redirect(url_for('signup'))
-            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+            if database.get_user_by_username(username) is not None:
+                flash('That username is already taken. If it is yours, please log in instead.', 'error')
+                return redirect(url_for('signup'))
 
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
             new_user = APP.User(username=username, password=hashed_password)
             db.session.add(new_user)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError:
+                # Lost a race with another signup for the same name; the database constraint caught it.
+                db.session.rollback()
+                flash('That username is already taken. If it is yours, please log in instead.', 'error')
+                return redirect(url_for('signup'))
 
             flash('Account created successfully. You can now log in.', 'success')
             return redirect(url_for('login'))
@@ -58,12 +71,12 @@ def register(app):
             logout_user()
         secret_key = secrets.token_hex(16)
         username = str(secret_key) + "_guest"
-        password = "guest"
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        guest_user = APP.User(username=username, password=hashed_password)
+        # Nobody ever logs into a guest account by password, so make it unguessable.
+        hashed_password = generate_password_hash(secrets.token_urlsafe(32), method='pbkdf2:sha256')
+        guest_user = APP.User(username=username, password=hashed_password, is_guest=True)
         db.session.add(guest_user)
         db.session.commit()
-        user = APP.User.query.filter_by(username=username).first()
+        user = guest_user
         login_user(user)
         session["user_id"] = user.id
         project_name = "Default Project"
@@ -100,9 +113,9 @@ def register(app):
             return redirect(url_for('projects'))
         if request.method == 'POST':
             username = request.form.get('username')
-            password = request.form.get('password')
+            password = request.form.get('password') or ''
             try:
-                user = APP.User.query.filter_by(username=username).first()
+                user = database.get_user_by_username(username)
             except Exception as e:
                 login_message = f"Error querying user by username. This means the connection with the database was a little whack. Check your internet connection. Just try again, as it usually works on the second or third attempt."
                 return render_template('init/pages/login.html', login_message=login_message, current_user=current_user)

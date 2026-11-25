@@ -17,7 +17,7 @@ def start_cleanup():
 def cleanup_job():
     with APP.app.app_context():
         try:
-            guest_users = APP.User.query.filter(APP.User.username.endswith("_guest")).all()
+            guest_users = APP.User.query.filter(APP.User.is_guest.is_(True)).all()
             
             if not guest_users:
                 print("No guest accounts to clean up")
@@ -32,7 +32,7 @@ def cleanup_job():
             print(f"Deleted {deleted_files} files from guest accounts")
             
             deleted_users = APP.User.query.filter(
-                APP.User.username.endswith("_guest")
+                APP.User.id.in_(guest_user_ids)
             ).delete(synchronize_session=False)
             print(f"Deleted {deleted_users} guest accounts")
             
